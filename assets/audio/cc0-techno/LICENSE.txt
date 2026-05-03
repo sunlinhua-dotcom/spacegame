@@ -1,0 +1,10 @@
+CC0 1.0 Universal (Public Domain Dedication)
+
+These tracks were downloaded from OpenGameArt.org, all licensed CC0:
+
+- tech-rave.wav        ← https://opengameart.org/content/tech-rave
+- techno-5.mp3         ← https://opengameart.org/content/electronic (Pro Sensory)
+- space-flight.mp3     ← https://opengameart.org/content/space-flight
+
+Used as background music in Earth Defense Ring. No attribution required by license,
+but credit retained here for transparency.

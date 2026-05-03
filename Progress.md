@@ -49,6 +49,16 @@
 - 已完成 UI 全面重做：双 HUD 卡片（含新增"击杀"计数）、玻璃质感 backdrop-filter、3 色渐变品牌字与 LEVEL UP 标题、4 档稀有度卡片（rare/epic/legendary/mythic 各有边框/光晕/背景）、cardReveal 入场动画、icon+label 底部按钮、Pause/GameOver/Victory 三个 overlay（含 4 项统计 + 主按钮辉光）、Mini Boss 名牌实时跟随。
 - 已做专业游戏性微调：首次升级 18.5s → 14s 加快正反馈循环、Mini Boss 入场加 0.3s 震屏、HUD 长文案 webkit-line-clamp 不撑卡片。
 - 已修 4 项用户反馈：swarm 针头加 π 翻转 + 26×84 加粗（原 16×112 太细且首尾颠倒）；第一关平衡（baseDensity 130→70、prefill 50→28、stage 系数前移到 stage-1，第一关只看 wave 增量）；升级持续可见化（bullet 尺寸/颜色随 damage/laserLevel 变化、defender 随 gunLevel 变大且 5+ 升级后获 halo、Laser 冷却 3.1→2.4 + level×0.5、Beam 触发率提升 70%）；Boss 全周 360° 巡逻 + 半径 184-296 起伏 + 5-8 秒一次冲锋俯冲突袭（震屏 + 中途突袭 burst）。
+- 已完成 iPhone 全面适配：safe-area-inset 接入 .hud-top / .controls / .shell 三处、html/body 用 100dvh + touch-action manipulation + tap-highlight 透明、media query 分 3 档（≤460 / ≤390 / ≤360）覆盖 Pro Max / 标准 iPhone / SE/mini、ctrl-btn 加大到 52px 符合 Apple HIG 触摸目标、@supports (-webkit-touch-callout) 加 iOS 专属调优。
+- 已默认开启音效：state.soundOn 起手即 true、新增 unlockAudioOnce() 在 .stage 任意 pointerdown 时自动 audio.start() 解锁 AudioContext、soundBtn 默认显示"🔊 音效"（不再是"开启"），符合浏览器 autoplay policy 同时减少用户操作。
+- 已用 5 首 OpenGameArt CC0 techno/EDM 曲子替代 Armin 商业版权（无法下载）：tech-rave + Pro Sensory techno + bright/melodic EDM + space-flight，每次开局 playSample 随机选一首循环播放；MusicGen 死机后改用直接 curl 下载方案，更快更稳，已附 LICENSE.txt。
+- 已完成 7 项 UI polish：顶 HUD 收缩成单行 pill（含彩色 icon 5 项 stats + 关卡主题）、数字滚动动画、Mini Boss HP 血条、击杀飘字 +¥N、Boss 入场全屏 banner、商店统一 panel-shell 风格、dev server bind 0.0.0.0、桌面宽屏 ambient halo。
+- 已先后两次升级地球渲染：首版 SphereGeometry + 程序化 CanvasTexture（被指出像 marble 不像地球），最终版改用 NASA Blue Marble 真实贴图 + Sangil Lee 多 sampler shader（day/night sigmoid 混合 + 海洋反光 + 云层夜侧暗化）+ Franky Hung 薄蓝大气 fresnel。OrthographicCamera near 0.1→-200 才能让 sphere 不被 clip。
+- 已增强星空：3 层视差（620 远点 / 220 中点 / 70 近点 twinkle ShaderMaterial）+ 7 个 nebula sprites。
+- 已按用户要求停止使用其外部图片 API；外部接口生成的玩法增强图集已被本地程序化 4x4 图集覆盖，并切割出 16 个透明 PNG：Boss 弱点/狂暴/预警/冲锋、冻结弹/轨道炮/修复云/护盾超载、商店锁卡/重掷棱晶/资金缓存/雇佣信标、4 个关卡主题徽记。
+- 已补充本地生成脚本和切割脚本：`scripts/generate_procedural_polish_atlas.py`、`scripts/process_polish_atlas.py`；总 manifest 与 polish manifest 均标记为 `local-procedural-pillow`，不记录也不依赖用户 Key。
+- 已把 `assets/generated/polish/final/` 接入游戏：Boss 弱点命中倍率、Boss 狂暴光环、Boss 攻击预警圈、Boss 冲锋轨道、商店锁卡遮罩、刷新棱晶按钮/动效、购买弹出反馈、HUD 关卡主题徽记和特殊升级卡图标均已落地。
+- 已新增 QA 验收入口：`?qa=shop&stage=4` 可直接查看商店接入，`?qa=boss&stage=8` 可直接查看 Boss 弱点/预警接入；普通游戏入口不受影响。
 
 ## 进行中
 - 继续细化 Boss 位置、Boss 技能差异、商店经济平衡、升级后视觉冲击和音频层次。
@@ -60,3 +70,10 @@
 - 继续提升 Three.js 层的爆炸、激光、能量束和敌人入场动画。
 - 继续试听并微调 MusicGen 背景音乐提示词和循环长度。
 - 继续为 10 个 Boss 增加更强的阶段技能差异和击杀后的专属升级池。
+- 下一轮可继续把关卡主题从 HUD 徽记扩展到背景色调、敌人调色和 Boss 技能差异。
+- 已综合 bobbyroe + Three.js Journey + sneha-belkhale 方案重写星空：3 层视差 + 每星独立 HSL 颜色（per-vertex color attribute）+ circle.png 圆点贴图 + ShaderMaterial twinkle + 7 个 nebula sprites + 流星系统（每 3.5-8s 一颗划过屏幕）。
+- 已实现升级卡 leveling（Vampire Survivors / Slay the Spire 综合）：每个 upgrade.maxLevel 按稀有度分（common 5 / rare 4 / epic 3 / legendary 2 / mythic 1），forceUnique 标记 3 张颠覆性卡只能选一次；state.upgradeLevels 记录每张卡当前等级；卡面显示 Lv N/M + 黄色 pips（已填 / 即将填 next 呼吸光晕 / 待填）。
+- 已为 10 个 BOSS 各设计独立"大招"：molten=lavaBurst 橙 / bio=swarmHive 绿 / ice=frostNova 青 / void=voidSlice 紫 / gold=goldBarrage 金 / red=plasmaSpiral 红 / blue=ionChain 蓝 / black=armorRam 黑 / white=gravityWell 白 / solar=eclipsePulse 黄。Boss HP 跌到 70/40/15% 三个阈值各放一次，showBossBanner 同时给中央 banner 提示。
+- 已根据用户反馈裁掉 2 首难听的 EDM 曲（bright-edm/melodic-edm），audio.js music 数组从 5 缩到 3：tech-rave / techno-5 / space-flight。
+- 已新增游戏开始界面 titlePanel：大渐变标题"地球防御战" + tagline + 5 行 Bright.Sun credits（创意/美术/技术/音乐/音效）+ "开始游戏" 主按钮 + 底部小提示。首次加载停在 title 模式（电影开场 — 地球自转、星空闪烁、swarm 冻结），点 "开始游戏" 进入 playing；后续重启不再回 title，直接进战。
+- 已对开始界面做"顶级排版"重做：去掉卡片容器，改电影海报式布局 — 顶部状态横线 `MISSION 001 · ORBITAL DEFENSE PROTOCOL` + 双行垂直渐变 hero 大字 `EARTH`/`DEFENSE`（白→青 / 金→橙 / 入场级联动画）+ 中文小字 `地 球 防 御 战`（左右细线装饰）+ 上下细线包夹的 STATUS/YEAR/BUILD 元数据栏 + Sci-fi 切角 `▶ ENGAGE / 开 始 任 务` 按钮（hover 浮起 + 青光，clip-path 6 边形）+ 底部金色横线 + `创意 · 美术 · 技术 · 音乐 · 音效` + `ALL BY BRIGHT.SUN`（金/青/紫渐变）+ 监控提示 `TAP TO UNLOCK AUDIO`。

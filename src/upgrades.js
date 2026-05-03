@@ -155,6 +155,17 @@ const groups = [
   }
 ];
 
+// Max levels per rarity — pattern borrowed from Vampire Survivors (weapons
+// cap at 8) and Slay the Spire (cards upgrade once). Common upgrades stack
+// the most; mythic effects are powerful enough to keep at 1 pick per run.
+const RARITY_MAX_LEVEL = {
+  common: 5,
+  rare: 4,
+  epic: 3,
+  legendary: 2,
+  mythic: 1,
+};
+
 export const upgrades = groups.flatMap((group, groupIndex) =>
   group.base.map(([name, price, rarity, effect], index) => ({
     id: String(groupIndex * 9 + index + 1).padStart(3, "0"),
@@ -164,7 +175,10 @@ export const upgrades = groups.flatMap((group, groupIndex) =>
     rarity,
     effect,
     stage: groupIndex < 3 ? 1 : groupIndex < 6 ? 2 : groupIndex < 9 ? 3 : 4,
-    repeatable: !["Laser", "Beam", "时间回卷", "无限预算"].includes(name)
+    maxLevel: RARITY_MAX_LEVEL[rarity] || 3,
+    // Special items that should never repeat regardless of rarity (one-shots
+    // like time-rewind, infinite-budget — they're game-changers per pick)
+    forceUnique: ["时间回卷", "无限预算", "孤注一掷"].includes(name),
   }))
 );
 

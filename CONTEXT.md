@@ -52,3 +52,17 @@
 - 全部 99 张升级卡都接入了 `upgradeShowcasesByName` 字典，每张卡都有专属战场动画/音效/震屏，传奇/神话卡能直接清场或回血；后续如新增升级卡只要在该字典追加 `name → fn` 即可。
 - 敌人共 4 层：swarm（金色火焰条，主流密度 130-240，HP 1）/ 小怪（saucer/meteor/bolt 标准尺寸，spawnEnemies 控制）/ Mini Boss（同 sprite 1.7x 放大，每 4 波生成，HP 24-100，三种专属技能）/ Big Boss（boss-1 ~ boss-10，每关末波）。前 3 层都用 `state.enemies` 数组管理，通过 `isSwarm / isMiniBoss / isBoss` 标记走不同分支。
 - UI 已全面重做：HUD 拆双卡片（含新增"击杀"统计）、3 个 overlay（Pause/GameOver/Victory）、Mini Boss 屏幕名牌、icon+label 底部按钮、cardReveal 升级卡入场动画、4 档稀有度配色、玻璃质感 backdrop-filter。`index.html` 与 `src/styles.css` 整体重写，`src/game-three.js` 接入新 UI 元素与 syncOverlays。
+- 已停止使用用户提供的外部图片 API 配置；玩法增强素材改为本地程序化生成：`scripts/generate_procedural_polish_atlas.py` 生成 4x4 图集，`scripts/process_polish_atlas.py` 切割为 `assets/generated/polish/final/` 下 16 个透明 PNG，并生成 `output/asset-review/gameplay-polish-atlas-contact.png` 供目检。
+- 本地程序化玩法增强素材已接入运行时：Boss 弱点核心可见且命中有额外伤害，Boss 狂暴/预警/冲锋轨道有 Sprite 反馈；商店刷新/购买/锁卡有对应素材；HUD 显示关卡主题徽记；部分升级卡直接使用冻结弹、轨道炮、修复云、护盾超载、资金缓存、舰队信标等新图标。
+- iPhone 完整适配已落地：100dvh、env(safe-area-inset-*) 三方向、3 档 media query (≤460 / ≤390 / ≤360)、ctrl-btn 52px 触摸目标、@supports (-webkit-touch-callout) iOS 专属调优、touch-action manipulation 防双击缩放。
+- 默认开启音效：state.soundOn=true、首次 .stage pointerdown 自动 unlock AudioContext、soundBtn 显示"🔊 音效"。
+- 背景音乐已切换为 5 首 OpenGameArt CC0 techno/EDM（Armin 商业版权无法下载，用 CC0 替代）：`assets/audio/cc0-techno/{tech-rave.wav, techno-5.mp3, bright-edm.ogg, melodic-edm.ogg, space-flight.mp3}` + LICENSE.txt；每次开局随机轮播一首。旧 musicgen-earth-defense.wav 文件保留但不再被引用。
+- 顶 HUD 已重做为单行 pill 形状的 hud-bar（5 项彩色 icon stats + 关卡主题徽记）+ 4px 进度条 + 单行 ellipsis 状态文字，整体高度从 ~140px 缩到 ~70px。
+- 7 项 UI polish 已落地：数字滚动动画（setRollingNumber easeOutCubic）、Mini Boss HP 血条、击杀飘字 +¥N（floaters DOM 池）、Boss 入场全屏 banner（showBossBanner）、商店统一 panel-shell 风格、dev server bind 0.0.0.0（局域网手机可扫）、桌面宽屏 ≥1024 ambient halo。
+- Three.js 地球已升级到全球最优解：NASA Blue Marble + Sangil Lee 多 sampler shader（day/night sigmoid 混合 + 海洋 spec 反光 + 城市夜光），云层独立 sphere 用 cloudtrans 作为 alpha + 夜侧暗化，Franky Hung pattern 的薄蓝大气 fresnel shell。贴图来自 `bobbyroe/threejs-earth`（MIT，原始 NASA 公共领域），存于 `assets/textures/earth/`。
+- OrthographicCamera near 已从 0.1 改为 -200，让 SphereGeometry 不被前裁剪面 clip。
+- 星空已重做：3 层视差（620 远 + 220 中 + 70 近 twinkle ShaderMaterial）+ 7 个 nebula sprites 营造深度。
+- 星空已综合 bobbyroe / Three.js Journey / sneha-belkhale 方案重写：3 层视差 + 每星独立 HSL 颜色 + circle.png 圆贴图 + ShaderMaterial twinkle + 7 nebula + 流星系统（每 3.5-8s 一颗划过）。
+- 升级卡 leveling 已上线：upgrades.RARITY_MAX_LEVEL（common5/rare4/epic3/legendary2/mythic1）+ forceUnique；state.upgradeLevels 跟踪每卡当前等级；卡面显示 Lv N/M + 黄色 pips（filled/next pulse/empty）；drawUpgradeOptions 过滤 maxed。
+- 10 个 BOSS 大招已上线：每个 boss slug 映射到独立 ult kind，使用 boss.color；HP 跌到 70/40/15% 三阈值各放一次（boss.bossUltsFired 计数）；showBossBanner 同时显示"BOSS 大招 · 招式名"。
+- 已新增游戏开始界面 titlePanel（首次加载停在 mode="title"，点 "开始游戏" 进入 playing）。包含大渐变标题、tagline、5 行 Bright.Sun credits（创意/美术/技术/音乐/音效）、开始按钮。重启游戏不再回 title 直接进战。

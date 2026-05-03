@@ -1,6 +1,6 @@
 import * as THREE from "../node_modules/three/build/three.module.js";
-import { AudioEngine } from "./audio.js?v=20260503-ui-pro";
-import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-ui-pro";
+import { AudioEngine } from "./audio.js?v=20260503-polish-runtime1";
+import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
 
 /* ═══════════════════════════════════════════════════════════════
    UI References
@@ -12,6 +12,8 @@ const ui = {
   stageWave: document.getElementById("stageWave"),
   levelCount: document.getElementById("levelCount"),
   killCount: document.getElementById("killCount"),
+  stageThemeIcon: document.getElementById("stageThemeIcon"),
+  stageThemeText: document.getElementById("stageThemeText"),
   runState: document.getElementById("runState"),
   restartBtn: document.getElementById("restartBtn"),
   shopBtn: document.getElementById("shopBtn"),
@@ -45,7 +47,16 @@ const ui = {
   vLevels: document.getElementById("vLevels"),
   vMoney: document.getElementById("vMoney"),
   restartVictoryBtn: document.getElementById("restartVictoryBtn"),
+  titlePanel: document.getElementById("titlePanel"),
+  startBtn: document.getElementById("startBtn"),
   miniBossTag: document.getElementById("miniBossTag"),
+  miniBossName: document.getElementById("miniBossName"),
+  miniBossHpFill: document.getElementById("miniBossHpFill"),
+  bossBanner: document.getElementById("bossBanner"),
+  bossBannerName: document.getElementById("bossBannerName"),
+  bossBannerSub: document.getElementById("bossBannerSub"),
+  floaters: document.getElementById("floaters"),
+  stageThemeBadge: document.getElementById("stageThemeBadge"),
   stage: document.querySelector(".stage"),
 };
 
@@ -57,6 +68,90 @@ function setHT(el, key, val) {
   if (_hc[key] === val) return;
   _hc[key] = val;
   el.textContent = val;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Number rolling — animate stat changes for tactile feedback
+   ═══════════════════════════════════════════════════════════════ */
+const _roll = {};
+function setRollingNumber(el, key, target, opts = {}) {
+  if (!el) return;
+  const duration = opts.duration ?? 280;
+  const fmt = opts.fmt || ((v) => Math.floor(v).toString());
+  const cur = _roll[key];
+  if (cur && cur.target === target) return;
+  const startVal = cur ? cur.current : Number(el.textContent) || 0;
+  const start = performance.now();
+  if (cur && cur.raf) cancelAnimationFrame(cur.raf);
+  const entry = { target, current: startVal, raf: 0 };
+  _roll[key] = entry;
+  function tick(now) {
+    const k = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - k, 3);
+    const value = startVal + (target - startVal) * eased;
+    entry.current = value;
+    el.textContent = fmt(value);
+    if (k < 1) {
+      entry.raf = requestAnimationFrame(tick);
+    } else {
+      el.textContent = fmt(target);
+      entry.current = target;
+    }
+  }
+  entry.raf = requestAnimationFrame(tick);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Floaters — drifting `+¥1` / `+5` text from kill positions.
+   Recycled DOM nodes via a small pool, removed by animationend.
+   ═══════════════════════════════════════════════════════════════ */
+const _floaterPool = [];
+function spawnFloater(text, sceneX, sceneY, kind = "money") {
+  if (!ui.floaters || !ui.stage) return;
+  const node = _floaterPool.pop() || document.createElement("div");
+  node.className = `floater is-${kind}`;
+  node.textContent = text;
+  // Convert game-space (720x1280) to stage-relative px
+  const stageRect = ui.stage.getBoundingClientRect();
+  const sx = (sceneX / W) * stageRect.width;
+  const sy = (sceneY / H) * stageRect.height;
+  node.style.left = `${sx}px`;
+  node.style.top = `${sy}px`;
+  node.style.animation = "none";
+  ui.floaters.appendChild(node);
+  // Restart animation
+  // eslint-disable-next-line no-unused-expressions
+  node.offsetHeight;
+  node.style.animation = "";
+  node.addEventListener(
+    "animationend",
+    () => {
+      if (node.parentNode) node.parentNode.removeChild(node);
+      if (_floaterPool.length < 32) _floaterPool.push(node);
+    },
+    { once: true },
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Boss intro banner — full-stage drama on stage spawn
+   ═══════════════════════════════════════════════════════════════ */
+let _bossBannerTimer = null;
+function showBossBanner(name, sub) {
+  if (!ui.bossBanner) return;
+  if (_bossBannerTimer) clearTimeout(_bossBannerTimer);
+  if (ui.bossBannerName) ui.bossBannerName.textContent = name;
+  if (ui.bossBannerSub) ui.bossBannerSub.textContent = sub || "";
+  ui.bossBanner.hidden = false;
+  // Force animation restart
+  ui.bossBanner.style.animation = "none";
+  // eslint-disable-next-line no-unused-expressions
+  ui.bossBanner.offsetHeight;
+  ui.bossBanner.style.animation = "";
+  _bossBannerTimer = setTimeout(() => {
+    if (ui.bossBanner) ui.bossBanner.hidden = true;
+    _bossBannerTimer = null;
+  }, 2400);
 }
 function setHS(el, key, prop, val) {
   const ck = key + prop;
@@ -75,7 +170,8 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260503-audio-earth1";
+const ASSET_VERSION = "20260503-polish-runtime1";
+const qaParams = new URLSearchParams(window.location.search);
 const tex = {};
 const iconMap = {
   Gun: "topdown-gun-icon",
@@ -113,6 +209,68 @@ const upgradeVfxMap = {
   风险收益: "rarity-evolution",
 };
 
+const polishAssetBase = "assets/generated/polish/final";
+const polishTextureFiles = {
+  polishBossWeakpointCore: "boss-weakpoint-core",
+  polishBossRageAura: "boss-rage-aura",
+  polishDangerWarningRing: "danger-warning-ring",
+  polishBossChargeLane: "boss-charge-lane",
+  polishFreezeBomb: "tactical-freeze-bomb",
+  polishRailCannon: "orbital-rail-cannon",
+  polishEarthRepairNanites: "earth-repair-nanites",
+  polishShieldOvercharge: "shield-overcharge",
+  polishShopLockCard: "shop-lock-card",
+  polishRarityRerollPrism: "rarity-reroll-prism",
+  polishWarFundCache: "war-fund-cache",
+  polishHireFleetBeacon: "hire-fleet-beacon",
+  polishStageAsteroidBelt: "stage-asteroid-belt",
+  polishStageMothershipShadow: "stage-mothership-shadow",
+  polishStageIonStorm: "stage-ion-storm",
+  polishStageEclipseFinale: "stage-eclipse-finale",
+};
+
+const stageThemes = [
+  { max: 2, key: "polishStageAsteroidBelt", label: "陨石带" },
+  { max: 4, key: "polishStageMothershipShadow", label: "母舰阴影" },
+  { max: 7, key: "polishStageIonStorm", label: "电磁风暴" },
+  { max: 10, key: "polishStageEclipseFinale", label: "日蚀终局" },
+];
+
+const polishIconByUpgradeName = {
+  冰蓝减速: "tactical-freeze-bomb",
+  轨道冻结: "tactical-freeze-bomb",
+  时间减速: "tactical-freeze-bomb",
+  轨道裁决: "orbital-rail-cannon",
+  地平线炮: "orbital-rail-cannon",
+  近轨炮台: "orbital-rail-cannon",
+  修复卫星: "earth-repair-nanites",
+  应急修复: "earth-repair-nanites",
+  轨道维修站: "earth-repair-nanites",
+  护盾发生器: "shield-overcharge",
+  护盾回流: "shield-overcharge",
+  盖亚圣盾: "shield-overcharge",
+  极限护盾: "shield-overcharge",
+  环形屏障: "shield-overcharge",
+  稀有补贴: "rarity-reroll-prism",
+  黑市改装: "rarity-reroll-prism",
+  低价采购: "rarity-reroll-prism",
+  战争债券: "war-fund-cache",
+  无限预算: "war-fund-cache",
+  黑洞贷款: "war-fund-cache",
+  贪婪协议: "war-fund-cache",
+  近地机群: "hire-fleet-beacon",
+  超量起飞: "hire-fleet-beacon",
+  卫星阵列: "hire-fleet-beacon",
+};
+
+const polishShowcaseByCategory = {
+  经济: "polishWarFundCache",
+  防御: "polishShieldOvercharge",
+  特殊: "polishFreezeBomb",
+  近地卫星: "polishHireFleetBeacon",
+  Gun: "polishHireFleetBeacon",
+};
+
 /* ═══════════════════════════════════════════════════════════════
    Audio — preload samples on import
    ═══════════════════════════════════════════════════════════════ */
@@ -124,7 +282,9 @@ audio.preload();
    ═══════════════════════════════════════════════════════════════ */
 const loader = new THREE.TextureLoader();
 const scene = new THREE.Scene();
-const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 100);
+// Z range expanded so SphereGeometry-based earth (radius 64 + atmosphere 78)
+// isn't clipped by the near plane. Negative near is valid for orthographic.
+const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, -200, 200);
 camera.position.z = 20;
 
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: true, powerPreference: "high-performance" });
@@ -260,12 +420,16 @@ loadTexture("playerBullet", `${individualAssetBase}/player-bullet.png`);
 loadTexture("enemyBolt", `${individualAssetBase}/enemy-bolt.png`);
 loadTexture("explosionCore", `${individualAssetBase}/explosion-core.png`);
 loadTexture("barrageProjectile", `${individualAssetBase}/barrage-projectile.png`);
+loadTexture("starCircle", "assets/textures/star-circle.png");
 loadTexture("charPlaneBlue", `${characterAssetBase}/interceptor-blue.png`);
 loadTexture("charPlaneGold", `${characterAssetBase}/interceptor-gold.png`);
 loadTexture("charPlaneLaser", `${characterAssetBase}/interceptor-laser.png`);
 loadTexture("charEnemyMeteor", `${characterAssetBase}/enemy-meteor-crab.png`);
 loadTexture("charEnemyBolt", `${characterAssetBase}/enemy-bolt-needle.png`);
 loadTexture("charEnemySaucer", `${characterAssetBase}/enemy-saucer-hunter.png`);
+for (const [key, file] of Object.entries(polishTextureFiles)) {
+  loadTexture(key, `${polishAssetBase}/${file}.png`);
+}
 for (const boss of bossConfigs) {
   const id = String(boss.level).padStart(2, "0");
   for (let frame = 0; frame < 4; frame++) {
@@ -297,6 +461,8 @@ const state = {
   levelOptions: [],
   shopOptions: [],
   selectedIds: new Set(),
+  // Vampire-Survivors-style per-upgrade level tracking. id → currentLevel.
+  upgradeLevels: {},
   enemies: [],
   bullets: [],
   explosions: [],
@@ -315,7 +481,9 @@ const state = {
   splitShot: 0,
   explosionScale: 1,
   moneyMul: 1,
-  soundOn: false,
+  // Default ON. Browsers block actual playback until first user gesture, so
+  // the AudioContext is unlocked on the initial pointerdown anywhere on the stage.
+  soundOn: true,
   miniBossesDefeated: 0,
   message: "地球防御系统启动中",
 };
@@ -428,6 +596,32 @@ function angleTo(a, b) {
 
 function pointOnCircle(angle, radius, center = C) {
   return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius };
+}
+
+function currentStageTheme() {
+  return stageThemes.find((theme) => state.stageLevel <= theme.max) || stageThemes[stageThemes.length - 1];
+}
+
+function polishAssetUrl(slug) {
+  return `${polishAssetBase}/${slug}.png?v=${ASSET_VERSION}`;
+}
+
+function polishTextureKeyFromSlug(slug) {
+  for (const [key, file] of Object.entries(polishTextureFiles)) {
+    if (file === slug) return key;
+  }
+  return null;
+}
+
+function bossWeakpointPosition(boss) {
+  const a = boss.bossPhase * 1.72 + boss.wobble;
+  const rx = boss.size * 0.24;
+  const ry = boss.size * 0.18;
+  return {
+    x: boss.x + Math.cos(a) * rx,
+    y: boss.y + Math.sin(a) * ry,
+    angle: a,
+  };
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -592,11 +786,19 @@ function createBossVisual(config) {
     frame: 0,
     frameTimer: 0,
     aura: createSprite(tex.explosionCore, config.size * 1.72, config.size * 1.72, { additive: true, opacity: 0.2, color }),
+    rageAura: createSprite(tex.polishBossRageAura, config.size * 1.9, config.size * 1.9, { additive: true, opacity: 0 }),
+    warningRing: createSprite(tex.polishDangerWarningRing, config.size * 1.34, config.size * 1.34, { additive: true, opacity: 0 }),
+    chargeLane: createSprite(tex.polishBossChargeLane, config.size * 0.55, config.size * 2.1, { additive: true, opacity: 0 }),
     ringOuter: makeEnergyRing(config.size * 0.72, config.size * 0.035, color, 0.32),
     ringInner: makeEnergyRing(config.size * 0.48, config.size * 0.025, 0xc8ffff, 0.18),
     core: createSprite(tex[`boss-${config.level}-0`], config.size, config.size, { opacity: 1 }),
+    weakpoint: createSprite(tex.polishBossWeakpointCore, config.size * 0.36, config.size * 0.36, { additive: true, opacity: 0.92 }),
   };
-  group.add(visual.aura, visual.ringOuter, visual.ringInner, visual.core);
+  visual.weakpoint.position.set(0, 0, 0.14);
+  visual.warningRing.position.set(0, 0, 0.08);
+  visual.rageAura.position.set(0, 0, 0.03);
+  visual.chargeLane.position.set(0, -config.size * 0.66, -0.02);
+  group.add(visual.chargeLane, visual.aura, visual.rageAura, visual.warningRing, visual.ringOuter, visual.ringInner, visual.core, visual.weakpoint);
   return visual;
 }
 
@@ -629,12 +831,30 @@ function updateEnemyVisual(enemy, dt) {
       visual.core.material.needsUpdate = true;
     }
     const hpRatio = Math.max(0, enemy.hp / enemy.maxHp);
+    const danger = 1 - hpRatio;
+    const weak = bossWeakpointPosition(enemy);
+    visual.weakpoint.position.set(Math.cos(weak.angle) * config.size * 0.24, -Math.sin(weak.angle) * config.size * 0.18, 0.14);
+    visual.weakpoint.material.rotation = state.time * 1.6;
+    visual.weakpoint.material.opacity = 0.74 + Math.sin(state.time * 5.4 + enemy.wobble) * 0.18;
+    const weakSize = config.size * 0.36 * (1 + Math.sin(state.time * 6.8) * 0.08);
+    visual.weakpoint.scale.set(weakSize, weakSize, 1);
     const pulse = 1 + Math.sin(state.time * 3.8 + enemy.wobble) * 0.035 + (1 - hpRatio) * 0.035;
     visual.group.scale.set(pulse, pulse, 1);
     visual.group.rotation.z = Math.sin(state.time * 0.72 + enemy.wobble) * 0.04;
     visual.ringOuter.rotation.z += dt * (0.7 + config.level * 0.04);
     visual.ringInner.rotation.z -= dt * (1.1 + config.level * 0.05);
     visual.aura.material.opacity = 0.14 + Math.sin(state.time * 4.6 + enemy.wobble) * 0.045 + (1 - hpRatio) * 0.1;
+    visual.rageAura.material.opacity = Math.max(0, danger - 0.38) * 0.95 + (enemy.bossCharging ? 0.2 : 0);
+    visual.rageAura.material.rotation -= dt * (0.55 + config.level * 0.03);
+    const attackWarn = enemy.attackTimer < 0.75 ? 1 - Math.max(0, enemy.attackTimer / 0.75) : 0;
+    visual.warningRing.material.opacity = Math.max(enemy.bossCharging ? 0.5 : 0, attackWarn * 0.74);
+    visual.warningRing.material.rotation += dt * (1.9 + attackWarn * 1.2);
+    const toEarth = angleTo(enemy, C);
+    const laneAlpha = enemy.bossCharging ? 0.56 : attackWarn * 0.34;
+    visual.chargeLane.material.opacity = laneAlpha;
+    visual.chargeLane.material.rotation = -toEarth + Math.PI / 2;
+    visual.chargeLane.scale.set(config.size * (0.42 + attackWarn * 0.12), Math.max(config.size * 1.6, enemy.radius * 0.78), 1);
+    visual.chargeLane.position.set(Math.cos(toEarth) * config.size * 0.72, -Math.sin(toEarth) * config.size * 0.72, -0.02);
     visual.core.material.opacity = 0.92 + Math.sin(state.time * 5.2 + enemy.wobble) * 0.06;
     return;
   }
@@ -665,17 +885,152 @@ function updateEnemyVisual(enemy, dt) {
 /* ═══════════════════════════════════════════════════════════════
    Star Field & Barrage Layer
    ═══════════════════════════════════════════════════════════════ */
-function createStarField() {
-  const geometry = new THREE.BufferGeometry();
-  const positions = [];
-  for (let i = 0; i < 300; i++) {
-    positions.push(rand(-W / 2, W / 2), rand(-H / 2, H / 2), -3);
+// Multi-layer star field with parallax, HSL color variety (bobbyroe pattern),
+// circle.png star texture for crisp round points, twinkle shader on near layer,
+// nebula tinting, and occasional shooting stars.
+const _twinkleMaterials = [];
+const _shootingStars = [];
+
+// Per-vertex random color via HSL — gives the realistic blue/white/yellow/red
+// stellar mix instead of uniform monochrome.
+function makeStarLayerColored(count, z, size, opacity, twinkle = false, hueRange = [0.55, 0.7]) {
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const phases = new Float32Array(count);
+  const sizes = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = rand(-W / 2 - 60, W / 2 + 60);
+    positions[i * 3 + 1] = rand(-H / 2 - 60, H / 2 + 60);
+    positions[i * 3 + 2] = z;
+    phases[i] = Math.random() * Math.PI * 2;
+    sizes[i] = size * (0.6 + Math.random() * 0.8);
+    // Star color: most are warm-white, a few are blue/yellow/red
+    const hue = rand(hueRange[0], hueRange[1]);
+    const sat = 0.05 + Math.random() * 0.5;
+    const lit = 0.55 + Math.random() * 0.45;
+    const c = new THREE.Color().setHSL(hue, sat, lit);
+    colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
   }
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  const material = new THREE.PointsMaterial({ color: 0xcdefff, size: 1.8, transparent: true, opacity: 0.58, depthWrite: false });
-  const points = new THREE.Points(geometry, material);
-  scene.add(points);
-  return points;
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geom.setAttribute("phase", new THREE.Float32BufferAttribute(phases, 1));
+  geom.setAttribute("aSize", new THREE.Float32BufferAttribute(sizes, 1));
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uMap: { value: tex.starCircle },
+      uOpacity: { value: opacity },
+      uTwinkle: { value: twinkle ? 1.0 : 0.0 },
+    },
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: `
+      attribute float phase;
+      attribute float aSize;
+      varying vec3 vColor;
+      varying float vBright;
+      uniform float uTime;
+      uniform float uTwinkle;
+      void main() {
+        vColor = color;
+        float tw = 0.5 + 0.5 * sin(uTime * 2.4 + phase);
+        vBright = mix(1.0, 0.35 + 0.75 * tw, uTwinkle);
+        float pointSize = aSize * mix(1.0, 1.0 + tw * 0.6, uTwinkle);
+        gl_PointSize = pointSize;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uMap;
+      uniform float uOpacity;
+      varying vec3 vColor;
+      varying float vBright;
+      void main() {
+        vec4 tex = texture2D(uMap, gl_PointCoord);
+        gl_FragColor = vec4(vColor, tex.a * uOpacity * vBright);
+      }
+    `,
+    vertexColors: true,
+  });
+  _twinkleMaterials.push(mat);
+  return new THREE.Points(geom, mat);
+}
+
+// Shooting stars — periodic streaks across the screen
+function spawnShootingStar() {
+  const fromTop = Math.random() < 0.6;
+  const startX = rand(-W / 2, W / 2);
+  const startY = fromTop ? H / 2 + 30 : rand(-H / 2, H / 2);
+  const angle = fromTop ? -Math.PI / 2 + rand(-0.5, 0.5) : rand(-Math.PI / 4, Math.PI / 4);
+  const speed = rand(420, 720);
+  const length = rand(60, 110);
+  const sprite = makeSprite(tex.barrageProjectile, 4, length, {
+    additive: true,
+    opacity: 0.95,
+    color: 0xb6f4ff,
+  });
+  sprite.material.rotation = -angle + Math.PI / 2;
+  sprite.position.set(startX, startY, -2);
+  _shootingStars.push({
+    sprite,
+    x: startX,
+    y: startY,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    life: rand(0.7, 1.2),
+    max: 1.2,
+  });
+}
+
+let _shootingTimer = rand(2.5, 5.5);
+function updateShootingStars(dt) {
+  _shootingTimer -= dt;
+  if (_shootingTimer <= 0) {
+    spawnShootingStar();
+    _shootingTimer = rand(3.5, 8);
+  }
+  for (let i = _shootingStars.length - 1; i >= 0; i--) {
+    const s = _shootingStars[i];
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    s.life -= dt;
+    s.sprite.position.x = s.x;
+    s.sprite.position.y = s.y;
+    s.sprite.material.opacity = Math.max(0, s.life / s.max) * 0.95;
+    if (s.life <= 0 || s.x < -W || s.x > W || s.y < -H || s.y > H) {
+      disposeObject(s.sprite);
+      swapRemove(_shootingStars, i);
+    }
+  }
+}
+
+function createStarField() {
+  const group = new THREE.Group();
+  // Layer 1: deep distant dim — broad blue-white range
+  group.add(makeStarLayerColored(620, -9, 1.4, 0.62, false, [0.55, 0.72]));
+  // Layer 2: mid — warmer hue spread
+  group.add(makeStarLayerColored(220, -6, 2.4, 0.78, false, [0.45, 0.78]));
+  // Layer 3: near bright twinkle — full color range including occasional reds
+  group.add(makeStarLayerColored(80, -3, 3.6, 0.96, true, [0.0, 0.95]));
+
+  // Nebula clouds — soft additive color blooms for depth
+  const nebulaColors = [0x5a78ff, 0x9a5fff, 0xff6aa0, 0x4ad8ff, 0xff8a4a];
+  for (let i = 0; i < 7; i++) {
+    const sprite = createSprite(tex.explosionCore, rand(280, 500), rand(280, 500), {
+      additive: true,
+      opacity: 0.05 + Math.random() * 0.06,
+      color: nebulaColors[i % nebulaColors.length],
+    });
+    sprite.position.set(rand(-W / 2, W / 2), rand(-H / 2, H / 2), -8);
+    sprite.material.rotation = Math.random() * Math.PI * 2;
+    group.add(sprite);
+  }
+
+  scene.add(group);
+  return group;
 }
 
 function resetBarrageItem(item, index = 0, initial = false) {
@@ -855,9 +1210,296 @@ const background = makeSprite(tex.background, W, H, { opacity: 0.92 });
 background.position.set(0, 0, -5);
 const starField = createStarField();
 createBarrageLayer();
-drawRotatingEarthTexture(0);
-const earth = makeSprite(earthTexture, earthVisualSize, earthVisualSize, { opacity: 1 });
+
+// Procedural Three.js Earth — real SphereGeometry with continents/cloud
+// CanvasTexture as basemap (drawn once, reused by GPU), plus an additive
+// fresnel atmosphere shell drawn with a simple shader for an authentic edge
+// glow. Real Y-axis rotation gives proper 3D depth.
+function createProceduralEarthTexture() {
+  const size = 1024;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size / 2; // 2:1 aspect = standard equirectangular UV
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Saturated ocean gradient — equator brighter, polar darker
+  const ocean = ctx.createLinearGradient(0, 0, 0, h);
+  ocean.addColorStop(0, "#0a2c5e");
+  ocean.addColorStop(0.5, "#1968b8");
+  ocean.addColorStop(1, "#082450");
+  ctx.fillStyle = ocean;
+  ctx.fillRect(0, 0, w, h);
+
+  // Continent blobs — saturated greens / browns for contrast against ocean
+  const continentSeeds = 56;
+  const palette = ["#1f6a32", "#2c7836", "#3f8a3c", "#5a8836", "#876d34", "#5a3a20", "#6e4a26"];
+  for (let i = 0; i < continentSeeds; i++) {
+    const cx = Math.random() * w;
+    const cy = h * 0.18 + Math.random() * h * 0.62;
+    const rx = 28 + Math.random() * 90;
+    const ry = 18 + Math.random() * 60;
+    const c = palette[i % palette.length];
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.random() * Math.PI);
+    ctx.filter = "blur(2px)";
+    ctx.fillStyle = c;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // wrap copies for seamless E/W edge
+    if (cx < 100) {
+      ctx.beginPath();
+      ctx.ellipse(w - cx + (cx - cx), 0, rx, ry, 0, 0, Math.PI * 2);
+    }
+    ctx.restore();
+  }
+
+  // Wrap-edge handling: copy a vertical strip from left to right edge
+  const stripW = 80;
+  const stripData = ctx.getImageData(0, 0, stripW, h);
+  ctx.putImageData(stripData, w - stripW / 2, 0);
+
+  // Sand/desert speckles for warm latitudes
+  ctx.filter = "blur(1.4px)";
+  ctx.globalAlpha = 0.38;
+  for (let i = 0; i < 220; i++) {
+    const cx = Math.random() * w;
+    const cy = h * 0.25 + Math.random() * h * 0.5;
+    const r = 6 + Math.random() * 18;
+    ctx.fillStyle = ["#c5a560", "#a8854a", "#9c7a40"][i % 3];
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r, r * 0.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Polar ice caps — top and bottom strips
+  ctx.filter = "blur(6px)";
+  const iceTop = ctx.createLinearGradient(0, 0, 0, h * 0.18);
+  iceTop.addColorStop(0, "rgba(240, 248, 255, 1)");
+  iceTop.addColorStop(1, "rgba(240, 248, 255, 0)");
+  ctx.fillStyle = iceTop;
+  ctx.fillRect(0, 0, w, h * 0.18);
+  const iceBot = ctx.createLinearGradient(0, h * 0.84, 0, h);
+  iceBot.addColorStop(0, "rgba(240, 248, 255, 0)");
+  iceBot.addColorStop(1, "rgba(240, 248, 255, 1)");
+  ctx.fillStyle = iceBot;
+  ctx.fillRect(0, h * 0.84, w, h * 0.16);
+
+  ctx.filter = "none";
+  return canvas;
+}
+
+function createProceduralCloudsTexture() {
+  const size = 1024;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size / 2;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Transparent base
+  ctx.clearRect(0, 0, w, h);
+
+  // Cloud blobs as soft ellipses with strong blur, varying density by latitude
+  ctx.filter = "blur(7px)";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
+  for (let i = 0; i < 80; i++) {
+    const cy = h * 0.12 + Math.random() * h * 0.76;
+    const cx = Math.random() * w;
+    // tropical band gets more cloud
+    const latFactor = Math.abs(cy / h - 0.5);
+    if (Math.random() < (latFactor < 0.18 ? 1 : 0.55)) {
+      const rx = 30 + Math.random() * 100;
+      const ry = 14 + Math.random() * 40;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.filter = "none";
+  return canvas;
+}
+
+// Pre-load real NASA Blue Marble textures (sourced from bobbyroe/threejs-earth,
+// MIT licensed; original NASA Visible Earth data is public domain). These give
+// the world-class look — recognizable continents, real city lights, cloud
+// shadows — instead of the procedural blob the canvas approach produced.
+const earthTextureBase = "assets/textures/earth";
+loadTexture("earthDay", `${earthTextureBase}/00_earthmap1k.jpg`);
+loadTexture("earthSpec", `${earthTextureBase}/02_earthspec1k.jpg`);
+loadTexture("earthLights", `${earthTextureBase}/03_earthlights1k.jpg`);
+loadTexture("earthClouds", `${earthTextureBase}/05_earthcloudmaptrans.jpg`);
+
+function createProceduralEarth() {
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const earthMap = tex.earthDay;
+  if (earthMap) {
+    earthMap.wrapS = THREE.RepeatWrapping;
+    earthMap.colorSpace = THREE.SRGBColorSpace;
+    earthMap.anisotropy = 4;
+  }
+  const earthSpec = tex.earthSpec;
+  if (earthSpec) {
+    earthSpec.wrapS = THREE.RepeatWrapping;
+    earthSpec.colorSpace = THREE.NoColorSpace;
+  }
+  const earthLights = tex.earthLights;
+  if (earthLights) {
+    earthLights.wrapS = THREE.RepeatWrapping;
+    earthLights.colorSpace = THREE.SRGBColorSpace;
+  }
+  const cloudMap = tex.earthClouds;
+  if (cloudMap) {
+    cloudMap.wrapS = THREE.RepeatWrapping;
+    cloudMap.colorSpace = THREE.NoColorSpace;
+  }
+
+  // Earth surface — Sangil Lee's day/night blend pattern adapted to our
+  // pipeline: sample real day texture + city-lights texture, blend by sigmoid
+  // of normal·sunDir, add specular ocean highlight via spec mask.
+  const earthGeom = new THREE.SphereGeometry(earthRadius, 96, 64);
+  const earthMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uDay: { value: earthMap },
+      uNight: { value: earthLights },
+      uSpec: { value: earthSpec },
+      uSunDir: { value: new THREE.Vector3(0.6, 0.45, 0.7).normalize() },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec3 vNormalLocal;
+      void main() {
+        vUv = uv;
+        vNormalLocal = normalize(normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uDay;
+      uniform sampler2D uNight;
+      uniform sampler2D uSpec;
+      uniform vec3 uSunDir;
+      varying vec2 vUv;
+      varying vec3 vNormalLocal;
+      void main() {
+        vec3 day = texture2D(uDay, vUv).rgb;
+        vec3 night = texture2D(uNight, vUv).rgb;
+        float cosA = dot(vNormalLocal, uSunDir);
+        // Sigmoid blend (Sangil Lee technique) — sharp but smooth terminator
+        float dayMix = 1.0 / (1.0 + exp(-7.0 * cosA));
+        // Night side: city lights pop where the night-lights texture is bright,
+        // remainder gets a deep-navy ambient
+        vec3 ambient = vec3(0.012, 0.022, 0.045);
+        vec3 nightCombined = ambient + night * 1.4;
+        vec3 col = mix(nightCombined, day, dayMix);
+        // Specular ocean highlight on day side — spec mask is white over water
+        float spec = texture2D(uSpec, vUv).r;
+        float specPower = pow(max(0.0, cosA), 24.0) * spec * 0.65;
+        col += vec3(0.92, 0.96, 1.0) * specPower * dayMix;
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+  });
+  const earthSphere = new THREE.Mesh(earthGeom, earthMat);
+  group.add(earthSphere);
+
+  // Cloud layer — real cloud transparency texture (white = cloud, black = clear)
+  const cloudGeom = new THREE.SphereGeometry(earthRadius * 1.014, 64, 48);
+  const cloudMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      uMap: { value: cloudMap },
+      uSunDir: { value: new THREE.Vector3(0.6, 0.45, 0.7).normalize() },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec3 vNormalLocal;
+      void main() {
+        vUv = uv;
+        vNormalLocal = normalize(normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uMap;
+      uniform vec3 uSunDir;
+      varying vec2 vUv;
+      varying vec3 vNormalLocal;
+      void main() {
+        // Cloud transparency map: bright = cloud
+        float c = texture2D(uMap, vUv).r;
+        // Fade clouds on night side so they don't appear lit when sun is gone
+        float cosA = dot(vNormalLocal, uSunDir);
+        float dayMix = 1.0 / (1.0 + exp(-7.0 * cosA));
+        float litCloud = mix(0.18, 1.0, dayMix); // dim clouds on night side
+        gl_FragColor = vec4(vec3(litCloud), c * 0.78 * mix(0.35, 1.0, dayMix));
+      }
+    `,
+  });
+  const cloudSphere = new THREE.Mesh(cloudGeom, cloudMat);
+  group.add(cloudSphere);
+
+  // Atmosphere — back-side fresnel rim. Tuned for a THIN BLUE highlight rather
+  // than a thick white halo. Higher pow concentrates glow at the rim,
+  // multiplier kept low so colors stay saturated blue instead of clamping white.
+  const atmoGeom = new THREE.SphereGeometry(earthRadius * 1.10, 64, 48);
+  const atmoMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    uniforms: {
+      uTime: { value: 0 },
+      atmOpacity: { value: 0.85 },
+      atmPowFactor: { value: 6.0 },
+      atmMultiplier: { value: 0.95 },
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 eyeVector;
+      void main() {
+        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        eyeVector = normalize(mvPos.xyz);
+        gl_Position = projectionMatrix * mvPos;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform float atmOpacity;
+      uniform float atmPowFactor;
+      uniform float atmMultiplier;
+      varying vec3 vNormal;
+      varying vec3 eyeVector;
+      void main() {
+        float dotP = dot(vNormal, eyeVector);
+        float factor = pow(dotP, atmPowFactor) * atmMultiplier;
+        float pulse = 1.0 + sin(uTime * 2.0) * 0.06;
+        // Pure cyan-blue palette — no white channel boost. Edges stay blue
+        // even at peak intensity instead of clamping to white.
+        vec3 atmColor = vec3(0.18, 0.55, 1.0);
+        gl_FragColor = vec4(atmColor, atmOpacity) * factor * pulse;
+      }
+    `,
+  });
+  const atmosphere = new THREE.Mesh(atmoGeom, atmoMat);
+  group.add(atmosphere);
+
+  group.userData = { earthSphere, cloudSphere, atmosphere, atmoMat };
+  return group;
+}
+
+const earth = createProceduralEarth();
 setXY(earth, C.x, C.y, 2);
+earth.rotation.x = 0.4;
 
 const shieldOuter = makeCircleLine(earthRadius + 52, 0x45e7ff, 0.22);
 const shieldInner = makeCircleLine(earthRadius + 31, 0x8af8ff, 0.62);
@@ -869,6 +1511,7 @@ shieldInner.position.set(worldX(C.x), worldY(C.y), 1.7);
    ═══════════════════════════════════════════════════════════════ */
 const explosionPool = [];
 const EXPLOSION_POOL_MAX = 60;
+const polishEffects = [];
 
 function drainExplosionPool() {
   while (explosionPool.length) disposeObject(explosionPool.pop());
@@ -887,6 +1530,57 @@ function addExplosion(x, y, scale = 1) {
   sprite.material.opacity = 0.9;
   setXY(sprite, x, y, 7);
   state.explosions.push({ mesh: sprite, life: 0.42, max: 0.42, scale, baseSize: size });
+}
+
+function addPolishEffect(key, x, y, size, options = {}) {
+  const texture = tex[key];
+  if (!texture) return null;
+  const width = options.width ?? size;
+  const height = options.height ?? size;
+  const sprite = makeSprite(texture, width, height, {
+    additive: options.additive ?? true,
+    opacity: options.opacity ?? 0.9,
+    color: options.color ?? 0xffffff,
+  });
+  const life = options.life ?? 0.85;
+  sprite.material.rotation = options.rotation ?? 0;
+  setXY(sprite, x, y, options.z ?? 8.2);
+  polishEffects.push({
+    mesh: sprite,
+    life,
+    max: life,
+    baseWidth: width,
+    baseHeight: height,
+    grow: options.grow ?? 0.35,
+    spin: options.spin ?? 0,
+    fadeIn: options.fadeIn ?? 0.08,
+  });
+  return sprite;
+}
+
+function updatePolishEffects(dt) {
+  for (let i = polishEffects.length - 1; i >= 0; i--) {
+    const effect = polishEffects[i];
+    effect.life -= dt;
+    const age = 1 - Math.max(0, effect.life / effect.max);
+    const fadeIn = Math.min(1, age / effect.fadeIn);
+    const fadeOut = Math.max(0, effect.life / effect.max);
+    const alpha = Math.min(fadeIn, fadeOut);
+    effect.mesh.material.opacity = alpha;
+    effect.mesh.material.rotation += effect.spin * dt;
+    const scale = 1 + age * effect.grow;
+    effect.mesh.scale.set(effect.baseWidth * scale, effect.baseHeight * scale, 1);
+    if (effect.life <= 0) {
+      disposeObject(effect.mesh);
+      swapRemove(polishEffects, i);
+    }
+  }
+}
+
+function showStageThemeBurst(scale = 1) {
+  const theme = currentStageTheme();
+  addPolishEffect(theme.key, C.x, H * 0.27, 116 * scale, { life: 1.25, grow: 0.28, spin: 0.45, opacity: 0.96, z: 8.5 });
+  addPolishEffect("polishDangerWarningRing", C.x, C.y, 210 * scale, { life: 0.82, grow: 0.22, spin: -1.1, opacity: 0.48, z: 2.2 });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1039,19 +1733,26 @@ function clearEntities() {
   for (const item of state.enemies) { disposeObject(item.mesh); disposeObject(item.trail); }
   for (const item of state.bullets) { disposeObject(item.mesh); disposeObject(item.trail); }
   for (const item of state.explosions) { disposeObject(item.mesh); }
-  for (const item of state.defenders) { disposeObject(item.mesh); }
+  for (const item of state.defenders) { disposeObject(item.mesh); disposeObject(item.halo); }
   for (const item of state.beams) { disposeObject(item.line); }
   for (const item of interceptFlashes) { disposeObject(item.mesh); }
+  for (const item of polishEffects) { disposeObject(item.mesh); }
   interceptFlashes.length = 0;
+  polishEffects.length = 0;
 }
 
+// First reset() call (page load) keeps title overlay up; subsequent calls
+// (restart from game-over / victory) jump straight back to playing.
+let _firstReset = true;
 function reset() {
   clearEntities();
   drainExplosionPool();
   drainFlashPool();
   resetHudCache();
+  const startMode = _firstReset ? "title" : "playing";
+  _firstReset = false;
   Object.assign(state, {
-    mode: "playing",
+    mode: startMode,
     last: performance.now(),
     time: 0,
     gameTime: 0,
@@ -1070,6 +1771,7 @@ function reset() {
     levelOptions: [],
     shopOptions: [],
     selectedIds: new Set(),
+    upgradeLevels: {},
     enemies: [],
     bullets: [],
     explosions: [],
@@ -1099,7 +1801,11 @@ function reset() {
   hideOverlay(ui.gameOverPanel);
   hideOverlay(ui.victoryPanel);
   if (ui.miniBossTag) ui.miniBossTag.hidden = true;
+  if (ui.bossBanner) ui.bossBanner.hidden = true;
+  if (_bossBannerTimer) { clearTimeout(_bossBannerTimer); _bossBannerTimer = null; }
+  if (ui.floaters) ui.floaters.replaceChildren();
   prefillSwarm();
+  showStageThemeBurst(0.9);
   updateHud();
 }
 
@@ -1137,21 +1843,30 @@ function setPauseButton() {
 }
 
 function updateHud() {
-  setHT(ui.health, "health", Math.max(0, Math.round(state.health)));
-  setHT(ui.money, "money", Math.floor(state.money));
+  setRollingNumber(ui.health, "health", Math.max(0, Math.round(state.health)));
+  setRollingNumber(ui.money, "money", Math.floor(state.money));
   setHT(ui.stageWave, "sw", `${state.stageLevel}-${String(state.waveIndex).padStart(2, "0")}`);
-  setHT(ui.levelCount, "lc", state.levelCount);
-  if (ui.killCount) setHT(ui.killCount, "kc", state.kills);
+  updateStageThemeHud();
+  setRollingNumber(ui.levelCount, "lc", state.levelCount, { duration: 220 });
+  if (ui.killCount) setRollingNumber(ui.killCount, "kc", state.kills, { duration: 180 });
   setHT(ui.runState, "rs", state.message);
   setSoundButton();
   setShopButton();
-  setHT(ui.shopMoney, "sm", Math.floor(state.money));
+  setRollingNumber(ui.shopMoney, "sm", Math.floor(state.money));
   setHT(ui.shopRefreshBtn, "srf", `刷新 ¥${shopRefreshCost}`);
   const shouldDisable = state.money < shopRefreshCost;
   if (ui.shopRefreshBtn.disabled !== shouldDisable) ui.shopRefreshBtn.disabled = shouldDisable;
   setPauseButton();
   syncOverlays();
   // level-progress + boss-hp panels + mini-boss tag refresh every frame in frame(); skip here.
+}
+
+function updateStageThemeHud() {
+  if (!ui.stageThemeIcon || !ui.stageThemeText) return;
+  const theme = currentStageTheme();
+  const src = `${polishAssetBase}/${polishTextureFiles[theme.key]}.png?v=${ASSET_VERSION}`;
+  if (ui.stageThemeIcon.getAttribute("src") !== src) ui.stageThemeIcon.setAttribute("src", src);
+  setHT(ui.stageThemeText, "stageThemeText", theme.label);
 }
 
 function showOverlay(panel) {
@@ -1165,6 +1880,11 @@ function hideOverlay(panel) {
 }
 
 function syncOverlays() {
+  if (state.mode === "title") {
+    showOverlay(ui.titlePanel);
+  } else {
+    hideOverlay(ui.titlePanel);
+  }
   if (state.mode === "paused") {
     showOverlay(ui.pausePanel);
   } else {
@@ -1212,12 +1932,13 @@ function updateMiniBossTag() {
   const stageRect = ui.stage.getBoundingClientRect();
   const sx = stageRect.width / W;
   const sy = stageRect.height / H;
-  const screenX = target.x * sx;
-  const screenY = target.y * sy;
+  const screenX = Math.max(60, Math.min(stageRect.width - 60, target.x * sx));
+  const screenY = Math.max(20, Math.min(stageRect.height - 96, target.y * sy - target.size * 0.6 * sy - 20));
   tag.style.left = `${screenX}px`;
-  tag.style.top = `${screenY - target.size * 0.6 * sy}px`;
+  tag.style.top = `${screenY}px`;
   const hpPct = Math.max(0, Math.min(1, target.hp / target.maxHp));
-  setHT(tag, "mbtag", `${palette.label} · HP ${Math.ceil(hpPct * 100)}%`);
+  if (ui.miniBossName) setHT(ui.miniBossName, "mbName", palette.label);
+  if (ui.miniBossHpFill) setHS(ui.miniBossHpFill, "mbHp", "width", `${Math.round(hpPct * 1000) / 10}%`);
   if (tag.hidden) tag.hidden = false;
 }
 
@@ -1264,6 +1985,7 @@ function updateLevelProgress() {
 function startLevelUp(options = {}) {
   state.mode = "levelUp";
   state.levelUpSource = options.source || "timer";
+  if (ui.levelPanel) ui.levelPanel.dataset.source = state.levelUpSource;
   hideShopPanel();
   const extraChoices = options.source === "boss" ? 1 : Math.floor(state.levelCount / 12);
   const optionCount = Math.min(5, 3 + extraChoices);
@@ -1277,8 +1999,15 @@ function startLevelUp(options = {}) {
   updateHud();
 }
 
+// Predicate — has the player picked this upgrade enough times to max it out?
+function isUpgradeMaxed(u) {
+  if (u.forceUnique && state.selectedIds.has(u.id)) return true;
+  const lvl = state.upgradeLevels[u.id] || 0;
+  return lvl >= (u.maxLevel || 1);
+}
+
 function drawUpgradeOptions(count = 3) {
-  const pool = unlockedPool(state.levelCount).filter((u) => u.repeatable || !state.selectedIds.has(u.id));
+  const pool = unlockedPool(state.levelCount).filter((u) => !isUpgradeMaxed(u));
   const targetCount = Math.min(count, Math.max(1, pool.length));
   const weighted = [];
   const rarityWeight = { common: 9, rare: 6, epic: 3, legendary: 1.5, mythic: 0.6 };
@@ -1303,13 +2032,15 @@ function drawUpgradeOptions(count = 3) {
 }
 
 function iconSrc(option) {
+  const polishIcon = polishIconByUpgradeName[option.name];
+  if (polishIcon) return polishAssetUrl(polishIcon);
   const iconName = iconMap[option.category] || "special-icon";
   return `${individualAssetBase}/${iconName}.png?v=${ASSET_VERSION}`;
 }
 
 function upgradeVfxSrc(option) {
   const vfxName = upgradeVfxMap[option.category] || "card-reveal";
-  return `assets/generated/upgrades/final/${vfxName}.png?v=${ASSET_VERSION}`;
+  return `/assets/generated/upgrades/final/${vfxName}.png?v=${ASSET_VERSION}`;
 }
 
 function renderLevelPanel() {
@@ -1323,6 +2054,7 @@ function renderLevelPanel() {
 
 function hideLevelPanel() {
   ui.levelPanel.hidden = true;
+  ui.levelPanel.dataset.source = "";
   ui.levelCards.classList.remove("is-expanded");
   ui.levelCards.replaceChildren();
 }
@@ -1331,15 +2063,33 @@ function createUpgradeCard(option, onClick, compact = false) {
   const card = document.createElement("button");
   const affordable = state.money >= option.price;
   card.className = `upgrade-card ${compact ? "shop-card " : ""}${rarityClass[option.rarity] || "is-common"}`;
+  if (compact && !affordable) card.classList.add("is-locked");
   card.type = "button";
   card.disabled = !affordable;
   card.style.setProperty("--upgrade-vfx", `url("${upgradeVfxSrc(option)}")`);
+  // Level state: how many times the player has already picked this card.
+  // Display the next pick as "Lv (currentLvl+1) / maxLevel" so the player
+  // sees what they're upgrading TO. If already at max it'd be filtered out.
+  const currentLvl = state.upgradeLevels[option.id] || 0;
+  const nextLvl = Math.min(option.maxLevel || 1, currentLvl + 1);
+  const maxLvl = option.maxLevel || 1;
+  // Build pip markup — fills `currentLvl` dots, highlights pip [currentLvl] as
+  // "the one you're about to fill", leaves the rest empty.
+  const pips = [];
+  for (let i = 0; i < maxLvl; i++) {
+    let cls = "upgrade-pip";
+    if (i < currentLvl) cls += " is-filled";
+    else if (i === currentLvl) cls += " is-next";
+    pips.push(`<span class="${cls}"></span>`);
+  }
   card.innerHTML = `
     <span class="upgrade-name"></span>
     <span class="upgrade-art"><img alt="" /></span>
     <span class="upgrade-category"></span>
+    <span class="upgrade-level">Lv ${nextLvl}/${maxLvl}<span class="upgrade-pips">${pips.join("")}</span></span>
     <span class="upgrade-effect"></span>
     <span class="upgrade-price"></span>
+    <span class="shop-lock"><img alt="" src="${polishAssetUrl("shop-lock-card")}" /></span>
   `;
   card.querySelector(".upgrade-name").textContent = option.name;
   card.querySelector("img").src = iconSrc(option);
@@ -1361,9 +2111,11 @@ function openShopPanel() {
   }
   if (state.mode === "gameOver" || state.mode === "paused" || state.mode === "victory") return;
   state.mode = "shop";
-  state.shopOptions = state.shopOptions.filter((u) => u.repeatable || !state.selectedIds.has(u.id));
+  state.shopOptions = state.shopOptions.filter((u) => !isUpgradeMaxed(u));
   if (state.shopOptions.length < 3) state.shopOptions = drawUpgradeOptions(6);
   state.message = "商店开放：可直接购买升级";
+  addPolishEffect("polishShopLockCard", C.x - 88, H * 0.78, 82, { life: 0.55, grow: 0.12, spin: -0.25, opacity: 0.72, z: 8.6 });
+  addPolishEffect("polishWarFundCache", C.x + 88, H * 0.78, 96, { life: 0.65, grow: 0.16, spin: 0.35, opacity: 0.86, z: 8.6 });
   renderShopPanel();
   updateHud();
 }
@@ -1400,6 +2152,7 @@ function refreshShop(force = false) {
   if (!force) state.money = Math.max(0, state.money - shopRefreshCost);
   state.shopOptions = drawUpgradeOptions(6);
   state.message = "商店货架已刷新";
+  addPolishEffect("polishRarityRerollPrism", C.x, H * 0.76, 132, { life: 0.78, grow: 0.22, spin: 1.8, opacity: 0.9, z: 8.7 });
   audio.select();
   renderShopPanel();
 }
@@ -1414,10 +2167,15 @@ function buyShopUpgrade(index) {
   }
   state.money = Math.max(0, state.money - upgrade.price);
   state.selectedIds.add(upgrade.id);
+  state.upgradeLevels[upgrade.id] = (state.upgradeLevels[upgrade.id] || 0) + 1;
   applyUpgrade(upgrade);
   state.levelCount += 1;
-  state.message = `商店购买：${upgrade.name}`;
+  const lvlNow = state.upgradeLevels[upgrade.id];
+  state.message = `商店购买：${upgrade.name}  Lv ${lvlNow}/${upgrade.maxLevel}`;
+  const key = polishShowcaseByCategory[upgrade.category] || polishShowcaseByCategory[upgrade.name] || "polishRarityRerollPrism";
+  addPolishEffect(key, C.x, H * 0.76, 118, { life: 0.72, grow: 0.24, spin: 0.85, opacity: 0.92, z: 8.8 });
   triggerUpgradeShowcase(upgrade);
+  // Card stays in pool only if not yet maxed; remove it from current shelf either way
   state.shopOptions.splice(index, 1);
   if (state.shopOptions.length < 3) state.shopOptions = drawUpgradeOptions(6);
   renderShopPanel();
@@ -1434,12 +2192,14 @@ function chooseUpgrade(index) {
   }
   state.money = Math.max(0, state.money - upgrade.price);
   state.selectedIds.add(upgrade.id);
+  state.upgradeLevels[upgrade.id] = (state.upgradeLevels[upgrade.id] || 0) + 1;
   applyUpgrade(upgrade);
   state.levelCount += 1;
   state.nextLevelIndex += 1;
   state.levelUpSource = "timer";
   state.mode = "playing";
-  state.message = `已升级：${upgrade.name}`;
+  const lvlNow = state.upgradeLevels[upgrade.id];
+  state.message = `已升级：${upgrade.name}  Lv ${lvlNow}/${upgrade.maxLevel}`;
   hideLevelPanel();
   triggerUpgradeShowcase(upgrade);
   updateHud();
@@ -2295,6 +3055,11 @@ function showcaseByCategory(upgrade) {
 }
 
 function triggerUpgradeShowcase(upgrade) {
+  const polishSlug = polishIconByUpgradeName[upgrade.name];
+  const polishKey = polishSlug ? polishTextureKeyFromSlug(polishSlug) : polishShowcaseByCategory[upgrade.category];
+  if (polishKey) {
+    addPolishEffect(polishKey, C.x, C.y - 118, 118, { life: 0.7, grow: 0.22, spin: 0.9, opacity: 0.92, z: 8.5 });
+  }
   const fn = upgradeShowcasesByName[upgrade.name];
   if (fn) fn(upgrade);
   else showcaseByCategory(upgrade);
@@ -2620,6 +3385,9 @@ function spawnBoss() {
   state.boss = boss;
   state.enemies.push(boss);
   state.message = `第 ${state.stageLevel} 关 Boss：${config.name}`;
+  showBossBanner(config.name, config.ability);
+  addPolishEffect("polishBossWeakpointCore", boss.x, boss.y, config.size * 0.62, { life: 0.9, grow: 0.25, spin: 1.2, opacity: 0.96, z: 8.4 });
+  addPolishEffect("polishDangerWarningRing", boss.x, boss.y, config.size * 1.6, { life: 1.1, grow: 0.18, spin: -1.0, opacity: 0.62, z: 7.8 });
   addExplosion(boss.x, boss.y, 1.25);
   for (let i = 0; i < 8; i++) {
     const a = (Math.PI * 2 * i) / 8;
@@ -2630,6 +3398,232 @@ function spawnBoss() {
   triggerScreenShake(0.6, 14);
   audio.levelUp();
   updateHud();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOSS Ultimates — each Boss has a signature "大招" rendered in its
+   own color via Three.js. Triggered when boss HP first crosses 55%
+   (one-shot per boss instance) AND replaces normal attack at half-HP
+   thresholds for repeated drama.
+   ═══════════════════════════════════════════════════════════════ */
+const bossUltKinds = {
+  "molten-asteroid": "lavaBurst",       // 火山喷发 — 橙红环形岩浆
+  "bio-saucer-hive": "swarmHive",       // 召唤虫群 — 12 只小怪同时出击
+  "ice-crystal-leviathan": "frostNova", // 冰冻新星 — 多层青色冲击波 + 冰冻 swarm
+  "void-mothership": "voidSlice",       // 虚空切片 — 紫色扇形切割
+  "gold-artillery-fortress": "goldBarrage", // 重炮齐射 — 8 发金色重炮
+  "red-plasma-coil": "plasmaSpiral",    // 等离子螺旋 — 红色螺旋轨迹
+  "blue-ion-hive": "ionChain",          // 离子连击 — 6 道蓝色闪电链
+  "black-dreadnought": "armorRam",      // 装甲冲撞 — 黑色重力波 + 强震屏
+  "white-graviton-ring": "gravityWell", // 引力井 — 白色多层环旋入
+  "solar-eclipse-core": "eclipsePulse", // 日蚀脉冲 — 黄色全屏超新星
+};
+
+function _ringBurst(cx, cy, count, radius, color, sizeScale = 1) {
+  for (let i = 0; i < count; i++) {
+    const a = (Math.PI * 2 * i) / count;
+    const px = cx + Math.cos(a) * radius;
+    const py = cy + Math.sin(a) * radius;
+    spawnInterceptFlash(px, py, sizeScale);
+    addExplosion(px, py, sizeScale * 0.55);
+  }
+  void color; // tint reserved for future per-boss flash colors
+}
+
+function _ultBanner(boss, name) {
+  showBossBanner(`${boss.bossConfig.name} 大招`, name);
+}
+
+const bossUltImpls = {
+  lavaBurst(boss) {
+    _ultBanner(boss, "火山喷发 · 岩浆环爆");
+    triggerScreenShake(0.65, 14);
+    audio.boom();
+    for (let r = 90; r <= 320; r += 50) {
+      setTimeout(() => _ringBurst(boss.x, boss.y, 18, r, 0xff7032, 1.05), (r - 90) * 1.5);
+    }
+    // damage swarm enemies inside the ring
+    setTimeout(() => damageRing(8, 1.2), 320);
+    setTimeout(() => audio.beam(), 220);
+  },
+
+  swarmHive(boss) {
+    _ultBanner(boss, "召唤蜂群 · 12 单位涌出");
+    triggerScreenShake(0.4, 8);
+    const baseAngle = angleTo(boss, C);
+    for (let i = 0; i < 12; i++) {
+      setTimeout(() => {
+        const a = baseAngle + (i - 5.5) * 0.18;
+        createRegularEnemy({
+          x: boss.x + Math.cos(a) * boss.size * 0.45,
+          y: boss.y + Math.sin(a) * boss.size * 0.45,
+          angle: a,
+          speed: 90 + i * 4,
+          hp: 3,
+          size: 30,
+          kind: "saucer",
+          reward: 1,
+          trailColor: 0x7bff5a,
+          trailOpacity: 0.62,
+        });
+      }, i * 60);
+    }
+    audio.beam();
+  },
+
+  frostNova(boss) {
+    _ultBanner(boss, "冰晶新星 · 全场减速");
+    triggerScreenShake(0.5, 10);
+    audio.beam();
+    for (let r = 60; r <= 380; r += 45) {
+      setTimeout(() => _ringBurst(boss.x, boss.y, 22, r, 0x8cefff, 0.9), (r - 60) * 1.8);
+    }
+    // freeze all swarm + slow regular for 2.5s
+    for (const e of state.enemies) {
+      if (e.isSwarm || e.isMiniBoss === false) e._frozenSpeed = e.speed;
+      e.speed = e.speed * 0.25;
+    }
+    setTimeout(() => {
+      for (const e of state.enemies) {
+        if (e._frozenSpeed) { e.speed = e._frozenSpeed; e._frozenSpeed = undefined; }
+      }
+    }, 2500);
+  },
+
+  voidSlice(boss) {
+    _ultBanner(boss, "虚空切片 · 紫色扇切");
+    triggerScreenShake(0.5, 11);
+    const cAngle = angleTo(boss, C);
+    spawnBeamFan(cAngle, 7, Math.PI * 0.65, { life: 1.2, color: 0xba83ff, opacity: 0.92, wide: true });
+    damageInBeam(cAngle, 0.42, 8);
+    audio.beam();
+    setTimeout(() => audio.boom(), 200);
+  },
+
+  goldBarrage(boss) {
+    _ultBanner(boss, "重炮齐射 · 8 发黄金弹幕");
+    triggerScreenShake(0.55, 12);
+    audio.boom();
+    for (let i = 0; i < 8; i++) {
+      setTimeout(() => {
+        const a = -Math.PI / 2 + (i - 3.5) * 0.32;
+        createEnergyBeam(a, {
+          from: boss,
+          to: { x: boss.x + Math.cos(a) * 600, y: boss.y + Math.sin(a) * 600 },
+          life: 0.7,
+          color: 0xffd260,
+          opacity: 0.94,
+          wide: true,
+        });
+        const tx = boss.x + Math.cos(a) * 280;
+        const ty = boss.y + Math.sin(a) * 280;
+        addExplosion(tx, ty, 1.0);
+        spawnInterceptFlash(tx, ty, 1.2);
+      }, i * 90);
+    }
+    setTimeout(() => damageRing(6, 1.3), 400);
+  },
+
+  plasmaSpiral(boss) {
+    _ultBanner(boss, "等离子螺旋 · 旋转扫荡");
+    triggerScreenShake(0.5, 10);
+    audio.beam();
+    // 24 flashes following a logarithmic spiral outward from boss
+    for (let i = 0; i < 24; i++) {
+      setTimeout(() => {
+        const a = i * 0.42;
+        const r = 60 + i * 14;
+        const px = boss.x + Math.cos(a) * r;
+        const py = boss.y + Math.sin(a) * r;
+        spawnInterceptFlash(px, py, 1.1);
+        addExplosion(px, py, 0.5);
+      }, i * 36);
+    }
+    setTimeout(() => damageRing(7, 1.2), 600);
+  },
+
+  ionChain(boss) {
+    _ultBanner(boss, "离子链 · 6 道闪电跳跃");
+    triggerScreenShake(0.42, 9);
+    audio.laser();
+    let prev = boss;
+    for (let i = 0; i < 6; i++) {
+      const target = nearestEnemy(prev, 600) || C;
+      createEnergyBeam(angleTo(prev, target), {
+        from: prev,
+        to: target,
+        life: 0.55,
+        color: 0x63dfff,
+        opacity: 0.95,
+      });
+      addExplosion(target.x, target.y, 0.6);
+      spawnInterceptFlash(target.x, target.y, 1.0);
+      if (target !== C) {
+        target.hp -= 6;
+        if (target.hp <= 0) {
+          const idx = state.enemies.indexOf(target);
+          if (idx >= 0) killEnemy(idx);
+        }
+      }
+      prev = target;
+    }
+  },
+
+  armorRam(boss) {
+    _ultBanner(boss, "装甲冲撞 · 重力波");
+    triggerScreenShake(0.95, 18);
+    audio.boom();
+    // Black-tinted shockwaves
+    for (let r = 50; r <= 400; r += 35) {
+      setTimeout(() => _ringBurst(boss.x, boss.y, 16, r, 0x444a55, 1.1), (r - 50) * 1.2);
+    }
+    setTimeout(() => damageRing(10, 1.4), 400);
+  },
+
+  gravityWell(boss) {
+    _ultBanner(boss, "引力井 · 多层环吸");
+    triggerScreenShake(0.5, 10);
+    audio.beam();
+    // Concentric expanding white rings
+    for (let layer = 0; layer < 5; layer++) {
+      setTimeout(() => {
+        spawnBeamFan(0, 28, Math.PI * 2, { life: 1.0, color: 0xf4fbff, opacity: 0.5 });
+      }, layer * 200);
+    }
+    // Pull all swarm toward Earth (boost their speed temporarily)
+    for (const e of state.enemies) {
+      if (e.isSwarm) e.speed *= 1.6;
+    }
+  },
+
+  eclipsePulse(boss) {
+    _ultBanner(boss, "日蚀核心 · 全屏脉冲");
+    triggerScreenShake(1.2, 22);
+    audio.boom();
+    addExplosion(boss.x, boss.y, 4.5);
+    setTimeout(() => audio.boom(), 240);
+    // Massive yellow pulse from boss outward
+    for (let r = 100; r <= 900; r += 60) {
+      setTimeout(() => {
+        for (let i = 0; i < 26; i++) {
+          const a = (Math.PI * 2 * i) / 26;
+          const px = boss.x + Math.cos(a) * r;
+          const py = boss.y + Math.sin(a) * r;
+          spawnInterceptFlash(px, py, 1.1);
+          if (r > 200 && r < 600) addExplosion(px, py, 0.6);
+        }
+      }, (r - 100) * 0.9);
+    }
+    setTimeout(() => damageRing(15, 1.6), 600);
+  },
+};
+
+function fireBossUltimate(boss) {
+  if (!boss || !boss.bossConfig) return;
+  const slug = boss.bossConfig.slug;
+  const kind = bossUltKinds[slug] || "lavaBurst";
+  const impl = bossUltImpls[kind];
+  if (impl) impl(boss);
 }
 
 function spawnBossAttack(boss) {
@@ -2821,6 +3815,26 @@ function damageInBeam(angle, width, damage) {
   }
 }
 
+function applyHitDamage(enemy, damage, x, y) {
+  let finalDamage = damage;
+  if (enemy.isBoss) {
+    const weak = bossWeakpointPosition(enemy);
+    const dx = x - weak.x;
+    const dy = y - weak.y;
+    const weakRadius = Math.max(22, enemy.size * 0.16);
+    if (dx * dx + dy * dy <= weakRadius * weakRadius) {
+      finalDamage *= 2.75;
+      if (!enemy.lastWeakpointHit || state.time - enemy.lastWeakpointHit > 0.08) {
+        enemy.lastWeakpointHit = state.time;
+        spawnInterceptFlash(weak.x, weak.y, 0.92);
+        addPolishEffect("polishBossWeakpointCore", weak.x, weak.y, enemy.size * 0.32, { life: 0.28, grow: 0.45, spin: 2.2, opacity: 0.96, z: 8.6 });
+      }
+    }
+  }
+  enemy.hp -= finalDamage;
+  return finalDamage;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Bullet Update (spatial grid + swap-and-pop)
    ═══════════════════════════════════════════════════════════════ */
@@ -2842,7 +3856,7 @@ function updateBullets(dt) {
         const dy = b.y - enemy.y;
         const r = enemy.size * 0.55 + 7;
         if (dx * dx + dy * dy < r * r) {
-          enemy.hp -= b.damage;
+          applyHitDamage(enemy, b.damage, b.x, b.y);
           addExplosion(b.x, b.y, 0.42);
           spawnInterceptFlash(b.x, b.y, 0.45);
           if (enemy.hp <= 0) {
@@ -2899,6 +3913,17 @@ function updateEnemies(dt) {
       if (e.bossChargeTimer <= 0 && !e.bossCharging) {
         e.bossCharging = true;
         e.bossChargeStart = state.time;
+        addPolishEffect("polishBossChargeLane", (e.x + C.x) * 0.5, (e.y + C.y) * 0.5, 1, {
+          width: Math.min(150, e.size * 0.78),
+          height: Math.max(230, e.radius * 0.82),
+          life: 0.95,
+          grow: 0.08,
+          spin: 0,
+          rotation: -angleTo(e, C) + Math.PI / 2,
+          opacity: 0.72,
+          z: 7.6,
+        });
+        addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 3.6, { life: 0.7, grow: 0.18, spin: -2.1, opacity: 0.58, z: 2.4 });
         triggerScreenShake(0.28, 6);
       }
       // Patrol: travels full circle (no longer pinned to top arc) with a
@@ -2920,6 +3945,7 @@ function updateEnemies(dt) {
           if (!e.bossChargeBurst && chargeAge >= 0.55) {
             e.bossChargeBurst = true;
             spawnBossAttack(e);
+            addPolishEffect("polishBossRageAura", e.x, e.y, e.size * 1.32, { life: 0.56, grow: 0.18, spin: 1.6, opacity: 0.82, z: 8.3 });
             triggerScreenShake(0.36, 9);
             for (let f = 0; f < 6; f++) {
               const fa = Math.atan2(C.y - e.y, C.x - e.x) + (f - 2.5) * 0.18;
@@ -2943,6 +3969,17 @@ function updateEnemies(dt) {
       const tailY = e.y - Math.sin(e.angle) * e.size * 0.45;
       updateLineXY(e.trail, tailX, tailY, e.x, e.y, 2.6);
       e.trail.material.opacity = 0.22 + Math.sin(state.time * 5 + e.wobble) * 0.08 + (e.bossCharging ? 0.2 : 0);
+      // Boss ultimates fire at 70% / 40% / 15% HP thresholds (one-shot per
+      // threshold per boss instance). Each boss has a unique impl + color.
+      const hpRatio = e.hp / e.maxHp;
+      e.bossUltsFired = e.bossUltsFired || 0;
+      const thresholds = [0.7, 0.4, 0.15];
+      while (e.bossUltsFired < thresholds.length && hpRatio < thresholds[e.bossUltsFired]) {
+        fireBossUltimate(e);
+        e.bossUltsFired += 1;
+        // Slight cooldown so we don't fire 2 ults the same frame
+        e.attackTimer = Math.max(e.attackTimer, 1.6);
+      }
       e.attackTimer -= dt;
       if (e.attackTimer <= 0) {
         spawnBossAttack(e);
@@ -3001,14 +4038,17 @@ function killEnemy(index) {
   const enemy = state.enemies[index];
   state.kills += 1;
   const reward = enemy.reward ?? 1;
-  state.money += reward * state.moneyMul;
+  const moneyEarned = reward * state.moneyMul;
+  state.money += moneyEarned;
   if (enemy.isSwarm) {
-    // Bullet impact already added the larger explosion + intercept flash;
-    // kill confirmation just plays a small puff so dense intercepts stay cheap.
     spawnInterceptFlash(enemy.x, enemy.y, 0.55);
+    // Throttled floater — every 4th swarm kill spawns a +¥ floater so the screen
+    // doesn't get flooded during dense intercepts.
+    if ((state.kills & 3) === 0) {
+      spawnFloater(`+¥${Math.max(1, Math.round(moneyEarned * 4))}`, enemy.x, enemy.y, "money");
+    }
     disposeObject(enemy.mesh);
     swapRemove(state.enemies, index);
-    // Coalesce HUD writes — only every 8th swarm kill refreshes money/kills text.
     if ((state.kills & 7) === 0) updateHud();
     return;
   }
@@ -3025,9 +4065,17 @@ function killEnemy(index) {
     triggerScreenShake(0.42, 8);
     audio.boom();
     setTimeout(() => audio.upgrade(), 110);
-  } else {
-    addExplosion(enemy.x, enemy.y, enemy.isBoss ? 2.2 : state.explosionScale);
+    spawnFloater(`+¥${Math.round(moneyEarned)}`, enemy.x, enemy.y, "boss");
+  } else if (enemy.isBoss) {
+    addExplosion(enemy.x, enemy.y, 2.2);
     audio.boom();
+    spawnFloater(`+¥${Math.round(moneyEarned)}`, enemy.x, enemy.y, "boss");
+  } else {
+    addExplosion(enemy.x, enemy.y, state.explosionScale);
+    audio.boom();
+    if (moneyEarned >= 0.8) {
+      spawnFloater(`+¥${Math.max(1, Math.round(moneyEarned))}`, enemy.x, enemy.y, "kill");
+    }
   }
   disposeObject(enemy.mesh);
   disposeObject(enemy.trail);
@@ -3056,6 +4104,7 @@ function completeBoss(enemy) {
   state.stageLevel += 1;
   state.waveIndex = 1;
   state.message = `第 ${state.stageLevel} 关开始：${bossConfigs[state.stageLevel - 1].name} 正在逼近`;
+  showStageThemeBurst(1.05);
   startLevelUp({ source: "boss" });
 }
 
@@ -3072,16 +4121,29 @@ function update(dt) {
   }
   updateExplosions(dt);
   updateInterceptFlashes(dt);
+  updatePolishEffects(dt);
 }
 
 function updateScene(t, dt) {
   background.material.opacity = 0.88 + Math.sin(t * 0.16) * 0.03;
   starField.rotation.z = Math.sin(t * 0.05) * 0.012;
   updateBarrageLayer(dt, t);
-  maybeRedrawEarth(t);
-  earth.material.rotation = Math.sin(t * 0.08) * 0.018;
+
+  // Procedural Three.js earth — surface rotates slowly, clouds 1.6x faster,
+  // shade-shell stays fixed (so sun direction is constant in world space)
+  const ud = earth.userData;
+  if (ud?.atmoMat) ud.atmoMat.uniforms.uTime.value = t;
+  if (ud?.earthSphere) ud.earthSphere.rotation.y += dt * 0.06;
+  if (ud?.cloudSphere) ud.cloudSphere.rotation.y += dt * 0.095;
   const pulse = 1 + Math.sin(t * 2.4) * 0.012;
-  earth.scale.set(earthVisualSize * pulse, earthVisualSize * pulse, 1);
+  earth.scale.setScalar(pulse);
+
+  // Twinkle stars driven by uniform
+  for (let i = 0; i < _twinkleMaterials.length; i++) {
+    _twinkleMaterials[i].uniforms.uTime.value = t;
+  }
+  updateShootingStars(dt);
+
   shieldInner.rotation.z = t * 0.36;
   shieldOuter.rotation.z = -t * 0.18;
   shieldInner.material.opacity = state.shield > 0 ? 0.44 + Math.sin(t * 3.4) * 0.12 : 0.08;
@@ -3099,6 +4161,7 @@ function frame(now) {
   state.time += dt;
   if (state.mode === "paused") {
     updateExplosions(dt);
+    updatePolishEffects(dt);
   } else {
     update(dt);
   }
@@ -3113,12 +4176,24 @@ function frame(now) {
 /* ═══════════════════════════════════════════════════════════════
    Event Listeners
    ═══════════════════════════════════════════════════════════════ */
-canvas.addEventListener("pointerdown", async () => {
-  if (!state.soundOn) {
+// Browsers REQUIRE a user gesture before any audio can play.
+// Since soundOn defaults to true, we just need to unlock the AudioContext
+// on the first interaction anywhere on the stage (canvas OR any HTML overlay).
+async function unlockAudioOnce() {
+  if (audio.started) return;
+  try {
     await audio.start();
-    state.soundOn = true;
+    audio.setEnabled(state.soundOn);
     updateHud();
+  } catch (err) {
+    console.warn("audio unlock failed", err);
   }
+}
+
+// Listen on the entire stage element (canvas + HUD + buttons) so any tap
+// works as the audio-unlock gesture. `pointerdown` fires before click.
+ui.stage?.addEventListener("pointerdown", unlockAudioOnce, { passive: true });
+canvas.addEventListener("pointerdown", () => {
   if (state.mode === "gameOver" || state.mode === "victory") reset();
 });
 
@@ -3146,13 +4221,11 @@ ui.shopBtn.addEventListener("click", () => {
 ui.shopCloseBtn.addEventListener("click", () => closeShopPanel());
 ui.shopRefreshBtn.addEventListener("click", () => refreshShop());
 ui.soundBtn.addEventListener("click", async () => {
-  if (!state.soundOn) {
-    await audio.start();
-    state.soundOn = true;
-  } else {
-    state.soundOn = !audio.enabled;
-    audio.setEnabled(state.soundOn);
-  }
+  // First click on the page is also the gesture that unlocks audio. After that,
+  // this button just toggles between "music + sfx on" and "muted".
+  if (!audio.started) await audio.start();
+  state.soundOn = !state.soundOn;
+  audio.setEnabled(state.soundOn);
   updateHud();
 });
 
@@ -3174,8 +4247,44 @@ if (ui.restartVictoryBtn) {
   ui.restartVictoryBtn.addEventListener("click", () => reset());
 }
 
+if (ui.startBtn) {
+  ui.startBtn.addEventListener("click", async () => {
+    // First user gesture — also the audio unlock moment.
+    if (!audio.started) {
+      try { await audio.start(); audio.setEnabled(state.soundOn); } catch (err) { console.warn("audio unlock failed", err); }
+    }
+    // Reset clock so swarm prefilled while title was up doesn't get a giant dt.
+    state.last = performance.now();
+    state.mode = "playing";
+    state.message = "地球防御系统启动中";
+    updateHud();
+  });
+}
+
+function applyQaMode() {
+  const mode = qaParams.get("qa");
+  if (mode !== "boss" && mode !== "shop") return;
+  state.stageLevel = Math.max(1, Math.min(bossConfigs.length, Number(qaParams.get("stage") || state.stageLevel)));
+  state.levelCount = Math.max(state.levelCount, 8);
+  state.money = Math.max(state.money, 120);
+  state.gunLevel = Math.max(state.gunLevel, 5);
+  rebuildDefenders();
+  if (mode === "shop") {
+    openShopPanel();
+    return;
+  }
+  state.waveIndex = wavesPerStage;
+  state.levelCount = Math.max(state.levelCount, 18);
+  state.maxHealth = Math.max(state.maxHealth, 999);
+  state.health = state.maxHealth;
+  state.shield = Math.max(state.shield, 999);
+  spawnBoss();
+  updateHud();
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Init
    ═══════════════════════════════════════════════════════════════ */
 reset();
+applyQaMode();
 requestAnimationFrame(frame);

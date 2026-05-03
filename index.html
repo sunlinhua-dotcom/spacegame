@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>地球防御战</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="src/styles.css?v=20260503-ui-pro" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-title-editorial2" />
   </head>
   <body>
     <main class="shell">
@@ -13,26 +13,40 @@
         <canvas id="game" width="720" height="1280"></canvas>
 
         <header class="hud-top">
-          <div class="hud-card hud-brand">
-            <div class="brand">EARTH DEFENSE</div>
-            <div id="runState" class="run-state">地球防御系统启动中</div>
-            <div class="level-progress" aria-label="升级进度">
-              <div class="level-progress-row">
-                <span class="muted">下一次升级</span>
-                <span id="levelProgressText">0%</span>
-              </div>
-              <div class="level-progress-track">
-                <span id="levelProgressFill"></span>
-              </div>
+          <div class="hud-bar">
+            <div class="hud-stat hud-health" title="生命">
+              <span class="hud-icon">❤</span>
+              <span class="hud-val" id="health">160</span>
+            </div>
+            <div class="hud-stat hud-money" title="资金">
+              <span class="hud-icon">¥</span>
+              <span class="hud-val" id="money">8</span>
+            </div>
+            <div class="hud-stat hud-stage" title="关卡">
+              <span class="hud-icon">★</span>
+              <span class="hud-val" id="stageWave">1-01</span>
+            </div>
+            <div class="hud-stat hud-level" title="升级">
+              <span class="hud-icon">▲</span>
+              <span class="hud-val" id="levelCount">0</span>
+            </div>
+            <div class="hud-stat hud-kill" title="击杀">
+              <span class="hud-icon">⌖</span>
+              <span class="hud-val" id="killCount">0</span>
+            </div>
+            <div class="hud-stat hud-theme" title="关卡主题" id="stageThemeBadge">
+              <img id="stageThemeIcon" alt="" />
+              <span id="stageThemeText">陨石带</span>
             </div>
           </div>
-          <div class="hud-card hud-stats">
-            <div class="stat"><span class="stat-key">生命</span><span class="stat-val" id="health">160</span></div>
-            <div class="stat"><span class="stat-key">资金</span><span class="stat-val">¥<span id="money">8</span></span></div>
-            <div class="stat"><span class="stat-key">关卡</span><span class="stat-val" id="stageWave">1-01</span></div>
-            <div class="stat"><span class="stat-key">升级</span><span class="stat-val" id="levelCount">0</span></div>
-            <div class="stat"><span class="stat-key">击杀</span><span class="stat-val" id="killCount">0</span></div>
+          <div class="hud-progress" aria-label="升级进度">
+            <span id="levelProgressFill"></span>
+            <span class="hud-progress-text">
+              <span class="muted">下一次升级</span>
+              <span id="levelProgressText">0%</span>
+            </span>
           </div>
+          <div class="hud-state" id="runState">地球防御系统启动中</div>
         </header>
 
         <div id="bossPanel" class="boss-panel" hidden>
@@ -43,7 +57,18 @@
           <div class="boss-hp-track"><span id="bossHpFill"></span></div>
         </div>
 
-        <div id="miniBossTag" class="mini-boss-tag" hidden></div>
+        <div id="bossBanner" class="boss-banner" hidden>
+          <div class="boss-banner-eyebrow">BOSS APPROACHING</div>
+          <div class="boss-banner-name" id="bossBannerName">Boss</div>
+          <div class="boss-banner-sub" id="bossBannerSub">能力描述</div>
+        </div>
+
+        <div id="miniBossTag" class="mini-boss-tag" hidden>
+          <div class="mini-boss-name" id="miniBossName">小 Boss</div>
+          <div class="mini-boss-hp"><span id="miniBossHpFill"></span></div>
+        </div>
+
+        <div id="floaters" class="floaters" aria-hidden="true"></div>
 
         <div id="levelPanel" class="level-panel" hidden>
           <div class="panel-shell">
@@ -56,16 +81,66 @@
         </div>
 
         <div id="shopPanel" class="shop-panel" hidden>
-          <div class="shop-head">
-            <div>
-              <div class="shop-title">战术商店</div>
-              <div class="shop-subtitle">当前资金 ¥<span id="shopMoney">0</span></div>
+          <div class="panel-shell">
+            <div class="shop-head">
+              <div>
+                <div class="shop-title">战术商店</div>
+                <div class="shop-subtitle">当前资金 ¥<span id="shopMoney">0</span></div>
+              </div>
+              <button id="shopCloseBtn" class="shop-icon-btn" type="button" aria-label="关闭商店">×</button>
             </div>
-            <button id="shopCloseBtn" class="shop-icon-btn" type="button" aria-label="关闭商店">×</button>
+            <div id="shopCards" class="shop-cards" aria-label="商店升级"></div>
+            <div class="shop-actions">
+              <button id="shopRefreshBtn" type="button"><span>刷新 ¥3</span></button>
+            </div>
           </div>
-          <div id="shopCards" class="shop-cards" aria-label="商店升级"></div>
-          <div class="shop-actions">
-            <button id="shopRefreshBtn" type="button">刷新 ¥3</button>
+        </div>
+
+        <div id="titlePanel" class="overlay overlay-title">
+          <div class="title-stage">
+            <header class="title-status">
+              <span class="title-status-bar"></span>
+              <span class="title-status-text">MISSION 001 · ORBITAL DEFENSE PROTOCOL</span>
+              <span class="title-status-bar"></span>
+            </header>
+
+            <div class="title-hero">
+              <span class="title-hero-line title-hero-line-1">EARTH</span>
+              <span class="title-hero-line title-hero-line-2">DEFENSE</span>
+              <span class="title-hero-cn">地&nbsp;&nbsp;球&nbsp;&nbsp;防&nbsp;&nbsp;御&nbsp;&nbsp;战</span>
+            </div>
+
+            <dl class="title-meta">
+              <div><dt>STATUS</dt><dd class="is-ready">READY</dd></div>
+              <div><dt>YEAR</dt><dd>2026</dd></div>
+              <div><dt>BUILD</dt><dd>1.0</dd></div>
+            </dl>
+
+            <button id="startBtn" type="button" class="title-engage">
+              <span class="title-engage-row">
+                <span class="title-engage-marker">▶</span>
+                <span class="title-engage-en">ENGAGE</span>
+              </span>
+              <span class="title-engage-cn">开 始 任 务</span>
+            </button>
+
+            <footer class="title-foot">
+              <div class="title-foot-line"></div>
+              <div class="title-foot-grid">
+                <div class="title-foot-roles">
+                  <span>创意</span><span>美术</span><span>技术</span><span>音乐</span><span>音效</span>
+                </div>
+                <div class="title-foot-by">
+                  <span class="title-foot-prefix">ALL BY</span>
+                  <span class="title-foot-name title-foot-name-pub">DIGIREPUB</span>
+                </div>
+                <div class="title-foot-by title-foot-by-creator">
+                  <span class="title-foot-prefix">CREATED BY</span>
+                  <span class="title-foot-name title-foot-name-brand">BRIGHT.SUN</span>
+                </div>
+              </div>
+              <div class="title-foot-tip">TAP TO UNLOCK AUDIO · MUSIC STARTS ON ENGAGE</div>
+            </footer>
           </div>
         </div>
 
@@ -129,6 +204,6 @@
         </nav>
       </section>
     </main>
-    <script type="module" src="src/game-three.js?v=20260503-ui-pro"></script>
+    <script type="module" src="src/game-three.js?v=20260504-title-editorial2"></script>
   </body>
 </html>

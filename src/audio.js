@@ -1,7 +1,14 @@
-const SAMPLE_VERSION = "20260503-audio-earth1";
+const SAMPLE_VERSION = "20260503-cc0-techno1";
 
 const SAMPLE_PATHS = {
-  music: "assets/audio/musicgen-earth-defense.wav",
+  // 5 CC0 techno/EDM tracks from OpenGameArt — randomly rotated each game.
+  // (Armin van Buuren tracks are copyrighted; we picked the closest royalty-free
+  //  matches: tech-rave + Pro Sensory techno + bright/melodic EDM + space.)
+  music: [
+    "assets/audio/cc0-techno/tech-rave.wav",
+    "assets/audio/cc0-techno/techno-5.mp3",
+    "assets/audio/cc0-techno/space-flight.mp3"
+  ],
   fire: [
     "assets/audio/kenney-sci-fi/Audio/laserSmall_000.ogg",
     "assets/audio/kenney-sci-fi/Audio/laserSmall_001.ogg",

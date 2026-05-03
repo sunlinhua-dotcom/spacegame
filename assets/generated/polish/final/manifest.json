@@ -1,0 +1,168 @@
+{
+  "source": "assets/generated/polish/raw/gameplay-polish-atlas-4x4.png",
+  "model": "local-procedural-pillow",
+  "base_url": "local",
+  "grid": "4x4",
+  "items": [
+    {
+      "id": "boss-weakpoint-core",
+      "name": "Boss 弱点核心",
+      "group": "boss",
+      "file": "assets/generated/polish/final/boss-weakpoint-core.png",
+      "cell": {
+        "row": 1,
+        "col": 1
+      }
+    },
+    {
+      "id": "boss-rage-aura",
+      "name": "Boss 狂暴光环",
+      "group": "boss",
+      "file": "assets/generated/polish/final/boss-rage-aura.png",
+      "cell": {
+        "row": 1,
+        "col": 2
+      }
+    },
+    {
+      "id": "danger-warning-ring",
+      "name": "Boss 预警圈",
+      "group": "telegraph",
+      "file": "assets/generated/polish/final/danger-warning-ring.png",
+      "cell": {
+        "row": 1,
+        "col": 3
+      }
+    },
+    {
+      "id": "boss-charge-lane",
+      "name": "Boss 冲锋轨道",
+      "group": "telegraph",
+      "file": "assets/generated/polish/final/boss-charge-lane.png",
+      "cell": {
+        "row": 1,
+        "col": 4
+      }
+    },
+    {
+      "id": "tactical-freeze-bomb",
+      "name": "冻结战术弹",
+      "group": "tactical",
+      "file": "assets/generated/polish/final/tactical-freeze-bomb.png",
+      "cell": {
+        "row": 2,
+        "col": 1
+      }
+    },
+    {
+      "id": "orbital-rail-cannon",
+      "name": "轨道炮令牌",
+      "group": "tactical",
+      "file": "assets/generated/polish/final/orbital-rail-cannon.png",
+      "cell": {
+        "row": 2,
+        "col": 2
+      }
+    },
+    {
+      "id": "earth-repair-nanites",
+      "name": "地球修复纳米云",
+      "group": "tactical",
+      "file": "assets/generated/polish/final/earth-repair-nanites.png",
+      "cell": {
+        "row": 2,
+        "col": 3
+      }
+    },
+    {
+      "id": "shield-overcharge",
+      "name": "护盾超载脉冲",
+      "group": "tactical",
+      "file": "assets/generated/polish/final/shield-overcharge.png",
+      "cell": {
+        "row": 2,
+        "col": 4
+      }
+    },
+    {
+      "id": "shop-lock-card",
+      "name": "商店锁卡",
+      "group": "shop",
+      "file": "assets/generated/polish/final/shop-lock-card.png",
+      "cell": {
+        "row": 3,
+        "col": 1
+      }
+    },
+    {
+      "id": "rarity-reroll-prism",
+      "name": "稀有度重掷棱晶",
+      "group": "shop",
+      "file": "assets/generated/polish/final/rarity-reroll-prism.png",
+      "cell": {
+        "row": 3,
+        "col": 2
+      }
+    },
+    {
+      "id": "war-fund-cache",
+      "name": "战争资金缓存",
+      "group": "shop",
+      "file": "assets/generated/polish/final/war-fund-cache.png",
+      "cell": {
+        "row": 3,
+        "col": 3
+      }
+    },
+    {
+      "id": "hire-fleet-beacon",
+      "name": "雇佣舰队信标",
+      "group": "shop",
+      "file": "assets/generated/polish/final/hire-fleet-beacon.png",
+      "cell": {
+        "row": 3,
+        "col": 4
+      }
+    },
+    {
+      "id": "stage-asteroid-belt",
+      "name": "陨石带关卡徽记",
+      "group": "stage",
+      "file": "assets/generated/polish/final/stage-asteroid-belt.png",
+      "cell": {
+        "row": 4,
+        "col": 1
+      }
+    },
+    {
+      "id": "stage-mothership-shadow",
+      "name": "母舰阴影关卡徽记",
+      "group": "stage",
+      "file": "assets/generated/polish/final/stage-mothership-shadow.png",
+      "cell": {
+        "row": 4,
+        "col": 2
+      }
+    },
+    {
+      "id": "stage-ion-storm",
+      "name": "电磁风暴关卡徽记",
+      "group": "stage",
+      "file": "assets/generated/polish/final/stage-ion-storm.png",
+      "cell": {
+        "row": 4,
+        "col": 3
+      }
+    },
+    {
+      "id": "stage-eclipse-finale",
+      "name": "日蚀终局关卡徽记",
+      "group": "stage",
+      "file": "assets/generated/polish/final/stage-eclipse-finale.png",
+      "cell": {
+        "row": 4,
+        "col": 4
+      }
+    }
+  ]
+}

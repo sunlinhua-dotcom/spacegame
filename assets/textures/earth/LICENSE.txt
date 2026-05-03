@@ -1,0 +1,10 @@
+Earth textures sourced from bobbyroe/threejs-earth (MIT licensed).
+Original source data is NASA Visible Earth — public domain.
+Repo: https://github.com/bobbyroe/threejs-earth
+
+- 00_earthmap1k.jpg            day-side color map (Albedo)
+- 01_earthbump1k.jpg           grayscale elevation (Bump)
+- 02_earthspec1k.jpg           water vs land mask (Specular)
+- 03_earthlights1k.jpg         city lights at night (Emissive)
+- 04_earthcloudmap.jpg         cloud color
+- 05_earthcloudmaptrans.jpg    cloud alpha (white = cloud)

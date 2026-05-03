@@ -34,6 +34,7 @@
 ## 新风险
 - 当前 Three.js 引擎仍是第一版迁移，战斗动效已比 Canvas 版更稳，但爆炸、激光、能量束仍可继续精修。
 - Google 图片模型输出不是真透明 PNG，而是黑底/棋盘格等视觉背景；后续继续生成素材时必须保留本地透明化检查，不可直接接入原图。
+- 用户曾临时提供外部图片 API 配置，但后续明确要求不要再使用；项目文件不得保存该 Key，也不得把外部接口图集接入运行时。当前玩法增强图集已用本地程序化版本覆盖。
 
 ## 2026-05-02 新修复
 - 外圈弹幕出现方块头和廉价细线：根因是上一版用 `PointsMaterial + LineSegments` 临时模拟，已改成透明弹体 Sprite。
@@ -49,3 +50,6 @@
 - Boss 第 20 波实测位置被 Boss 血条遮挡：已将 Boss 战斗轨迹下移到地球上方可视战区，避免本体被血条压住。
 - 武器升级音效仍像机器杂音：根因是升级/选择反馈使用 `forceField` 和 `computerNoise`，已改为 OpenGameArt CC0 power-up 短版 wav，UI 选择改为 Kenney Interface confirmation/select。
 - 地球缺少明显自转：根因是旧版只极慢旋转整张 Sprite，看起来几乎静止且不像球体自转；已改为动态 CanvasTexture，绘制移动云带和大陆高光。
+- 用户要求不要使用其图片 API：已停止使用外部接口，重新用本地程序化绘图生成并覆盖 `assets/generated/polish/raw/gameplay-polish-atlas-4x4.png`，再切割为 16 个透明素材；项目密钥扫描未发现 `sk-` 形式残留。
+- 接入玩法增强素材时发现升级卡 VFX 背景 URL 会被 CSS 按 `src/` 相对路径解析，导致 `src/assets/...` 404：已将 `upgradeVfxSrc()` 改为根路径 `/assets/...`，Playwright 复测控制台 0 errors。
+- Mini Boss 名牌在顶部边缘可能越界：已对 `updateMiniBossTag()` 的屏幕坐标做边界约束，并把 CSS transform 改为只水平居中。

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "python3 -m http.server 4647 --bind 127.0.0.1",
+    "dev": "python3 -m http.server 4647 --bind 0.0.0.0",
     "check": "node --check src/game.js && node --check src/game-three.js && node --check src/audio.js && node --check src/upgrades.js"
   },
   "dependencies": {

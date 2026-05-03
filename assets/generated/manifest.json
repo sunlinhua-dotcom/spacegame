@@ -94,6 +94,16 @@
       "intended_use": "当前运行时循环播放的背景音乐，由本地 MusicGen 生成"
     },
     {
+      "id": "local-procedural-polish-atlas",
+      "name": "本地程序化玩法增强素材图集",
+      "type": "single-atlas-derived-assets",
+      "file": "assets/generated/polish/final/",
+      "source_file": "assets/generated/polish/raw/gameplay-polish-atlas-4x4.png",
+      "source": "local procedural Pillow script",
+      "model": "local-procedural-pillow",
+      "intended_use": "已接入当前运行时：Boss 弱点判定/狂暴光环/冲锋预警，商店锁卡/刷新/购买反馈，升级卡特殊图标与关卡主题徽记；由本地脚本生成并切割，无外部 API 调用，也不使用用户提供的 Key"
+    },
+    {
       "id": "level-up-cards",
       "name": "Level Up 卡片",
       "type": "ui",
