@@ -1,4 +1,4 @@
-import * as THREE from "../node_modules/three/build/three.module.js";
+import * as THREE from "three";
 import { AudioEngine } from "./audio.js?v=20260503-polish-runtime1";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
 
