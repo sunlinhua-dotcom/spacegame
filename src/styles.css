@@ -62,22 +62,25 @@ button {
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 8px;
-  /* Account for iOS safe-area on landscape and rotated states */
-  padding-left: max(8px, env(safe-area-inset-left));
-  padding-right: max(8px, env(safe-area-inset-right));
+  /* Padding doubles as the visible bezel around the stage on phones; iOS
+     safe-area insets stack on top so the frame clears the notch + home bar. */
+  padding-top: max(10px, env(safe-area-inset-top));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: max(10px, env(safe-area-inset-right));
 }
 
 .stage {
   position: relative;
-  /* On phones, the dvh measurement excludes the URL bar so the canvas always
-     fills the visible viewport instead of being chopped by Safari chrome. */
-  width: min(100vw, calc(100dvh * 9 / 16));
+  /* 100% (not 100vw) so we respect .shell padding and the rounded border + ring
+     shadow stay fully visible inside the iPhone viewport. dvh keeps the canvas
+     within Safari's visible area when the URL bar collapses/expands. */
+  width: min(100%, calc(100dvh * 9 / 16));
   max-width: 720px;
   aspect-ratio: 9 / 16;
   overflow: hidden;
   background: #01060a;
-  border-radius: 8px;
+  border-radius: 14px;
   box-shadow:
     0 0 0 1px rgba(124, 232, 255, 0.18),
     0 32px 80px rgba(0, 0, 0, 0.78),
@@ -1404,8 +1407,10 @@ canvas {
   color: rgba(241, 250, 255, 0.36);
 }
 
-/* Compact title for very small viewports */
-@media (max-width: 390px) {
+/* Compact title for very small viewports.
+   410 (not 390) so iPhone 14/15 Pro at 393 viewport gets the compact styling
+   too — the stage is now inset 20px from viewport edges. */
+@media (max-width: 410px) {
   .title-stage {
     gap: 18px;
     padding: max(20px, env(safe-area-inset-top)) 18px max(16px, env(safe-area-inset-bottom));
@@ -1760,9 +1765,9 @@ canvas {
   }
 }
 
-@media (max-width: 390px) {
+@media (max-width: 410px) {
   .stage {
-    border-radius: 6px;
+    border-radius: 12px;
   }
 
   .hud-top {
