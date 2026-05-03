@@ -1,53 +1,44 @@
-const SAMPLE_VERSION = "20260503-cc0-techno1";
+const SAMPLE_VERSION = "20260504-mixkit-premium1";
 
 const SAMPLE_PATHS = {
-  // 5 CC0 techno/EDM tracks from OpenGameArt — randomly rotated each game.
-  // (Armin van Buuren tracks are copyrighted; we picked the closest royalty-free
-  //  matches: tech-rave + Pro Sensory techno + bright/melodic EDM + space.)
   music: [
     "assets/audio/cc0-techno/tech-rave.wav",
     "assets/audio/cc0-techno/techno-5.mp3",
     "assets/audio/cc0-techno/space-flight.mp3"
   ],
   fire: [
-    "assets/audio/kenney-sci-fi/Audio/laserSmall_000.ogg",
-    "assets/audio/kenney-sci-fi/Audio/laserSmall_001.ogg",
-    "assets/audio/kenney-sci-fi/Audio/laserSmall_002.ogg"
+    "assets/audio/mixkit-premium/fire-1.mp3",
+    "assets/audio/mixkit-premium/fire-2.mp3"
   ],
   boom: [
-    "assets/audio/kenney-sci-fi/Audio/explosionCrunch_000.ogg",
-    "assets/audio/kenney-sci-fi/Audio/explosionCrunch_001.ogg",
-    "assets/audio/kenney-sci-fi/Audio/lowFrequency_explosion_000.ogg"
+    "assets/audio/mixkit-premium/boom-1.mp3",
+    "assets/audio/mixkit-premium/boom-2.mp3",
+    "assets/audio/mixkit-premium/boom-3.mp3"
   ],
   hit: [
-    "assets/audio/kenney-sci-fi/Audio/impactMetal_000.ogg",
-    "assets/audio/kenney-sci-fi/Audio/impactMetal_001.ogg",
-    "assets/audio/kenney-sci-fi/Audio/impactMetal_002.ogg"
+    "assets/audio/mixkit-premium/hit-1.mp3",
+    "assets/audio/mixkit-premium/hit-2.mp3",
+    "assets/audio/mixkit-premium/hit-3.mp3"
   ],
   levelUp: [
-    "assets/audio/opengameart-powerup/processed/level_up_reward_001.wav",
-    "assets/audio/opengameart-powerup/processed/level_up_reward_002.wav"
+    "assets/audio/mixkit-premium/level-up-1.mp3",
+    "assets/audio/mixkit-premium/level-up-2.mp3"
   ],
   upgrade: [
-    "assets/audio/opengameart-powerup/processed/weapon_upgrade_001.wav",
-    "assets/audio/opengameart-powerup/processed/weapon_upgrade_002.wav",
-    "assets/audio/opengameart-powerup/processed/weapon_upgrade_003.wav"
+    "assets/audio/mixkit-premium/upgrade-1.mp3",
+    "assets/audio/mixkit-premium/upgrade-2.mp3"
   ],
   select: [
-    "assets/audio/kenney-interface/Audio/confirmation_001.ogg",
-    "assets/audio/kenney-interface/Audio/confirmation_002.ogg",
-    "assets/audio/kenney-interface/Audio/select_004.ogg",
-    "assets/audio/kenney-interface/Audio/select_005.ogg"
+    "assets/audio/mixkit-premium/select-1.mp3",
+    "assets/audio/mixkit-premium/select-2.mp3",
+    "assets/audio/mixkit-premium/select-3.mp3"
   ],
   laser: [
-    "assets/audio/kenney-sci-fi/Audio/laserLarge_000.ogg",
-    "assets/audio/kenney-sci-fi/Audio/laserLarge_001.ogg",
-    "assets/audio/kenney-sci-fi/Audio/laserLarge_002.ogg"
+    "assets/audio/mixkit-premium/laser-1.mp3"
   ],
   beam: [
-    "assets/audio/kenney-sci-fi/Audio/forceField_000.ogg",
-    "assets/audio/kenney-sci-fi/Audio/forceField_001.ogg",
-    "assets/audio/kenney-sci-fi/Audio/spaceEngineLarge_000.ogg"
+    "assets/audio/mixkit-premium/beam-1.mp3",
+    "assets/audio/mixkit-premium/beam-2.mp3"
   ]
 };
 

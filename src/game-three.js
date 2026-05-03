@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { AudioEngine } from "./audio.js?v=20260503-polish-runtime1";
+import { AudioEngine } from "./audio.js?v=20260504-mixkit-premium1";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
 
 /* ═══════════════════════════════════════════════════════════════
