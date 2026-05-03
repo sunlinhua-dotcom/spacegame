@@ -10,8 +10,8 @@ COPY . /usr/share/nginx/html/
 # Custom config: serve index.html at /, set MIME for .wasm if needed,
 # allow directory traversal for asset folders, gzip on.
 RUN printf 'server {\n\
-  listen 80 default_server;\n\
-  listen [::]:80 default_server;\n\
+  listen 8080 default_server;\n\
+  listen [::]:8080 default_server;\n\
   root /usr/share/nginx/html;\n\
   index index.html;\n\
   gzip on;\n\
@@ -22,5 +22,6 @@ RUN printf 'server {\n\
   location = /index.html { add_header Cache-Control "no-cache"; }\n\
 }\n' > /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Zeabur convention: public domain maps to container port 8080
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
