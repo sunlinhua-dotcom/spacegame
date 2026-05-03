@@ -1,0 +1,142 @@
+{
+  "assets": [
+    {
+      "id": "alien-meteor",
+      "file": "assets/generated/individual/final/alien-meteor.png",
+      "source_file": "assets/generated/individual/black/alien-meteor.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "alien-saucer",
+      "file": "assets/generated/individual/final/alien-saucer.png",
+      "source_file": "assets/generated/individual/black/alien-saucer.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "ballistic-icon",
+      "file": "assets/generated/individual/final/ballistic-icon.png",
+      "source_file": "assets/generated/individual/black/ballistic-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "beam-icon",
+      "file": "assets/generated/individual/final/beam-icon.png",
+      "source_file": "assets/generated/individual/black/beam-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "defense-icon",
+      "file": "assets/generated/individual/final/defense-icon.png",
+      "source_file": "assets/generated/individual/black/defense-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "defense-plane",
+      "file": "assets/generated/individual/final/defense-plane.png",
+      "source_file": "assets/generated/individual/black/defense-plane.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "earth-core",
+      "file": "assets/generated/individual/final/earth-core.png",
+      "source_file": "assets/generated/individual/black/earth-core.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "earth-icon",
+      "file": "assets/generated/individual/final/earth-icon.png",
+      "source_file": "assets/generated/individual/black/earth-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "economy-icon",
+      "file": "assets/generated/individual/final/economy-icon.png",
+      "source_file": "assets/generated/individual/black/economy-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "enemy-bolt",
+      "file": "assets/generated/individual/final/enemy-bolt.png",
+      "source_file": "assets/generated/individual/black/enemy-bolt.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "explosion-core",
+      "file": "assets/generated/individual/final/explosion-core.png",
+      "source_file": "assets/generated/individual/black/explosion-core.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "gun-icon",
+      "file": "assets/generated/individual/final/gun-icon.png",
+      "source_file": "assets/generated/individual/black/gun-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "laser-icon",
+      "file": "assets/generated/individual/final/laser-icon.png",
+      "source_file": "assets/generated/individual/black/laser-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "player-bullet",
+      "file": "assets/generated/individual/final/player-bullet.png",
+      "source_file": "assets/generated/individual/black/player-bullet.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "risk-icon",
+      "file": "assets/generated/individual/final/risk-icon.png",
+      "source_file": "assets/generated/individual/black/risk-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "satellite-icon",
+      "file": "assets/generated/individual/final/satellite-icon.png",
+      "source_file": "assets/generated/individual/black/satellite-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "special-icon",
+      "file": "assets/generated/individual/final/special-icon.png",
+      "source_file": "assets/generated/individual/black/special-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "topdown-gun-icon",
+      "file": "assets/generated/individual/final/topdown-gun-icon.png",
+      "source_file": "assets/generated/individual/black/topdown-gun-icon.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "topdown-plane-0",
+      "file": "assets/generated/individual/final/topdown-plane-0.png",
+      "source_file": "assets/generated/individual/black/topdown-plane-0.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "topdown-plane-1",
+      "file": "assets/generated/individual/final/topdown-plane-1.png",
+      "source_file": "assets/generated/individual/black/topdown-plane-1.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "topdown-plane-2",
+      "file": "assets/generated/individual/final/topdown-plane-2.png",
+      "source_file": "assets/generated/individual/black/topdown-plane-2.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "topdown-plane-3",
+      "file": "assets/generated/individual/final/topdown-plane-3.png",
+      "source_file": "assets/generated/individual/black/topdown-plane-3.png",
+      "pipeline": "single-imagegen-asset-black-background-alpha-clean"
+    },
+    {
+      "id": "barrage-projectile",
+      "file": "assets/generated/individual/final/barrage-projectile.png",
+      "source_file": "programmatic-transparent-projectile",
+      "pipeline": "single-transparent-projectile-sprite"
+    }
+  ]
+}

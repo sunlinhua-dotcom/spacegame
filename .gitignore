@@ -1,0 +1,28 @@
+# dependencies — reinstall via `npm install`
+node_modules/
+
+# source video (25MB, kept locally only)
+*.MOV
+*.mov
+
+# derived / dev tooling state
+tmp/
+output/
+.runtime/
+.workbuddy/
+.playwright-cli/
+.playwright-mcp/
+
+# transient QA screenshots from prior dev sessions
+visual-qa-*.png
+earth-defense-*.png
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+__pycache__/
+*.pyc

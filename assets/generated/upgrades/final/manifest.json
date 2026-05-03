@@ -1,0 +1,44 @@
+{
+  "upgradeVfx": [
+    {
+      "id": "card-reveal",
+      "name": "升级卡揭示",
+      "file": "assets/generated/upgrades/final/card-reveal.png"
+    },
+    {
+      "id": "boss-core",
+      "name": "Boss 核心奖励",
+      "file": "assets/generated/upgrades/final/boss-core.png"
+    },
+    {
+      "id": "weapon-overclock",
+      "name": "武器超频",
+      "file": "assets/generated/upgrades/final/weapon-overclock.png"
+    },
+    {
+      "id": "rarity-evolution",
+      "name": "稀有度进化",
+      "file": "assets/generated/upgrades/final/rarity-evolution.png"
+    },
+    {
+      "id": "economy-spark",
+      "name": "经济资金",
+      "file": "assets/generated/upgrades/final/economy-spark.png"
+    },
+    {
+      "id": "explosive-flare",
+      "name": "爆炸强化",
+      "file": "assets/generated/upgrades/final/explosive-flare.png"
+    },
+    {
+      "id": "shield-pulse",
+      "name": "护盾强化",
+      "file": "assets/generated/upgrades/final/shield-pulse.png"
+    },
+    {
+      "id": "shop-reroll",
+      "name": "商店刷新",
+      "file": "assets/generated/upgrades/final/shop-reroll.png"
+    }
+  ]
+}

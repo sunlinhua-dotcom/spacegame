@@ -1,0 +1,174 @@
+{
+  "bosses": [
+    {
+      "id": "boss-01",
+      "level": 1,
+      "name": "熔核陨星",
+      "slug": "molten-asteroid",
+      "ability": "火山裂隙核心，周期喷发岩浆弹",
+      "maxHp": 595,
+      "reward": 28,
+      "size": 160,
+      "base": "assets/generated/bosses/final/boss-01-molten-asteroid.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-01-molten-asteroid-frame-00.png",
+        "assets/generated/bosses/frames/boss-01-molten-asteroid-frame-01.png",
+        "assets/generated/bosses/frames/boss-01-molten-asteroid-frame-02.png",
+        "assets/generated/bosses/frames/boss-01-molten-asteroid-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-02",
+      "level": 2,
+      "name": "寄生蜂巢",
+      "slug": "bio-saucer-hive",
+      "ability": "绿色生物机械外壳，召唤修复虫群",
+      "maxHp": 1060,
+      "reward": 36,
+      "size": 164,
+      "base": "assets/generated/bosses/final/boss-02-bio-saucer-hive.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-02-bio-saucer-hive-frame-00.png",
+        "assets/generated/bosses/frames/boss-02-bio-saucer-hive-frame-01.png",
+        "assets/generated/bosses/frames/boss-02-bio-saucer-hive-frame-02.png",
+        "assets/generated/bosses/frames/boss-02-bio-saucer-hive-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-03",
+      "level": 3,
+      "name": "霜晶利维坦",
+      "slug": "ice-crystal-leviathan",
+      "ability": "冰晶护甲，释放减速晶刺",
+      "maxHp": 1715,
+      "reward": 44,
+      "size": 168,
+      "base": "assets/generated/bosses/final/boss-03-ice-crystal-leviathan.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-03-ice-crystal-leviathan-frame-00.png",
+        "assets/generated/bosses/frames/boss-03-ice-crystal-leviathan-frame-01.png",
+        "assets/generated/bosses/frames/boss-03-ice-crystal-leviathan-frame-02.png",
+        "assets/generated/bosses/frames/boss-03-ice-crystal-leviathan-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-04",
+      "level": 4,
+      "name": "虚空母舰",
+      "slug": "void-mothership",
+      "ability": "紫色暗能量舰体，发射扇形切割线",
+      "maxHp": 2560,
+      "reward": 52,
+      "size": 172,
+      "base": "assets/generated/bosses/final/boss-04-void-mothership.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-04-void-mothership-frame-00.png",
+        "assets/generated/bosses/frames/boss-04-void-mothership-frame-01.png",
+        "assets/generated/bosses/frames/boss-04-void-mothership-frame-02.png",
+        "assets/generated/bosses/frames/boss-04-void-mothership-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-05",
+      "level": 5,
+      "name": "黄金炮垒",
+      "slug": "gold-artillery-fortress",
+      "ability": "重型火炮平台，多炮口轮射",
+      "maxHp": 3595,
+      "reward": 60,
+      "size": 176,
+      "base": "assets/generated/bosses/final/boss-05-gold-artillery-fortress.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-05-gold-artillery-fortress-frame-00.png",
+        "assets/generated/bosses/frames/boss-05-gold-artillery-fortress-frame-01.png",
+        "assets/generated/bosses/frames/boss-05-gold-artillery-fortress-frame-02.png",
+        "assets/generated/bosses/frames/boss-05-gold-artillery-fortress-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-06",
+      "level": 6,
+      "name": "赤环蛇影",
+      "slug": "red-plasma-coil",
+      "ability": "环形等离子生命体，缠绕式攻击",
+      "maxHp": 4820,
+      "reward": 68,
+      "size": 180,
+      "base": "assets/generated/bosses/final/boss-06-red-plasma-coil.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-06-red-plasma-coil-frame-00.png",
+        "assets/generated/bosses/frames/boss-06-red-plasma-coil-frame-01.png",
+        "assets/generated/bosses/frames/boss-06-red-plasma-coil-frame-02.png",
+        "assets/generated/bosses/frames/boss-06-red-plasma-coil-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-07",
+      "level": 7,
+      "name": "离子雷巢",
+      "slug": "blue-ion-hive",
+      "ability": "蓝色电弧核心，跳跃电击",
+      "maxHp": 6235,
+      "reward": 76,
+      "size": 184,
+      "base": "assets/generated/bosses/final/boss-07-blue-ion-hive.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-07-blue-ion-hive-frame-00.png",
+        "assets/generated/bosses/frames/boss-07-blue-ion-hive-frame-01.png",
+        "assets/generated/bosses/frames/boss-07-blue-ion-hive-frame-02.png",
+        "assets/generated/bosses/frames/boss-07-blue-ion-hive-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-08",
+      "level": 8,
+      "name": "黑骨 dreadnought",
+      "slug": "black-dreadnought",
+      "ability": "黑色装甲巨舰，冲撞与装甲阶段",
+      "maxHp": 7840,
+      "reward": 84,
+      "size": 188,
+      "base": "assets/generated/bosses/final/boss-08-black-dreadnought.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-08-black-dreadnought-frame-00.png",
+        "assets/generated/bosses/frames/boss-08-black-dreadnought-frame-01.png",
+        "assets/generated/bosses/frames/boss-08-black-dreadnought-frame-02.png",
+        "assets/generated/bosses/frames/boss-08-black-dreadnought-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-09",
+      "level": 9,
+      "name": "白环引力机",
+      "slug": "white-graviton-ring",
+      "ability": "多层引力环，牵引小飞机",
+      "maxHp": 9635,
+      "reward": 92,
+      "size": 192,
+      "base": "assets/generated/bosses/final/boss-09-white-graviton-ring.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-09-white-graviton-ring-frame-00.png",
+        "assets/generated/bosses/frames/boss-09-white-graviton-ring-frame-01.png",
+        "assets/generated/bosses/frames/boss-09-white-graviton-ring-frame-02.png",
+        "assets/generated/bosses/frames/boss-09-white-graviton-ring-frame-03.png"
+      ]
+    },
+    {
+      "id": "boss-10",
+      "level": 10,
+      "name": "日蚀核心",
+      "slug": "solar-eclipse-core",
+      "ability": "最终日蚀体，释放全屏脉冲",
+      "maxHp": 11620,
+      "reward": 100,
+      "size": 196,
+      "base": "assets/generated/bosses/final/boss-10-solar-eclipse-core.png",
+      "frames": [
+        "assets/generated/bosses/frames/boss-10-solar-eclipse-core-frame-00.png",
+        "assets/generated/bosses/frames/boss-10-solar-eclipse-core-frame-01.png",
+        "assets/generated/bosses/frames/boss-10-solar-eclipse-core-frame-02.png",
+        "assets/generated/bosses/frames/boss-10-solar-eclipse-core-frame-03.png"
+      ]
+    }
+  ]
+}

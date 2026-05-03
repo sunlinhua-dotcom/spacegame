@@ -1,0 +1,46 @@
+{
+  "characters": [
+    {
+      "id": "interceptor-blue",
+      "name": "玩家蓝翼截击机",
+      "kind": "player",
+      "raw": "assets/generated/characters/raw/interceptor-blue.png",
+      "final": "assets/generated/characters/final/interceptor-blue.png"
+    },
+    {
+      "id": "interceptor-gold",
+      "name": "玩家重炮截击机",
+      "kind": "player",
+      "raw": "assets/generated/characters/raw/interceptor-gold.png",
+      "final": "assets/generated/characters/final/interceptor-gold.png"
+    },
+    {
+      "id": "interceptor-laser",
+      "name": "玩家激光截击机",
+      "kind": "player",
+      "raw": "assets/generated/characters/raw/interceptor-laser.png",
+      "final": "assets/generated/characters/final/interceptor-laser.png"
+    },
+    {
+      "id": "enemy-meteor-crab",
+      "name": "熔岩陨石敌人",
+      "kind": "enemy",
+      "raw": "assets/generated/characters/raw/enemy-meteor-crab.png",
+      "final": "assets/generated/characters/final/enemy-meteor-crab.png"
+    },
+    {
+      "id": "enemy-bolt-needle",
+      "name": "能量针刺敌人",
+      "kind": "enemy",
+      "raw": "assets/generated/characters/raw/enemy-bolt-needle.png",
+      "final": "assets/generated/characters/final/enemy-bolt-needle.png"
+    },
+    {
+      "id": "enemy-saucer-hunter",
+      "name": "飞碟猎手敌人",
+      "kind": "enemy",
+      "raw": "assets/generated/characters/raw/enemy-saucer-hunter.png",
+      "final": "assets/generated/characters/final/enemy-saucer-hunter.png"
+    }
+  ]
+}

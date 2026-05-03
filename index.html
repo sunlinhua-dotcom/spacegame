@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>地球防御战</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="src/styles.css?v=20260503-ui-pro" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="stage" aria-label="地球防御战游戏画面">
+        <canvas id="game" width="720" height="1280"></canvas>
+
+        <header class="hud-top">
+          <div class="hud-card hud-brand">
+            <div class="brand">EARTH DEFENSE</div>
+            <div id="runState" class="run-state">地球防御系统启动中</div>
+            <div class="level-progress" aria-label="升级进度">
+              <div class="level-progress-row">
+                <span class="muted">下一次升级</span>
+                <span id="levelProgressText">0%</span>
+              </div>
+              <div class="level-progress-track">
+                <span id="levelProgressFill"></span>
+              </div>
+            </div>
+          </div>
+          <div class="hud-card hud-stats">
+            <div class="stat"><span class="stat-key">生命</span><span class="stat-val" id="health">160</span></div>
+            <div class="stat"><span class="stat-key">资金</span><span class="stat-val">¥<span id="money">8</span></span></div>
+            <div class="stat"><span class="stat-key">关卡</span><span class="stat-val" id="stageWave">1-01</span></div>
+            <div class="stat"><span class="stat-key">升级</span><span class="stat-val" id="levelCount">0</span></div>
+            <div class="stat"><span class="stat-key">击杀</span><span class="stat-val" id="killCount">0</span></div>
+          </div>
+        </header>
+
+        <div id="bossPanel" class="boss-panel" hidden>
+          <div class="boss-row">
+            <span id="bossName">Boss</span>
+            <span id="bossHpText">100%</span>
+          </div>
+          <div class="boss-hp-track"><span id="bossHpFill"></span></div>
+        </div>
+
+        <div id="miniBossTag" class="mini-boss-tag" hidden></div>
+
+        <div id="levelPanel" class="level-panel" hidden>
+          <div class="panel-shell">
+            <div class="level-title">
+              <span class="level-title-text">LEVEL UP</span>
+              <span class="level-title-sub" id="levelTitleSub">地球防卫系统升级</span>
+            </div>
+            <div id="levelCards" class="level-cards" aria-label="升级选择"></div>
+          </div>
+        </div>
+
+        <div id="shopPanel" class="shop-panel" hidden>
+          <div class="shop-head">
+            <div>
+              <div class="shop-title">战术商店</div>
+              <div class="shop-subtitle">当前资金 ¥<span id="shopMoney">0</span></div>
+            </div>
+            <button id="shopCloseBtn" class="shop-icon-btn" type="button" aria-label="关闭商店">×</button>
+          </div>
+          <div id="shopCards" class="shop-cards" aria-label="商店升级"></div>
+          <div class="shop-actions">
+            <button id="shopRefreshBtn" type="button">刷新 ¥3</button>
+          </div>
+        </div>
+
+        <div id="pausePanel" class="overlay overlay-pause" hidden>
+          <div class="overlay-card">
+            <div class="overlay-eyebrow">系统暂停</div>
+            <div class="overlay-title">PAUSED</div>
+            <div class="overlay-sub">地球防线进入待命状态</div>
+            <div class="overlay-actions">
+              <button id="resumeBtn" type="button" class="btn btn-primary">继续防御</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="gameOverPanel" class="overlay overlay-gameover" hidden>
+          <div class="overlay-card">
+            <div class="overlay-eyebrow">SYSTEM FAILURE</div>
+            <div class="overlay-title">防线失守</div>
+            <div class="overlay-sub" id="gameOverSub">地球已沦陷</div>
+            <div class="overlay-stats">
+              <div class="overlay-stat"><span class="stat-key">击杀</span><span class="stat-val" id="goKills">0</span></div>
+              <div class="overlay-stat"><span class="stat-key">关卡</span><span class="stat-val" id="goStage">1-01</span></div>
+              <div class="overlay-stat"><span class="stat-key">升级</span><span class="stat-val" id="goLevels">0</span></div>
+              <div class="overlay-stat"><span class="stat-key">资金</span><span class="stat-val" id="goMoney">0</span></div>
+            </div>
+            <div class="overlay-actions">
+              <button id="restartGameOverBtn" type="button" class="btn btn-primary">重启防御</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="victoryPanel" class="overlay overlay-victory" hidden>
+          <div class="overlay-card">
+            <div class="overlay-eyebrow">EARTH SAVED</div>
+            <div class="overlay-title">十关全清</div>
+            <div class="overlay-sub">所有 Boss 已击溃，地球防线胜利</div>
+            <div class="overlay-stats">
+              <div class="overlay-stat"><span class="stat-key">击杀</span><span class="stat-val" id="vKills">0</span></div>
+              <div class="overlay-stat"><span class="stat-key">升级</span><span class="stat-val" id="vLevels">0</span></div>
+              <div class="overlay-stat"><span class="stat-key">资金</span><span class="stat-val" id="vMoney">0</span></div>
+            </div>
+            <div class="overlay-actions">
+              <button id="restartVictoryBtn" type="button" class="btn btn-primary">再战一局</button>
+            </div>
+          </div>
+        </div>
+
+        <nav class="controls">
+          <button id="restartBtn" type="button" class="ctrl-btn">
+            <span class="ctrl-icon">↻</span><span class="ctrl-label">重开</span>
+          </button>
+          <button id="shopBtn" type="button" class="ctrl-btn">
+            <span class="ctrl-icon">⛁</span><span class="ctrl-label">商店</span>
+          </button>
+          <button id="pauseBtn" type="button" class="ctrl-btn">
+            <span class="ctrl-icon">⏸</span><span class="ctrl-label">暂停</span>
+          </button>
+          <button id="soundBtn" type="button" class="ctrl-btn">
+            <span class="ctrl-icon">🔊</span><span class="ctrl-label">音效</span>
+          </button>
+        </nav>
+      </section>
+    </main>
+    <script type="module" src="src/game-three.js?v=20260503-ui-pro"></script>
+  </body>
+</html>

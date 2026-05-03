@@ -1,0 +1,104 @@
+{
+  "version": "0.1.0",
+  "asset_mode": "single-imagegen-assets-plus-threejs-effects",
+  "note": "按用户纠偏重新生成并接入地球防御战素材：重要元素已改为逐张单独生成、黑底清理为透明 PNG 后接入，避免继续从大图集裁切造成碎片、棋盘格和边缘脏污。2026-05-02 追加重新生成俯视角小飞机、Gun 小队图标、透明金橙弹幕弹体；敌人已改为 Three.js 动态组合体；音效改接 Kenney Sci-fi Sounds CC0 素材，音乐改为本地 MusicGen 输出。2026-05-03 将武器升级音效替换为 OpenGameArt CC0 power-up 素材，UI 确认音改为 Kenney Interface Sounds。",
+  "items": [
+    {
+      "id": "earth-defense-background",
+      "name": "深空防御背景",
+      "type": "background",
+      "file": "assets/generated/images/earth-defense-background.png",
+      "intended_use": "Canvas 全屏铺底，提供深空、星云和战场纵深"
+    },
+    {
+      "id": "earth-defense-atlas-alpha",
+      "name": "地球防御战透明素材图集",
+      "type": "atlas",
+      "file": "assets/generated/images/earth-defense-atlas-alpha.png",
+      "source_file": "assets/generated/images/earth-defense-atlas.png",
+      "intended_use": "原始透明图集，仅作为拆分独立 PNG 的源文件，运行时不再直接做大范围裁切"
+    },
+    {
+      "id": "earth-defense-sprites",
+      "name": "旧版图集拆分 Sprite 素材",
+      "type": "sprites",
+      "file": "assets/generated/sprites/",
+      "intended_use": "旧版拆分素材保留为历史参考；关键运行元素不再依赖该目录"
+    },
+    {
+      "id": "individual-single-assets",
+      "name": "逐张单独生成的核心透明素材",
+      "type": "single-assets",
+      "file": "assets/generated/individual/final/",
+      "source_file": "assets/generated/individual/black/",
+      "intended_use": "Three.js 当前运行时加载的中心地球、俯视角小飞机、外星飞碟、外星弹体、玩家子弹、爆炸和 10 类升级图标；每个重要元素单独生成并清理为透明 PNG"
+    },
+    {
+      "id": "threejs-effects",
+      "name": "Three.js 实时动效层",
+      "type": "runtime-effects",
+      "file": "src/game-three.js",
+      "intended_use": "围绕内置生图素材渲染轨道小飞机、动态敌人组合体、子弹、拖尾、爆炸、护盾、星场、Sprite 弹幕和升级后的武器表现"
+    },
+    {
+      "id": "barrage-projectile",
+      "name": "外圈金橙弹幕弹体",
+      "type": "single-asset",
+      "file": "assets/generated/individual/final/barrage-projectile.png",
+      "intended_use": "替代 PointsMaterial 和 LineSegments 临时弹幕，避免画面出现方块弹头和细线残留"
+    },
+    {
+      "id": "premium-audio-pack",
+      "name": "历史本地 WAV 采样包",
+      "type": "audio",
+      "file": "assets/audio/premium/",
+      "source_file": "scripts/generate_audio_assets.py",
+      "intended_use": "上一轮自生成采样保留为历史文件，当前运行时不再引用"
+    },
+    {
+      "id": "kenney-sci-fi-sounds",
+      "name": "Kenney Sci-fi Sounds",
+      "type": "audio",
+      "file": "assets/audio/kenney-sci-fi/",
+      "source_file": "assets/audio/source/sci-fi_sounds.zip",
+      "license": "Creative Commons Zero, CC0",
+      "source_url": "https://opengameart.org/content/sci-fi-sounds",
+      "intended_use": "当前运行时的开火、爆炸、受击、激光和能量束音效"
+    },
+    {
+      "id": "opengameart-power-up-sounds",
+      "name": "OpenGameArt Power-Up Sound Effects",
+      "type": "audio",
+      "file": "assets/audio/opengameart-powerup/",
+      "source_url": "https://opengameart.org/content/power-up-sound-effects",
+      "license": "Creative Commons Zero, CC0",
+      "intended_use": "当前运行时的 Level Up 与武器升级正反馈音效，已裁出较短的 weapon_upgrade 版本"
+    },
+    {
+      "id": "kenney-interface-sounds",
+      "name": "Kenney Interface Sounds",
+      "type": "audio",
+      "file": "assets/audio/kenney-interface/",
+      "source_file": "assets/audio/source/kenney_interface-sounds.zip",
+      "source_url": "https://kenney.nl/assets/interface-sounds",
+      "license": "Creative Commons Zero, CC0",
+      "intended_use": "当前运行时的 UI 选择、确认和商店操作音效"
+    },
+    {
+      "id": "musicgen-earth-defense",
+      "name": "MusicGen 地球防御战背景音乐",
+      "type": "audio",
+      "file": "assets/audio/musicgen-earth-defense.wav",
+      "source_file": "scripts/generate_musicgen.py",
+      "model": "facebook/musicgen-small",
+      "intended_use": "当前运行时循环播放的背景音乐，由本地 MusicGen 生成"
+    },
+    {
+      "id": "level-up-cards",
+      "name": "Level Up 卡片",
+      "type": "ui",
+      "file": "index.html + src/styles.css + src/game-three.js",
+      "intended_use": "使用 HTML/CSS 排版和独立图标 PNG；价格统一使用人民币符号，禁止从大飞机或特效素材临时裁切卡面图标"
+    }
+  ]
+}
