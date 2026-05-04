@@ -4248,10 +4248,14 @@ if (ui.restartVictoryBtn) {
 }
 
 if (ui.startBtn) {
-  ui.startBtn.addEventListener("click", async () => {
-    // First user gesture — also the audio unlock moment.
+  ui.startBtn.addEventListener("click", () => {
+    // Fire-and-forget audio unlock — never block the title→playing transition
+    // on a multi-megabyte sample download. Music kicks in a few seconds later
+    // when the buffers are ready, but the player is already in the game.
     if (!audio.started) {
-      try { await audio.start(); audio.setEnabled(state.soundOn); } catch (err) { console.warn("audio unlock failed", err); }
+      audio.start()
+        .then(() => audio.setEnabled(state.soundOn))
+        .catch((err) => console.warn("audio unlock failed", err));
     }
     // Reset clock so swarm prefilled while title was up doesn't get a giant dt.
     state.last = performance.now();

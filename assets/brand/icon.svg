@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="68%">
+      <stop offset="0%" stop-color="#0d1633"/>
+      <stop offset="100%" stop-color="#02060e"/>
+    </radialGradient>
+
+    <radialGradient id="earth" cx="40%" cy="36%" r="62%">
+      <stop offset="0%" stop-color="#5fb4ff"/>
+      <stop offset="58%" stop-color="#1968b8"/>
+      <stop offset="100%" stop-color="#0a2c5e"/>
+    </radialGradient>
+
+    <radialGradient id="ringHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="62%" stop-color="rgba(199,125,255,0)"/>
+      <stop offset="78%" stop-color="rgba(199,125,255,0.42)"/>
+      <stop offset="92%" stop-color="rgba(199,125,255,0.16)"/>
+      <stop offset="100%" stop-color="rgba(199,125,255,0)"/>
+    </radialGradient>
+
+    <radialGradient id="atmoGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="80%" stop-color="rgba(124,232,255,0)"/>
+      <stop offset="96%" stop-color="rgba(124,232,255,0.55)"/>
+      <stop offset="100%" stop-color="rgba(124,232,255,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Rounded space backdrop (iOS-app-icon style) -->
+  <rect width="512" height="512" fill="url(#bg)" rx="92" ry="92"/>
+
+  <!-- Background stars -->
+  <g fill="#ffffff" fill-opacity="0.55">
+    <circle cx="84" cy="96" r="1.6"/>
+    <circle cx="430" cy="78" r="2.0"/>
+    <circle cx="62" cy="378" r="1.8"/>
+    <circle cx="450" cy="420" r="1.4"/>
+    <circle cx="124" cy="56" r="1.2"/>
+    <circle cx="376" cy="448" r="1.5"/>
+    <circle cx="48" cy="240" r="1.0"/>
+    <circle cx="468" cy="280" r="1.7"/>
+    <circle cx="160" cy="430" r="1.1"/>
+    <circle cx="350" cy="62" r="1.0"/>
+  </g>
+
+  <!-- Gold sun rays radiating from behind (BRIGHT.SUN motif) -->
+  <g stroke="#ffd166" stroke-width="6" stroke-linecap="round" opacity="0.86">
+    <line x1="256" y1="44" x2="256" y2="98"/>
+    <line x1="256" y1="414" x2="256" y2="468"/>
+    <line x1="44" y1="256" x2="98" y2="256"/>
+    <line x1="414" y1="256" x2="468" y2="256"/>
+    <line x1="106" y1="106" x2="144" y2="144"/>
+    <line x1="368" y1="368" x2="406" y2="406"/>
+    <line x1="406" y1="106" x2="368" y2="144"/>
+    <line x1="144" y1="368" x2="106" y2="406"/>
+  </g>
+
+  <!-- Secondary thinner gold rays (sunburst flicker) -->
+  <g stroke="#ffd166" stroke-width="2.4" stroke-linecap="round" opacity="0.5">
+    <line x1="180" y1="60" x2="200" y2="98"/>
+    <line x1="332" y1="60" x2="312" y2="98"/>
+    <line x1="180" y1="452" x2="200" y2="414"/>
+    <line x1="332" y1="452" x2="312" y2="414"/>
+    <line x1="60" y1="180" x2="98" y2="200"/>
+    <line x1="60" y1="332" x2="98" y2="312"/>
+    <line x1="452" y1="180" x2="414" y2="200"/>
+    <line x1="452" y1="332" x2="414" y2="312"/>
+  </g>
+
+  <!-- Violet defense-ring halo (glow disc) -->
+  <circle cx="256" cy="256" r="192" fill="url(#ringHalo)"/>
+
+  <!-- Crisp violet defense ring -->
+  <circle cx="256" cy="256" r="174" fill="none" stroke="#c77dff" stroke-width="7" opacity="0.96"/>
+  <circle cx="256" cy="256" r="174" fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.7"/>
+
+  <!-- Earth atmosphere outer glow -->
+  <circle cx="256" cy="256" r="138" fill="url(#atmoGlow)"/>
+
+  <!-- Earth planet body -->
+  <circle cx="256" cy="256" r="124" fill="url(#earth)"/>
+
+  <!-- Stylized continents (saturated greens for legibility at thumbnail size) -->
+  <g fill="#2c8c3a" opacity="0.92">
+    <path d="M 198 220 Q 214 200 246 210 Q 264 224 252 244 Q 232 254 208 244 Q 196 232 198 220 Z"/>
+    <path d="M 268 246 Q 308 236 326 268 Q 318 296 290 302 Q 264 290 268 246 Z"/>
+    <path d="M 218 296 Q 240 290 256 312 Q 244 328 224 326 Q 206 314 218 296 Z"/>
+  </g>
+
+  <!-- Cyan rim highlight -->
+  <circle cx="256" cy="256" r="124" fill="none" stroke="#7ce8ff" stroke-width="2" opacity="0.7"/>
+
+  <!-- Earth specular highlight -->
+  <ellipse cx="226" cy="222" rx="22" ry="14" fill="#ffffff" opacity="0.18"/>
+</svg>

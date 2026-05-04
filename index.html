@@ -3,9 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>地球防御战</title>
-    <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="src/styles.css?v=20260504-louder1" />
+    <title>地球防御战 · Bright 开荒手作</title>
+    <meta name="description" content="地球防御战 / Earth Defense — Bright 开荒手作。BRIGHT.SUN × DIGIREPUB 出品的环形防御小游戏。" />
+
+    <!-- Favicon + iOS home screen icon -->
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/brand/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/assets/brand/icon-192.png" />
+
+    <!-- WeChat / OG sharing — WeChat reads og:image for the share thumbnail.
+         Absolute URLs are required because WeChat fetches assets out-of-band.
+         Image must be ≤5MB and at least 300×300; 512×512 is the sweet spot. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://spacegame.zeabur.app/" />
+    <meta property="og:title" content="地球防御战 · Bright 开荒手作" />
+    <meta property="og:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
+    <meta property="og:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta itemprop="image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="地球防御战 · Bright 开荒手作" />
+    <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
+    <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
+
+    <link rel="stylesheet" href="src/styles.css?v=20260504-author1" />
   </head>
   <body>
     <main class="shell">
@@ -107,18 +128,18 @@
             <button id="startBtn" type="button" class="title-engage">
               <span class="title-engage-row">
                 <span class="title-engage-marker">▶</span>
-                <span class="title-engage-en">ENGAGE</span>
+                <span class="title-engage-en">开 始 游 戏</span>
               </span>
-              <span class="title-engage-cn">开 始 任 务</span>
+              <span class="title-engage-cn">START</span>
             </button>
 
             <footer class="title-foot">
               <div class="title-foot-line"></div>
               <div class="title-credits">
+                <span class="title-credit-eyebrow">GAME BY · 游戏制作人</span>
                 <span class="title-credit-name title-credit-creator">BRIGHT.SUN</span>
-                <span class="title-credit-name title-credit-studio">DIGIREPUB</span>
+                <span class="title-credit-studio">DIGIREPUB · STUDIO</span>
               </div>
-              <div class="title-foot-tip">tap engage to start</div>
             </footer>
           </div>
         </div>
