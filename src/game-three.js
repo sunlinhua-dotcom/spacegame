@@ -175,6 +175,31 @@ const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
 const ASSET_VERSION = "20260504-techrave2";
 const qaParams = new URLSearchParams(window.location.search);
+
+// ─── Performance tier ─────────────────────────────────────────────────
+// Old iPhones (A10/A11 chips, 2-3 GB RAM) hit WebGL memory ceilings and
+// fragment-shader limits hard. Detect low-end devices and degrade visuals
+// instead of letting the page crash. ?perf=low forces it for testing.
+const _ua = navigator.userAgent || "";
+const _deviceMemory = navigator.deviceMemory || 4; // missing on Safari → assume mid
+const _cores = navigator.hardwareConcurrency || 4;
+const _isOldiOS = /iPhone OS (\d+)_/.test(_ua) && parseInt(RegExp.$1, 10) < 16;
+const PERF_LOW =
+  qaParams.get("perf") === "low" ||
+  _deviceMemory <= 3 ||
+  _cores <= 4 ||
+  _isOldiOS;
+const PERF = {
+  low: PERF_LOW,
+  // DPR cap. 1.0 on low-end halves the pixel count vs DPR=2; even mid-tier
+  // benefits from 1.5 vs 2 with no perceptible quality drop on a 6"+ screen.
+  dprCap: PERF_LOW ? 1 : 1.5,
+  antialias: !PERF_LOW,
+  starCounts: PERF_LOW ? [240, 90, 32] : [620, 220, 80],
+  nebulaCount: PERF_LOW ? 0 : 7,
+  shootingStars: !PERF_LOW,
+};
+if (PERF_LOW) console.log("[perf] low-power tier active", { _deviceMemory, _cores, _isOldiOS });
 const tex = {};
 const iconMap = {
   Gun: "topdown-gun-icon",
@@ -331,9 +356,9 @@ const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, -200, 200);
 camera.position.z = 20;
 
-const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: true, powerPreference: "high-performance" });
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: PERF.antialias, powerPreference: PERF.low ? "default" : "high-performance" });
 renderer.setSize(W, H, false);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, PERF.dprCap));
 renderer.setClearColor(0x02070b, 1);
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1031,6 +1056,7 @@ function spawnShootingStar() {
 
 let _shootingTimer = rand(2.5, 5.5);
 function updateShootingStars(dt) {
+  if (!PERF.shootingStars) return;
   _shootingTimer -= dt;
   if (_shootingTimer <= 0) {
     spawnShootingStar();
@@ -1053,16 +1079,17 @@ function updateShootingStars(dt) {
 
 function createStarField() {
   const group = new THREE.Group();
+  const [c1, c2, c3] = PERF.starCounts;
   // Layer 1: deep distant dim — broad blue-white range
-  group.add(makeStarLayerColored(620, -9, 1.4, 0.62, false, [0.55, 0.72]));
+  group.add(makeStarLayerColored(c1, -9, 1.4, 0.62, false, [0.55, 0.72]));
   // Layer 2: mid — warmer hue spread
-  group.add(makeStarLayerColored(220, -6, 2.4, 0.78, false, [0.45, 0.78]));
+  group.add(makeStarLayerColored(c2, -6, 2.4, 0.78, false, [0.45, 0.78]));
   // Layer 3: near bright twinkle — full color range including occasional reds
-  group.add(makeStarLayerColored(80, -3, 3.6, 0.96, true, [0.0, 0.95]));
+  group.add(makeStarLayerColored(c3, -3, 3.6, 0.96, true, [0.0, 0.95]));
 
-  // Nebula clouds — soft additive color blooms for depth
+  // Nebula clouds — soft additive color blooms for depth (skipped on low-end)
   const nebulaColors = [0x5a78ff, 0x9a5fff, 0xff6aa0, 0x4ad8ff, 0xff8a4a];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < PERF.nebulaCount; i++) {
     const sprite = createSprite(tex.explosionCore, rand(280, 500), rand(280, 500), {
       additive: true,
       opacity: 0.05 + Math.random() * 0.06,
