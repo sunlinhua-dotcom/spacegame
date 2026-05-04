@@ -1,6 +1,12 @@
 # dependencies — reinstall via `npm install`
 node_modules/
 
+# secrets — API keys live here, NEVER commit
+.env
+.env.*
+!.env.example
+.venv-tools/
+
 # source video (25MB, kept locally only)
 *.MOV
 *.mov

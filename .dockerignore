@@ -23,6 +23,8 @@ __pycache__
 Dockerfile
 
 # Source images that get post-processed into final/
+assets/cast/_raw
+assets/enemies/_raw
 assets/generated/individual/raw
 assets/generated/individual/black
 assets/generated/individual/transparent
