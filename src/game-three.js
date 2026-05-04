@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { AudioEngine } from "./audio.js?v=20260504-techrave2";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
+import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260504-rogue1";
+import { HEROES, activeHeroesForStage, getHero, HeroGauges } from "./heroes.js?v=20260504-rogue1";
+import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260504-rogue1";
+import { PROLOGUE, EPILOGUE, getEvent } from "./dialogue.js?v=20260504-rogue1";
 
 /* ═══════════════════════════════════════════════════════════════
    UI References
@@ -52,6 +56,12 @@ const ui = {
   titleProgress: document.getElementById("titleProgress"),
   titleProgressFill: document.getElementById("titleProgressFill"),
   titleProgressLabel: document.getElementById("titleProgressLabel"),
+  // Phase-7 additions:
+  dialogueBox: document.getElementById("dialogueBox"),
+  dialoguePortrait: document.getElementById("dialoguePortraitImg"),
+  dialogueSpeaker: document.getElementById("dialogueSpeaker"),
+  dialogueText: document.getElementById("dialogueText"),
+  ultGauges: document.getElementById("ultGauges"),
   miniBossTag: document.getElementById("miniBossTag"),
   miniBossName: document.getElementById("miniBossName"),
   miniBossHpFill: document.getElementById("miniBossHpFill"),
@@ -349,6 +359,118 @@ audio.onItemQueued = reportAssetQueued;
 audio.onItemDone = reportAssetLoaded;
 audio.preload();
 
+/* ═══════════════════════════════════════════════════════════════
+   Phase-7 Roguelite — persistent progress + dialogue + ult gauges
+   ═══════════════════════════════════════════════════════════════ */
+let progress = loadProgress();
+let activeHeroes = activeHeroesForStage(1); // recomputed when stage advances
+let heroGauges = new HeroGauges(activeHeroes);
+
+// Dialogue queue — plays a list of {speaker, text} lines, auto-advancing on
+// duration timer. Tap-to-skip on the box advances immediately.
+const _dialogueState = { lines: [], idx: 0, timer: 0, lineDuration: 0, onDone: null };
+
+function dialogueShowLine(line) {
+  if (!ui.dialogueBox) return;
+  const speakerHero = HEROES.find((h) => h.id === line.speaker);
+  const speakerLabel = speakerHero ? speakerHero.name :
+    line.speaker === "boss" ? "BOSS" :
+    line.speaker === "narrator" ? "" : line.speaker.toUpperCase();
+  const portraitKey = speakerHero ? speakerHero.portrait :
+    line.speaker === "boss" ? null :
+    null;
+  if (ui.dialogueSpeaker) ui.dialogueSpeaker.textContent = speakerLabel;
+  if (ui.dialogueText) ui.dialogueText.textContent = line.text;
+  if (ui.dialoguePortrait) {
+    if (portraitKey) {
+      ui.dialoguePortrait.src = `assets/cast/${portraitKey}.png?v=${ASSET_VERSION}`;
+      ui.dialoguePortrait.style.visibility = "visible";
+    } else {
+      ui.dialoguePortrait.style.visibility = "hidden";
+    }
+  }
+  ui.dialogueBox.hidden = false;
+  // Restart fade-in animation
+  ui.dialogueBox.style.animation = "none";
+  // eslint-disable-next-line no-unused-expressions
+  ui.dialogueBox.offsetHeight;
+  ui.dialogueBox.style.animation = "";
+}
+
+function dialoguePlay(lines, onDone = null) {
+  if (!lines || !lines.length) { if (onDone) onDone(); return; }
+  _dialogueState.lines = lines.slice();
+  _dialogueState.idx = 0;
+  _dialogueState.timer = 0;
+  _dialogueState.onDone = onDone;
+  _dialogueState.lineDuration = (lines[0].durationMs || 2400) / 1000;
+  dialogueShowLine(lines[0]);
+}
+
+function dialogueAdvance() {
+  _dialogueState.idx += 1;
+  if (_dialogueState.idx >= _dialogueState.lines.length) {
+    if (ui.dialogueBox) ui.dialogueBox.hidden = true;
+    if (_dialogueState.onDone) _dialogueState.onDone();
+    _dialogueState.lines = [];
+    return;
+  }
+  const line = _dialogueState.lines[_dialogueState.idx];
+  _dialogueState.timer = 0;
+  _dialogueState.lineDuration = (line.durationMs || 2400) / 1000;
+  dialogueShowLine(line);
+}
+
+function updateDialogue(dt) {
+  if (!_dialogueState.lines.length) return;
+  _dialogueState.timer += dt;
+  if (_dialogueState.timer >= _dialogueState.lineDuration) {
+    dialogueAdvance();
+  }
+}
+
+if (ui.dialogueBox) {
+  ui.dialogueBox.addEventListener("pointerdown", () => {
+    if (_dialogueState.lines.length) dialogueAdvance();
+  });
+}
+
+// Render the ULT-gauges strip — one slot per active hero.
+function renderUltGauges() {
+  if (!ui.ultGauges) return;
+  const active = activeHeroes;
+  if (!active.length) { ui.ultGauges.hidden = true; return; }
+  ui.ultGauges.hidden = false;
+  // Rebuild on roster change.
+  if (ui.ultGauges.dataset.roster !== active.map((h) => h.id).join(",")) {
+    ui.ultGauges.dataset.roster = active.map((h) => h.id).join(",");
+    ui.ultGauges.innerHTML = "";
+    for (const h of active) {
+      const slot = document.createElement("div");
+      slot.className = "ult-slot";
+      slot.dataset.heroId = h.id;
+      const img = document.createElement("img");
+      img.src = `assets/cast/${h.portrait}.png?v=${ASSET_VERSION}`;
+      img.alt = h.name;
+      const fill = document.createElement("div");
+      fill.className = "ult-slot-fill";
+      slot.appendChild(img);
+      slot.appendChild(fill);
+      ui.ultGauges.appendChild(slot);
+    }
+  }
+  // Per-frame: update fill height + ready flash + active state.
+  for (const slot of ui.ultGauges.children) {
+    const id = slot.dataset.heroId;
+    const ratio = heroGauges.ratioFor(id);
+    const active = heroGauges.isUltActive(id);
+    const fill = slot.querySelector(".ult-slot-fill");
+    if (fill) fill.style.height = `${Math.round(ratio * 100)}%`;
+    slot.classList.toggle("is-ready", ratio >= 1 && !active);
+    slot.classList.toggle("is-active", active);
+  }
+}
+
 const loader = new THREE.TextureLoader(loadingManager);
 const scene = new THREE.Scene();
 // Z range expanded so SphereGeometry-based earth (radius 64 + atmosphere 78)
@@ -482,6 +604,20 @@ const bossConfigs = [
 
 loadTexture("background", "assets/generated/images/earth-defense-background.png");
 loadTexture("earth", `${individualAssetBase}/earth-core.png`);
+
+// Phase-7: hero mecha (top-down) + ULT-active variants + per-hero weapon
+// projectiles. Loaded for all 8 even though stage N only uses N — preload
+// keeps the unlock animation snappy when a new pilot joins the squad.
+for (const h of HEROES) {
+  loadTexture(`td-${h.id}`, `assets/cast/td-${h.id}.png`);
+  loadTexture(`td-${h.id}-ult`, `assets/cast/td-${h.id}-ult.png`);
+  loadTexture(`wp-${h.id}`, `assets/weapons/wp-${h.id}.png`);
+  loadTexture(`wp-${h.id}-ult`, `assets/weapons/wp-${h.id}-ult.png`);
+  // Portrait used by the dialogue box — HTML <img>, not a Three.js texture,
+  // but pre-warm the network cache by image element.
+  const pre = new Image();
+  pre.src = `assets/cast/${h.portrait}.png?v=${ASSET_VERSION}`;
+}
 for (let i = 0; i < 4; i++) loadTexture(`topdownPlane-${i}`, `${individualAssetBase}/topdown-plane-${i}.png`);
 loadTexture("alienSaucer", `${individualAssetBase}/alien-saucer.png`);
 loadTexture("alienMeteor", `${individualAssetBase}/alien-meteor.png`);
@@ -3457,6 +3593,9 @@ function spawnBoss() {
   state.enemies.push(boss);
   state.message = `第 ${state.stageLevel} 关 Boss：${config.name}`;
   showBossBanner(config.name, config.ability);
+  // Phase-7: stage-enter dialogue script (boss arrival + hero quips).
+  const enterLines = getEvent(state.stageLevel, "stage-enter");
+  if (enterLines.length) dialoguePlay(enterLines);
   addPolishEffect("polishBossWeakpointCore", boss.x, boss.y, config.size * 0.62, { life: 0.9, grow: 0.25, spin: 1.2, opacity: 0.96, z: 8.4 });
   addPolishEffect("polishDangerWarningRing", boss.x, boss.y, config.size * 1.6, { life: 1.1, grow: 0.18, spin: -1.0, opacity: 0.62, z: 7.8 });
   addExplosion(boss.x, boss.y, 1.25);
@@ -4108,6 +4247,9 @@ function takeHit(amount) {
 function killEnemy(index) {
   const enemy = state.enemies[index];
   state.kills += 1;
+  // Feed the ULT gauges — tier 0 fodder, 1 mid, 2 elite, 3 mini, 4 boss.
+  const tier = enemy.isBoss ? 4 : enemy.isMiniBoss ? 3 : enemy.isSwarm ? 0 : 1;
+  heroGauges.onKill(tier);
   const reward = enemy.reward ?? 1;
   const moneyEarned = reward * state.moneyMul;
   state.money += moneyEarned;
@@ -4165,6 +4307,11 @@ function completeBoss(enemy) {
     const pos = pointOnCircle(angle, enemy.size * 0.82, enemy);
     addExplosion(pos.x, pos.y, 0.78 + i * 0.04);
   }
+  // Phase-7: boss-defeat dialogue + persistent unlock.
+  const defeatLines = getEvent(state.stageLevel, "boss-defeat");
+  if (defeatLines.length) dialoguePlay(defeatLines);
+  progress = unlockHeroForStage(progress, state.stageLevel);
+  saveProgress(progress);
   if (state.stageLevel >= bossConfigs.length) {
     state.mode = "victory";
     state.message = "十关 Boss 已清除，地球防线胜利";
@@ -4174,6 +4321,9 @@ function completeBoss(enemy) {
   }
   state.stageLevel += 1;
   state.waveIndex = 1;
+  // Refresh active heroes + ult gauges for the new stage.
+  activeHeroes = activeHeroesForStage(state.stageLevel);
+  heroGauges = new HeroGauges(activeHeroes);
   state.message = `第 ${state.stageLevel} 关开始：${bossConfigs[state.stageLevel - 1].name} 正在逼近`;
   showStageThemeBurst(1.05);
   startLevelUp({ source: "boss" });
@@ -4240,6 +4390,19 @@ function frame(now) {
   updateLevelProgress();
   updateBossHud();
   updateMiniBossTag();
+  // Phase-7 hooks
+  updateDialogue(dt);
+  renderUltGauges();
+  // Auto-fire any ULT whose gauge is full + cooldown clear.
+  const fired = heroGauges.consumePending(state.time);
+  for (const heroId of fired) {
+    const hero = getHero(heroId);
+    if (!hero) continue;
+    heroGauges.beginUlt(heroId, hero.ult.durationSec, state.time);
+    audio.boom();
+    state.message = `${hero.name} ULT · ${hero.ult.name}`;
+    updateHud();
+  }
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

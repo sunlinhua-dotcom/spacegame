@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-bossbottom1" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-rogue1" />
   </head>
   <body>
     <main class="shell">
@@ -88,6 +88,23 @@
           <div class="mini-boss-name" id="miniBossName">小 Boss</div>
           <div class="mini-boss-hp"><span id="miniBossHpFill"></span></div>
         </div>
+
+        <!-- Per-stage dialogue overlay; rendered above the playfield, below
+             the modal panels. Auto-advances on a timer + tap-to-skip. -->
+        <div id="dialogueBox" class="dialogue-box" hidden aria-live="polite">
+          <div class="dialogue-portrait">
+            <img id="dialoguePortraitImg" alt="" />
+          </div>
+          <div class="dialogue-body">
+            <div class="dialogue-speaker" id="dialogueSpeaker">BRIGHT</div>
+            <div class="dialogue-text" id="dialogueText">…</div>
+          </div>
+          <div class="dialogue-skip">tap to skip</div>
+        </div>
+
+        <!-- ULT gauges row — one slot per active hero. Hidden until Lia
+             enters the squad in stage 1; grows up to 8 slots by stage 8. -->
+        <div id="ultGauges" class="ult-gauges" hidden></div>
 
         <div id="floaters" class="floaters" aria-hidden="true"></div>
 
@@ -226,6 +243,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-perftier1"></script>
+    <script type="module" src="src/game-three.js?v=20260504-rogue1"></script>
   </body>
 </html>
