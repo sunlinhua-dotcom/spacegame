@@ -114,10 +114,13 @@ export class AudioEngine {
     this.master.gain.value = 0;
     this.musicGain = this.ctx.createGain();
     this.sfxGain = this.ctx.createGain();
-    // Lower music + SFX so dialogue TTS (HTML5 Audio at 1.0) reads clearly.
-    // Was 0.78 / 0.92 — felt washed out vs voice.
-    this.musicGain.gain.value = 0.38;
-    this.sfxGain.gain.value = 0.55;
+    this.voiceDuckGain = this.ctx.createGain();
+    this.voiceDuckGain.gain.value = 1.0;
+    // Music + SFX restored to confidently audible levels. Voice ducking
+    // (musicGain temporarily attenuates while a TTS clip plays) handled
+    // separately in voice-side player.
+    this.musicGain.gain.value = 0.62;
+    this.sfxGain.gain.value = 0.78;
 
     this.musicGain.connect(this.master);
     this.sfxGain.connect(this.master);

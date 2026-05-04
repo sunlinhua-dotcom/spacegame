@@ -397,6 +397,12 @@ function stopVoice() {
   }
 }
 
+function duckMusic(amount) {
+  if (!audio.musicGain || !audio.ctx) return;
+  audio.musicGain.gain.cancelScheduledValues(audio.ctx.currentTime);
+  audio.musicGain.gain.setTargetAtTime(amount, audio.ctx.currentTime, 0.08);
+}
+
 function playLineVoice(sceneKey, idx, speaker, eventName = null, opts = {}) {
   if (!sceneKey) { stopVoice(); return; }
   const idx2 = String(idx).padStart(2, "0");
@@ -408,11 +414,15 @@ function playLineVoice(sceneKey, idx, speaker, eventName = null, opts = {}) {
     _voiceAudio.volume = 1.0;
   }
   try { _voiceAudio.pause(); _voiceAudio.currentTime = 0; } catch (e) { /* ignore */ }
-  // Reset old listener so leftovers from previous line don't fire on new audio.
   _voiceAudio.onended = null;
+  _voiceAudio.onpause = null;
   _voiceAudio.src = path;
   _voiceAudio.playbackRate = opts.rate || 1.0;
-  if (opts.onEnded) _voiceAudio.onended = opts.onEnded;
+  // Duck the music while voice plays so the line reads clearly.
+  duckMusic(0.18);
+  const restore = () => duckMusic(0.62);
+  _voiceAudio.onended = () => { restore(); if (opts.onEnded) opts.onEnded(); };
+  _voiceAudio.onpause = () => { if (_voiceAudio.currentTime >= _voiceAudio.duration - 0.05) restore(); };
   _voiceAudio.play().catch(() => { /* missing file or autoplay blocked — fine */ });
 }
 
@@ -642,52 +652,99 @@ if (ui.heroIntro) {
  *      explosion bursts at each defender's position, and a screen-wide
  *      particle storm in the hero's signature color. Distinct enough
  *      per-hero via color + shape variation. */
+// Fullscreen colored flash plane on the canvas — proves the ULT visually
+// dominated the screen. Lives ~1.2s, fades opacity 0 → 0.55 → 0.
+function spawnUltScreenFlash(colorHex) {
+  const geom = new THREE.PlaneGeometry(W * 1.4, H * 1.4);
+  const mat = new THREE.MeshBasicMaterial({
+    color: colorHex,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    depthTest: false,
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.position.set(0, 0, 9.8);
+  scene.add(mesh);
+  const start = state.time;
+  const flashEntry = { mesh, mat, start, life: 1.2 };
+  _ultFlashes.push(flashEntry);
+}
+
+// Updated each frame — fade in then fade out the flash plane(s).
+const _ultFlashes = [];
+function updateUltFlashes() {
+  for (let i = _ultFlashes.length - 1; i >= 0; i--) {
+    const f = _ultFlashes[i];
+    const t = (state.time - f.start) / f.life;
+    if (t >= 1) {
+      scene.remove(f.mesh);
+      f.mesh.geometry.dispose();
+      f.mat.dispose();
+      _ultFlashes.splice(i, 1);
+      continue;
+    }
+    // Triangle wave: 0 → 0.55 at t=0.18, → 0 at t=1
+    const opacity = t < 0.18 ? (t / 0.18) * 0.55 : (1 - (t - 0.18) / 0.82) * 0.55;
+    f.mat.opacity = Math.max(0, opacity);
+  }
+}
+
 function playUltSceneEffect(hero) {
-  // Color tint applied to all sprites this ULT spawns.
   const tint = hero.color;
 
-  // Big radial pulse from Earth — 3 staggered shockwaves, ~1.6s total.
-  for (let i = 0; i < 3; i++) {
+  // 1. FULLSCREEN COLOR FLASH on the canvas — guaranteed visible.
+  spawnUltScreenFlash(tint);
+
+  // 2. FIVE staggered MASSIVE shockwaves from Earth, each 3-5x earth radius.
+  //    Multiple rings overlapping in hero color so it looks like an
+  //    expanding nuclear bloom across the play area.
+  for (let i = 0; i < 5; i++) {
     setTimeout(() => {
-      addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 1.5, {
-        life: 0.95, grow: 0.55, spin: -1.2, opacity: 0.85, z: 8.6, color: tint,
+      const baseSize = earthRadius * (3.0 + i * 0.6);
+      addPolishEffect("polishDangerWarningRing", C.x, C.y, baseSize, {
+        life: 1.4, grow: 1.1, spin: -1.4, opacity: 0.95, z: 8.6, color: tint,
       });
-      addPolishEffect("polishBossRageAura", C.x, C.y, earthRadius * 2.4, {
-        life: 0.7, grow: 0.42, spin: 1.4, opacity: 0.65, z: 8.4, color: tint,
+      addPolishEffect("polishBossRageAura", C.x, C.y, baseSize * 0.7, {
+        life: 1.1, grow: 0.85, spin: 1.6, opacity: 0.85, z: 8.4, color: tint,
       });
-    }, i * 240);
+    }, i * 160);
   }
 
-  // Screen-wide glitter storm — 28 small flashes scattered behind action.
-  for (let i = 0; i < 28; i++) {
+  // 3. Screen-wide glitter — 50 flashes scattered, longer duration.
+  for (let i = 0; i < 50; i++) {
     setTimeout(() => {
-      const px = rand(-W * 0.42, W * 0.42) + C.x;
-      const py = rand(-H * 0.42, H * 0.42) + C.y;
-      spawnInterceptFlash(px, py, 0.7 + Math.random() * 0.5);
-    }, i * 35);
+      const px = rand(-W * 0.45, W * 0.45) + C.x;
+      const py = rand(-H * 0.45, H * 0.45) + C.y;
+      spawnInterceptFlash(px, py, 0.8 + Math.random() * 0.7);
+    }, i * 25);
   }
 
-  // Explosion at each defender position so the squad visibly "fires" the
-  // ult in unison — gives the player feedback that the team did it.
+  // 4. Per-defender shockwave + explosion in hero color.
   if (state.defenders) {
     for (const def of state.defenders) {
-      addExplosion(def.x, def.y, 1.3);
-      addPolishEffect("polishBossRageAura", def.x, def.y, def.size * 1.6, {
-        life: 0.55, grow: 0.18, spin: 1.0, opacity: 0.9, z: 4.2, color: tint,
+      addExplosion(def.x, def.y, 1.6);
+      addPolishEffect("polishBossRageAura", def.x, def.y, def.size * 2.4, {
+        life: 0.8, grow: 0.42, spin: 1.6, opacity: 0.95, z: 4.2, color: tint,
       });
     }
   }
 
-  // Final central detonation when the burst cycle finishes.
+  // 5. Final earth-shattering central detonation at the end of the burst.
   setTimeout(() => {
-    addExplosion(C.x, C.y, 2.4);
-    triggerScreenShake(0.6, 14);
-  }, 700);
+    addExplosion(C.x, C.y, 4.2);
+    addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 6, {
+      life: 1.0, grow: 0.95, spin: -2.4, opacity: 1.0, z: 9.0, color: tint,
+    });
+    triggerScreenShake(0.95, 22);
+  }, 880);
 
-  // Quick early shake to prime the moment.
-  triggerScreenShake(0.42, 10);
+  // Audio + early shake to prime the moment.
+  triggerScreenShake(0.7, 16);
   audio.boom();
-  setTimeout(() => audio.boom(), 320);
+  setTimeout(() => audio.boom(), 380);
+  setTimeout(() => audio.boom(), 880);
 }
 
 function playUltCinematic(heroId) {
@@ -3957,9 +4014,12 @@ function spawnEnemies(dt) {
       : null;
     const def = bestiaryKind ? ENEMY_TYPES[bestiaryKind] : null;
     const legacyKind = bestiaryKind ? (_bestiaryToLegacyKind[bestiaryKind] || "meteor") : (Math.random() < 0.58 ? "meteor" : Math.random() < 0.55 ? "bolt" : "saucer");
+    // Apply per-stage difficulty curve from balance.js so later stages
+    // ramp meaningfully — enemyHp×, enemySpeed× scale per STAGE_BALANCE.
+    const bal = getStageBalance(state.stageLevel);
     const size = (def?.size ?? rand(28, 48)) * 0.85 + pressure.stage * 6;
-    const speed = (def?.speed ?? rand(30, 56)) * 0.5 + pressure.combined * 34 + state.waveIndex * 0.8;
-    const hp = (def?.hp ?? 1) + Math.floor(pressure.stage * 3.2 + pressure.wave * 2.2);
+    const speed = ((def?.speed ?? rand(30, 56)) * 0.5 + pressure.combined * 34 + state.waveIndex * 0.8) * (bal?.enemySpeed || 1);
+    const hp = ((def?.hp ?? 1) + Math.floor(pressure.stage * 3.2 + pressure.wave * 2.2)) * (bal?.enemyHp || 1);
     const enemy = createRegularEnemy({
       x: pos.x,
       y: pos.y,
@@ -3984,7 +4044,9 @@ function spawnEnemies(dt) {
 function spawnBoss() {
   if (state.boss) return;
   const config = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
-  const maxHp = Math.round(config.maxHp * (1 + state.levelCount * 0.035));
+  const bal = getStageBalance(state.stageLevel);
+  const bossHpMul = bal?.bossHp || 1;
+  const maxHp = Math.round(config.maxHp * (1 + state.levelCount * 0.035) * bossHpMul);
   const pos = pointOnCircle(-Math.PI / 2, 215 + config.level * 3);
   const boss = {
     isBoss: true,
@@ -4359,7 +4421,10 @@ function updateCombat(dt) {
     const orbitY = C.y + sinA * defender.orbit;
     _defenderScratch.x = orbitX;
     _defenderScratch.y = orbitY;
-    const target = nearestEnemy(_defenderScratch, 520);
+    // Hero mech can engage targets ~80% further than the small interceptor —
+    // makes the bigger ship feel more capable + matches their outer orbit.
+    const range = defender.kind === "hero" ? 940 : 520;
+    const target = nearestEnemy(_defenderScratch, range);
     const a = target ? Math.atan2(target.y - orbitY, target.x - orbitX) : defender.angle;
     const launch = Math.min(1, (state.gameTime - defender.born) / 0.5);
     const fromX = C.x + cosA * (earthRadius + 20);
@@ -4367,8 +4432,6 @@ function updateCombat(dt) {
     defender.x = fromX + (orbitX - fromX) * launch;
     defender.y = fromY + (orbitY - fromY) * launch;
     setXY(defender.mesh, defender.x, defender.y, 4);
-    // Hero mech: engine glow points at Earth (sprite up = outward).
-    // Interceptor: face the target enemy like the classic ship behavior.
     if (defender.kind === "hero") {
       const outwardAngle = Math.atan2(defender.y - C.y, defender.x - C.x);
       defender.mesh.material.rotation = outwardAngle - Math.PI / 2;
@@ -4853,6 +4916,7 @@ function frame(now) {
   // Phase-7 hooks
   updatePrologue(dt);
   updateDialogue(dt);
+  updateUltFlashes();
   renderUltGauges();
   // Auto-fire any ULT whose gauge is full + cooldown clear.
   const fired = heroGauges.consumePending(state.time);
