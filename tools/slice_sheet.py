@@ -129,6 +129,13 @@ SLICES = {
         "td-mega-asteroid",
         "td-shadow-apostle",
     ]),
+
+    "yin_sheet": (4, 1, [
+        "yin-portrait",   # close-up head + shoulders
+        "yin-action",     # full-body taunt stance (the "default" hero shot)
+        "yin-action-alt", # side-profile slicing motion
+        "yin-chibi",      # SD-style icon for HUD badge
+    ]),
 }
 
 

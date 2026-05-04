@@ -365,6 +365,58 @@ mecha pilots' neon palette.
 CRITICAL: full body visible head-to-feet, NO weapons aimed at the
 viewer, NO mecha armor, NO gun. He is a CHEF, not a pilot.
 Pure clean backdrop, no UI elements, no text, no panel borders.""",
+
+    "yin_sheet": """A 1792x1024 character sheet of 殷师傅 (Master Yin), an
+ORIGINAL side-character for a sci-fi space defense game. ONE
+character across FOUR panels in a strict 4-column x 1-row grid
+(each panel exactly 448x1024 px, separated by thin dark gutters).
+SAME PERSON in every panel — must be recognizable as the same
+individual across all four.
+
+Subject: Chinese male sushi chef, mid-40s, chubby friendly build,
+short black flat-top haircut (平头, military cut). Square kind face,
+warm smile. Wearing traditional Japanese black sushi-chef sakumue
+(作務衣) — black short-sleeve cross-front jacket with white cloth
+ties at the waist, wide cuffs. A small embroidered swallow bird
+patch (silver/white songbird) sits over his LEFT CHEST, visible
+and crisp in every panel. Black wide cropped trousers, dark
+zōri sandals.
+
+Panel 1 (LEFT) — close-up head & shoulders PORTRAIT, 3/4 angle,
+warm gentle smile, eyes slightly crinkled, looking off-camera
+right. Painterly Korean MMO splash style. Tight crop on the face,
+head fills the panel.
+
+Panel 2 — FULL BODY taunt stance, facing the viewer head-on. Right
+hand holding a long sushi knife loosely pointed downward (resting,
+not threatening). Left hand raised palm-up at chest height in a
+calm "please come" gesture. Confident peaceful presence — the
+defining hero pose.
+
+Panel 3 — FULL BODY action moment, side-on profile facing right.
+Knife held forward in a precise slicing motion, body slightly
+crouched, wind catching the loose sleeves of his jacket. Still
+calm-faced; this is a chef's controlled action, not anger.
+
+Panel 4 (RIGHT) — CHIBI / SD-style icon shot, the same character
+rendered as a small cute mascot. Round body proportions (head ~ 1/2
+total height), big friendly eyes, holding the knife playfully.
+Suitable for a small HUD badge. Same outfit + bird patch.
+
+Backdrop for ALL four panels: deep dark navy gradient with soft
+warm orange paper-lantern glow behind him (suggests izakaya
+counter), no specific furniture, no text. Soft golden rim light.
+Match the warm earth-tone palette (black uniform, amber lantern,
+soft skin tone) — distinct from the neon mecha pilots.
+
+Style: Korean MMORPG splash art, NIKKE / Lost Ark aesthetic. Anime
+semi-realistic, painterly linework, dramatic studio lighting,
+sharp focus on the face. Same character across all four panels.
+
+CRITICAL: 4-column 1-row grid, panels evenly sized, NO panel
+labels, NO text. Each panel is independently sliceable. Do NOT
+merge panels. The bird-patch on the chest is consistent across
+panels 1-3 (clearly visible). NO mecha armor, NO gun.""",
 }
 
 

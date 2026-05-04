@@ -244,7 +244,15 @@ export const MASTER_YIN = {
   name: "殷师傅",
   fullName: "殷师傅 · 居酒屋客座助阵",
   country: "CN",
-  portrait: "yin-master",
+  // Multiple angles, same character. Wire each into a different UI surface:
+  //   portrait     — close-up head & shoulders, used in dialogue / cards
+  //   action       — full-body taunt stance, used in the unlock cinematic
+  //   actionAlt    — side-profile slicing motion, reserved for future scenes
+  //   chibi        — SD-style icon, used in the HUD badge
+  portrait: "yin-portrait",
+  actionPortrait: "yin-action",
+  actionAlt: "yin-action-alt",
+  chibi: "yin-chibi",
   // 0.78 = 22% slow. Strong enough to feel a difference on stage 2+
   // (where enemies start moving fast), gentle enough not to break
   // the mid-stage power curve.

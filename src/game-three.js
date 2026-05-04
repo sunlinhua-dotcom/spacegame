@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy3";
+const ASSET_VERSION = "20260504-juicy4";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -463,7 +463,9 @@ function playLineVoice(sceneKey, idx, speaker, eventName = null, opts = {}) {
 function dialogueShowLine(line) {
   if (!ui.dialogueBox) return;
   const speakerHero = HEROES.find((h) => h.id === line.speaker);
+  const isYin = line.speaker === MASTER_YIN.id;
   const speakerLabel = speakerHero ? speakerHero.name :
+    isYin ? MASTER_YIN.name :
     line.speaker === "boss" ? "BOSS" :
     line.speaker === "narrator" ? "" : line.speaker.toUpperCase();
   // Portrait resolution: hero → cast/{portrait}.png; boss → current
@@ -471,6 +473,8 @@ function dialogueShowLine(line) {
   let portraitSrc = null;
   if (speakerHero) {
     portraitSrc = `assets/cast/${speakerHero.portrait}.png?v=${ASSET_VERSION}`;
+  } else if (isYin) {
+    portraitSrc = `assets/cast/${MASTER_YIN.portrait}.png?v=${ASSET_VERSION}`;
   } else if (line.speaker === "boss") {
     const bossConfig = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
     if (bossConfig) {
