@@ -397,7 +397,7 @@ function stopVoice() {
   }
 }
 
-function playLineVoice(sceneKey, idx, speaker, eventName = null) {
+function playLineVoice(sceneKey, idx, speaker, eventName = null, opts = {}) {
   if (!sceneKey) { stopVoice(); return; }
   const idx2 = String(idx).padStart(2, "0");
   const fname = eventName ? `${eventName}-${idx2}-${speaker}.mp3` : `${idx2}-${speaker}.mp3`;
@@ -408,7 +408,11 @@ function playLineVoice(sceneKey, idx, speaker, eventName = null) {
     _voiceAudio.volume = 1.0;
   }
   try { _voiceAudio.pause(); _voiceAudio.currentTime = 0; } catch (e) { /* ignore */ }
+  // Reset old listener so leftovers from previous line don't fire on new audio.
+  _voiceAudio.onended = null;
   _voiceAudio.src = path;
+  _voiceAudio.playbackRate = opts.rate || 1.0;
+  if (opts.onEnded) _voiceAudio.onended = opts.onEnded;
   _voiceAudio.play().catch(() => { /* missing file or autoplay blocked — fine */ });
 }
 
@@ -520,8 +524,14 @@ function showPrologueLine(line) {
     const pct = ((_prologueState.idx + 1) / _prologueState.lines.length) * 100;
     ui.prologueProgressFill.style.width = `${pct}%`;
   }
-  // Voice playback for prologue lines (assets/voice/prologue/00-narrator.mp3 …)
-  playLineVoice("prologue", _prologueState.idx, line.speaker);
+  // Voice playback at 1.35x — auto-advance to next line when audio finishes.
+  playLineVoice("prologue", _prologueState.idx, line.speaker, null, {
+    rate: 1.35,
+    onEnded: () => {
+      // Only advance if we're still on the same line (player didn't tap-skip).
+      if (_prologueState.lines.length) prologueAdvance();
+    },
+  });
 }
 
 function playPrologue(lines, onDone) {
@@ -3582,68 +3592,107 @@ function triggerUpgradeShowcase(upgrade) {
    Defenders
    ═══════════════════════════════════════════════════════════════ */
 function rebuildDefenders() {
-  // Each active hero contributes 1 base defender; gunLevel adds duplicates.
-  // So Stage 1 (Lia only) starts with 1 Lia mech, gunLevel up = +1 Lia, etc.
-  // Stage 2+ rotates Lia / Devi / ... so each hero gets equal screen presence.
+  // Two defender tiers visible together:
+  //   Heroes — exactly ONE per active hero (Lia, then Lia+Devi, ...). They
+  //            are the cinematic stars: large td-{name} sprite, outer orbit
+  //            ring 220-290, ULT-swap to ult sprite while ult is active.
+  //   Interceptors — small swarm planes that scale with gunLevel (the
+  //                  classic upgrade card driver). 3 per gunLevel, capped
+  //                  at 24, inner orbit 148-205, cycle through the legacy
+  //                  charPlaneBlue/Gold/Laser sprites for shooting volume.
   const heroes = activeHeroes.length ? activeHeroes : [HEROES[0]];
-  const target = Math.min(24, Math.max(heroes.length, state.gunLevel * heroes.length));
-  // Defender size — heroes feel like companions orbiting Earth, not main
-  // visual anchors. Big enough to read silhouette + signature color, small
-  // enough not to overlap Earth or each other.
-  const size = Math.min(110, 76 + state.gunLevel * 2.6);
-  // Ambient halo unlocks once player has 5+ upgrades — visible "buffed" state.
+  const heroTarget = heroes.length;
+  const interceptorTarget = Math.min(24, Math.max(0, state.gunLevel * 3));
+  const heroSize = Math.min(110, 76 + state.gunLevel * 2.6);
+  const interceptorSize = Math.min(72, 46 + state.gunLevel * 1.6);
   const useHalo = state.levelCount >= 5;
-  const heroAspect = 414 / 474; // td-{hero}.png native aspect
+  const heroAspect = 414 / 474;
 
-  while (state.defenders.length < target) {
-    const index = state.defenders.length;
-    const hero = heroes[index % heroes.length];
-    const texKey = `td-${hero.id}`;
-    const baseSprite = makeSprite(tex[texKey], size * heroAspect, size, { opacity: 0.98 });
-    let halo = null;
-    if (useHalo) {
-      halo = makeSprite(tex.explosionCore, size * 1.5, size * 1.5, { additive: true, opacity: 0.22, color: hero.color });
-      halo.position.z = 3.9;
+  // Step 1: rebuild HERO defenders (one per hero, in unlock order).
+  // Drop any pre-existing hero defenders that no longer match (e.g. roster
+  // changed when a stage was cleared).
+  const aliveHeroes = state.defenders.filter((d) => d.kind === "hero" && heroes.some((h) => h.id === d.heroId));
+  for (const d of state.defenders) {
+    if (d.kind === "hero" && !aliveHeroes.includes(d)) {
+      disposeObject(d.mesh);
+      if (d.halo) disposeObject(d.halo);
     }
-    state.defenders.push({
+  }
+  const heroDefs = aliveHeroes;
+  for (const hero of heroes) {
+    if (heroDefs.some((d) => d.heroId === hero.id)) continue;
+    const texKey = `td-${hero.id}`;
+    const idx = heroDefs.length;
+    const baseSprite = makeSprite(tex[texKey], heroSize * heroAspect, heroSize, { opacity: 0.98 });
+    const halo = useHalo ? makeSprite(tex.explosionCore, heroSize * 1.5, heroSize * 1.5, { additive: true, opacity: 0.22, color: hero.color }) : null;
+    if (halo) halo.position.z = 3.9;
+    heroDefs.push({
+      kind: "hero",
       heroId: hero.id,
-      heroIdx: index % heroes.length,
-      angle: (Math.PI * 2 * index) / Math.max(1, target),
-      // Hero mech orbits FURTHER from Earth than the regular interceptors —
-      // gives a clear visual hierarchy: Earth at center, hero squadron in
-      // an outer protective ring, swarm enemies converging from beyond.
-      orbit: rand(220, 290),
+      heroIdx: idx,
+      angle: (Math.PI * 2 * idx) / Math.max(1, heroTarget),
+      orbit: rand(228, 282),
       cooldown: rand(0.05, 0.45),
       born: state.gameTime,
       mesh: baseSprite,
       halo,
-      size,
-      texKey,         // track current sprite so ULT-swap is detectable
+      size: heroSize,
+      texKey,
       ultTexKey: `td-${hero.id}-ult`,
       heroColor: hero.color,
     });
   }
-  while (state.defenders.length > target) {
-    const old = state.defenders.pop();
+
+  // Step 2: rebuild INTERCEPTOR defenders (small classic planes).
+  const interceptorDefs = state.defenders.filter((d) => d.kind === "interceptor");
+  while (interceptorDefs.length < interceptorTarget) {
+    const idx = interceptorDefs.length;
+    const baseSprite = makeSprite(tex[planeTextureKeys[idx % planeTextureKeys.length]], interceptorSize, interceptorSize, { opacity: 0.95 });
+    const halo = useHalo ? makeSprite(tex.explosionCore, interceptorSize * 1.6, interceptorSize * 1.6, { additive: true, opacity: 0.16, color: 0x9bf7ff }) : null;
+    if (halo) halo.position.z = 3.9;
+    interceptorDefs.push({
+      kind: "interceptor",
+      angle: (Math.PI * 2 * idx) / Math.max(1, interceptorTarget),
+      orbit: rand(150, 196),
+      cooldown: rand(0.05, 0.45),
+      born: state.gameTime,
+      mesh: baseSprite,
+      halo,
+      size: interceptorSize,
+    });
+  }
+  while (interceptorDefs.length > interceptorTarget) {
+    const old = interceptorDefs.pop();
     disposeObject(old.mesh);
     if (old.halo) disposeObject(old.halo);
   }
-  // Existing defenders also resize / regrow halo when gunLevel changes, and
-  // hot-swap the sprite to ULT variant if the hero's gauge is active.
+
+  // Replace the master list — heroes first, then swarm.
+  state.defenders = [...heroDefs, ...interceptorDefs];
+
+  // Per-frame visual sync: hot-swap sprite to ULT-active variant; resize
+  // existing meshes if gunLevel changed.
   for (const def of state.defenders) {
-    if (def.size !== size) {
-      def.mesh.scale.set(size * heroAspect, size, 1);
-      def.size = size;
-    }
-    const wantsUlt = heroGauges.isUltActive(def.heroId);
-    const wantedKey = wantsUlt ? def.ultTexKey : `td-${def.heroId}`;
-    if (def.texKey !== wantedKey) {
-      def.mesh.material.map = tex[wantedKey];
-      def.mesh.material.needsUpdate = true;
-      def.texKey = wantedKey;
+    if (def.kind === "hero") {
+      if (def.size !== heroSize) {
+        def.mesh.scale.set(heroSize * heroAspect, heroSize, 1);
+        def.size = heroSize;
+      }
+      const wantsUlt = heroGauges.isUltActive(def.heroId);
+      const wantedKey = wantsUlt ? def.ultTexKey : `td-${def.heroId}`;
+      if (def.texKey !== wantedKey) {
+        def.mesh.material.map = tex[wantedKey];
+        def.mesh.material.needsUpdate = true;
+        def.texKey = wantedKey;
+      }
+    } else if (def.size !== interceptorSize) {
+      def.mesh.scale.set(interceptorSize, interceptorSize, 1);
+      def.size = interceptorSize;
     }
     if (useHalo && !def.halo) {
-      def.halo = makeSprite(tex.explosionCore, size * 1.5, size * 1.5, { additive: true, opacity: 0.22, color: def.heroColor });
+      const sz = def.kind === "hero" ? def.size * 1.5 : def.size * 1.6;
+      const color = def.kind === "hero" ? def.heroColor : 0x9bf7ff;
+      def.halo = makeSprite(tex.explosionCore, sz, sz, { additive: true, opacity: def.kind === "hero" ? 0.22 : 0.16, color });
       def.halo.position.z = 3.9;
     }
   }
@@ -4318,11 +4367,14 @@ function updateCombat(dt) {
     defender.x = fromX + (orbitX - fromX) * launch;
     defender.y = fromY + (orbitY - fromY) * launch;
     setXY(defender.mesh, defender.x, defender.y, 4);
-    // Engine glow always points at Earth — i.e. sprite "up" points outward.
-    // The td-{hero}.png art has nose UP / engine DOWN, so this is just
-    // outward angle - π/2 (THREE.Sprite up at rotation 0 = +Y in world).
-    const outwardAngle = Math.atan2(defender.y - C.y, defender.x - C.x);
-    defender.mesh.material.rotation = outwardAngle - Math.PI / 2;
+    // Hero mech: engine glow points at Earth (sprite up = outward).
+    // Interceptor: face the target enemy like the classic ship behavior.
+    if (defender.kind === "hero") {
+      const outwardAngle = Math.atan2(defender.y - C.y, defender.x - C.x);
+      defender.mesh.material.rotation = outwardAngle - Math.PI / 2;
+    } else {
+      defender.mesh.material.rotation = -a + Math.PI / 2;
+    }
     if (defender.halo) {
       setXY(defender.halo, defender.x, defender.y, 3.9);
       defender.halo.material.opacity = 0.16 + Math.sin(state.time * 4 + defender.angle) * 0.06;

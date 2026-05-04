@@ -596,120 +596,101 @@ canvas {
  * ULT name slams across the screen in their signature color, plus a
  * radial flash + screen shake. ~1.4s total, then fades out and gameplay
  * continues. Z-index sits below modal panels but above gauges/dialogue. */
+/* ULT cinematic — slim BOTTOM banner so the Three.js scene burst on the
+ * canvas (radial shockwaves + glitter + per-defender explosion) is the
+ * star, not a giant card blocking gameplay. The banner is just a label
+ * "Lia · 巨陨炎涌" that pops in for ~1.4 s next to the controls. */
 .ult-cinematic {
   position: absolute;
-  inset: 0;
   z-index: 9;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 168px);
   pointer-events: none;
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
   animation: ultCinematicShake 1.4s cubic-bezier(0.22, 0.85, 0.32, 1);
 }
 .ult-cinematic[hidden] { display: none; }
 
 @keyframes ultCinematicShake {
-  0%   { transform: translate(0, 0); }
-  10%  { transform: translate(-3px, 2px); }
-  20%  { transform: translate(2px, -3px); }
-  30%  { transform: translate(-2px, 1px); }
-  40%  { transform: translate(2px, 2px); }
-  100% { transform: translate(0, 0); }
+  0%, 100% { transform: translate(0, 0); }
+  10%      { transform: translate(-2px, 1px); }
+  20%      { transform: translate(2px, -1px); }
+  30%      { transform: translate(-1px, 1px); }
 }
 
-.ult-cinematic-flash {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 50%,
-    var(--ult-color, rgba(255, 209, 102, 0.85)) 0%,
-    var(--ult-color, rgba(255, 209, 102, 0.45)) 30%,
-    transparent 70%);
-  mix-blend-mode: screen;
-  animation: ultCinematicFlash 1.4s ease-out;
-}
-
-@keyframes ultCinematicFlash {
-  0%   { opacity: 0; transform: scale(0.4); }
-  15%  { opacity: 1; transform: scale(1.0); }
-  35%  { opacity: 0.85; transform: scale(1.05); }
-  100% { opacity: 0; transform: scale(1.2); }
-}
+/* Hide the old full-screen flash — the canvas-side burst (Three.js
+ * shockwaves) is doing the visual heavy lift now. */
+.ult-cinematic-flash { display: none; }
 
 .ult-cinematic-frame {
   position: relative;
-  display: grid;
-  grid-template-columns: 168px 1fr;
-  gap: 22px;
+  display: inline-flex;
   align-items: center;
-  padding: 20px 28px 22px 22px;
-  background: linear-gradient(120deg, rgba(2, 6, 14, 0.86) 0%, rgba(20, 8, 36, 0.94) 100%);
-  border: 2px solid var(--ult-color, rgba(255, 209, 102, 0.95));
-  box-shadow: 0 0 60px var(--ult-color, rgba(255, 209, 102, 0.6)), inset 0 0 40px var(--ult-color, rgba(255, 209, 102, 0.2));
-  clip-path: polygon(20px 0%, 100% 0%, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0% 100%, 0% 20px);
+  gap: 12px;
+  padding: 8px 18px 9px;
+  background: linear-gradient(120deg, rgba(2, 6, 14, 0.92) 0%, rgba(20, 8, 36, 0.96) 100%);
+  border: 1.5px solid var(--ult-color, rgba(255, 209, 102, 0.95));
+  border-radius: 999px;
+  box-shadow: 0 0 32px var(--ult-color, rgba(255, 209, 102, 0.6));
   animation: ultCinematicFrame 1.4s cubic-bezier(0.22, 0.85, 0.32, 1);
 }
 
 @keyframes ultCinematicFrame {
-  0%   { opacity: 0; transform: translateY(40px) scale(0.86); }
-  18%  { opacity: 1; transform: translateY(0) scale(1.04); }
-  30%  { transform: translateY(0) scale(1.0); }
+  0%   { opacity: 0; transform: translateY(20px) scale(0.85); }
+  18%  { opacity: 1; transform: translateY(0) scale(1.0); }
   85%  { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  100% { opacity: 0; transform: translateY(-6px) scale(0.96); }
 }
 
+/* Compact circle portrait beside the name (was a big 168 px panel). */
 .ult-cinematic-frame img {
-  width: 168px;
-  height: 200px;
+  width: 32px;
+  height: 32px;
   object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 0 24px var(--ult-color, rgba(255, 209, 102, 0.6));
+  border-radius: 50%;
+  border: 1px solid var(--ult-color, rgba(255, 209, 102, 0.7));
+  box-shadow: 0 0 12px var(--ult-color, rgba(255, 209, 102, 0.6));
 }
 
 .ult-cinematic-text {
-  display: grid;
-  gap: 6px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
   text-align: left;
-  min-width: 0;
 }
 
 .ult-cinematic-eyebrow {
-  font-family: "SF Mono", monospace;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
+  display: none; /* slim banner — eyebrow folded into the inline name line */
 }
 
 .ult-cinematic-name {
-  font-size: clamp(28px, 7vw, 44px);
+  font-size: clamp(15px, 4.4vw, 20px);
   font-weight: 900;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: var(--ult-color, #ffd166);
-  text-shadow: 0 0 22px var(--ult-color, rgba(255, 209, 102, 0.7));
+  text-shadow: 0 0 14px var(--ult-color, rgba(255, 209, 102, 0.7));
   line-height: 1.1;
 }
 
 .ult-cinematic-hero {
   font-family: "SF Mono", monospace;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.38em;
-  text-indent: 0.38em;
-  color: rgba(255, 255, 255, 0.78);
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-/* Mobile compact */
 @media (max-width: 410px) {
   .ult-cinematic-frame {
-    grid-template-columns: 120px 1fr;
-    gap: 14px;
-    padding: 14px 18px 16px 16px;
-    width: min(86%, 360px);
+    padding: 7px 14px 8px;
+    gap: 10px;
   }
-  .ult-cinematic-frame img { width: 120px; height: 144px; }
-  .ult-cinematic-name { font-size: clamp(22px, 7.5vw, 32px); }
-  .ult-cinematic-hero { font-size: 10px; letter-spacing: 0.3em; }
+  .ult-cinematic-frame img { width: 28px; height: 28px; }
+  .ult-cinematic-name { font-size: clamp(13px, 4.2vw, 17px); }
+  .ult-cinematic-hero { font-size: 9px; letter-spacing: 0.26em; }
   .prologue-text { font-size: clamp(18px, 5vw, 24px); }
 }
 
