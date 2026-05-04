@@ -1,4 +1,8 @@
-const SAMPLE_VERSION = "20260504-mixkit-premium1";
+const SAMPLE_VERSION = "20260504-louder1";
+
+// Master audible target. 0.5 leaves headroom for the compressor while staying
+// loud enough to be heard on a phone speaker in a noisy room.
+const MASTER_AUDIBLE = 0.5;
 
 const SAMPLE_PATHS = {
   music: [
@@ -69,9 +73,25 @@ export class AudioEngine {
 
   async start() {
     if (!this.ctx) this.createContext();
+    // iOS WKWebView quirk: kicking a 1-frame silent BufferSource synchronously
+    // inside the user gesture forces the iOS audio engine to fully wake up.
+    // Without this, ctx.resume() can transition to "running" while the speaker
+    // output silently stays muted.
+    try {
+      const silent = this.ctx.createBuffer(1, 1, 22050);
+      const src = this.ctx.createBufferSource();
+      src.buffer = silent;
+      src.connect(this.ctx.destination);
+      src.start(0);
+    } catch (e) { /* legacy webkit can throw; safe to ignore */ }
+
     if (this.ctx.state === "suspended") await this.ctx.resume();
+    // Use direct setValueAtTime instead of setTargetAtTime — the latter takes
+    // a few frames to ramp up and can leave the gain mid-transition (=quiet)
+    // if iOS suspends the ctx during the ramp.
+    this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.master.gain.setValueAtTime(MASTER_AUDIBLE, this.ctx.currentTime);
     this.enabled = true;
-    this.master.gain.setTargetAtTime(0.34, this.ctx.currentTime, 0.08);
     await this.loadSamples();
     if (!this.started) {
       this.started = true;
@@ -84,18 +104,18 @@ export class AudioEngine {
     this.ctx = new Context();
 
     const compressor = this.ctx.createDynamicsCompressor();
-    compressor.threshold.value = -16;
-    compressor.knee.value = 20;
-    compressor.ratio.value = 7;
+    compressor.threshold.value = -10;
+    compressor.knee.value = 18;
+    compressor.ratio.value = 6;
     compressor.attack.value = 0.004;
     compressor.release.value = 0.22;
 
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0.0001;
+    this.master.gain.value = 0;
     this.musicGain = this.ctx.createGain();
     this.sfxGain = this.ctx.createGain();
-    this.musicGain.gain.value = 0.58;
-    this.sfxGain.gain.value = 0.72;
+    this.musicGain.gain.value = 0.78;
+    this.sfxGain.gain.value = 0.92;
 
     this.musicGain.connect(this.master);
     this.sfxGain.connect(this.master);
@@ -127,7 +147,8 @@ export class AudioEngine {
   setEnabled(value) {
     this.enabled = value;
     if (!this.ctx || !this.master) return;
-    this.master.gain.setTargetAtTime(value ? 0.34 : 0.0001, this.ctx.currentTime, 0.08);
+    this.master.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.master.gain.setValueAtTime(value ? MASTER_AUDIBLE : 0, this.ctx.currentTime);
   }
 
   playSample(name, options = {}) {
