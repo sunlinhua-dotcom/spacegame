@@ -1,4 +1,4 @@
-const SAMPLE_VERSION = "20260504-louder1";
+const SAMPLE_VERSION = "20260504-techrave2";
 
 // Master audible target. 0.5 leaves headroom for the compressor while staying
 // loud enough to be heard on a phone speaker in a noisy room.
@@ -6,9 +6,9 @@ const MASTER_AUDIBLE = 0.5;
 
 const SAMPLE_PATHS = {
   music: [
-    "assets/audio/cc0-techno/tech-rave.wav",
-    "assets/audio/cc0-techno/techno-5.mp3",
-    "assets/audio/cc0-techno/space-flight.mp3"
+    // Single track — author wants tech-rave as the default; mp3 (1.4MB) loads
+    // ~8x faster than the original wav (11MB).
+    "assets/audio/cc0-techno/tech-rave.mp3"
   ],
   fire: [
     "assets/audio/mixkit-premium/fire-1.mp3",

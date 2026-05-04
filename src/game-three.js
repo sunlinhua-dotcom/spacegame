@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { AudioEngine } from "./audio.js?v=20260504-louder1";
+import { AudioEngine } from "./audio.js?v=20260504-techrave2";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -170,7 +170,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260503-polish-runtime1";
+const ASSET_VERSION = "20260504-techrave2";
 const qaParams = new URLSearchParams(window.location.search);
 const tex = {};
 const iconMap = {
