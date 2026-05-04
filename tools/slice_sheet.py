@@ -76,6 +76,39 @@ SLICES = {
         "td-devi",
     ]),
 
+    "hero_ult": (4, 2, [
+        "td-bright-ult",
+        "td-sakura-ult",
+        "td-rin-ult",
+        "td-yue-ult",
+        "td-aria-ult",
+        "td-lia-ult",
+        "td-ade-ult",
+        "td-devi-ult",
+    ]),
+
+    "enemy_alt_frames": (4, 3, [
+        "td-magma-worm-alt",
+        "td-magma-worm-b",   # actually frame B; "alt" is A above, so naming below
+        "td-magma-spider-alt",
+        "td-magma-spider-b",
+        "td-bio-beetle-alt",
+        "td-bio-beetle-b",
+        "td-storm-wraith-alt",
+        "td-storm-wraith-b",
+        "td-hook-reaper-alt",
+        "td-hook-reaper-b",
+        "td-mega-asteroid-alt",
+        "td-mega-asteroid-b",
+    ]),
+
+    "weapons": (4, 4, [
+        "wp-sakura",       "wp-rin",       "wp-yue",       "wp-aria",
+        "wp-lia",          "wp-ade",       "wp-devi",      "wp-bright",
+        "wp-sakura-ult",   "wp-rin-ult",   "wp-yue-ult",   "wp-aria-ult",
+        "wp-lia-ult",      "wp-ade-ult",   "wp-devi-ult",  "wp-bright-ult",
+    ]),
+
     "enemy_topdown": (5, 3, [
         # Row 1: fodder
         "td-crystal-stalker",

@@ -233,6 +233,100 @@ Row 3 — elite + mini-boss (5 panels):
 
 CRITICAL: every creature faces DOWN. Top-down view, NOT 3/4. 5x3
 grid, even cells, pure black backdrops. No text labels.""",
+
+    "hero_ult": """A 1792x1024 top-down sprite sheet of 8 sci-fi mecha pilot ships
+in their ULTIMATE-ACTIVATED state, viewed from directly overhead
+(orthographic top-down camera). 8 panels in a strict 4-column x 2-row
+grid (each panel exactly 448x512 px, separated by thin dark gutters).
+Each panel one mech sprite on pure black backdrop.
+
+Same 8 mechs as the prior hero_topdown sheet, but now intensely
+glowing in their signature color, weapons fully extended/charged,
+energy halo visibly building around the cockpit, additional thrust
+nozzles flared, cracks of bright energy bleeding through the armor
+plates. Same orientation: nose UP, engine glow DOWN.
+
+Row 1: BRIGHT (white-violet halo flooding from indigo mech),
+       Sakura (electric pink corona, twin needle barrels charged),
+       Rin (frigid white-blue freeze halo, rail-gun glowing),
+       Yue (crimson flame-petal aura, twin moon blades flaring).
+
+Row 2: Aria (magenta sonic ring expanding), Lia (firestorm orange
+       plumes shooting from vents), Ade (gold solar flare exploding
+       around dome turret), Devi (violet bio-tendrils swirling
+       outward).
+
+CRITICAL: top-down only, 4x2 grid, pure black backdrops, each mech
+clearly recognizable as the same character from hero_topdown but in
+peak ULT activation. No text.""",
+
+    "enemy_alt_frames": """A 1792x1024 sprite sheet of organic enemies in alternate
+animation frames for use as a 2-frame loop, viewed top-down. 12 panels
+in a strict 4-column x 3-row grid (each panel exactly 448x341 px,
+separated by thin dark gutters). Each panel one creature on pure
+black backdrop with thin signature-color rim.
+
+Each pair of consecutive panels (P1+P2, P3+P4, ...) shows the SAME
+creature in two slightly different animation positions — limbs/wings
+shifted, body undulating — so the engine can flip between them at
+~6 fps for an organic motion loop.
+
+Row 1 (4 panels = 2 creatures, 2 frames each):
+  P1 Magma Worm — frame A, body curled left, segments visible.
+  P2 Magma Worm — frame B, body curled right, mirrored undulation.
+  P3 Magma Spider — frame A, legs spread wide.
+  P4 Magma Spider — frame B, legs slightly retracted, alternate.
+
+Row 2 (4 panels):
+  P5 Bio Beetle — frame A, mandibles open, wings tucked.
+  P6 Bio Beetle — frame B, mandibles closed, wings half-spread.
+  P7 Storm Wraith — frame A, lightning arcs LEFT.
+  P8 Storm Wraith — frame B, lightning arcs RIGHT, body shifted.
+
+Row 3 (4 panels):
+  P9 Hook Reaper — frame A, scythe hooks raised.
+  P10 Hook Reaper — frame B, scythe hooks lowered, ready to strike.
+  P11 Mega Asteroid — frame A, lava cracks dim.
+  P12 Mega Asteroid — frame B, lava cracks bright + flame plume.
+
+CRITICAL: 4x3 grid, pure black backdrops, top-down view. Each pair of
+adjacent panels shows the SAME creature in subtly different poses for
+animation. Match the visual style from prior enemy_topdown sheet.""",
+
+    "weapons": """A 1792x1024 sprite sheet of 16 sci-fi weapon projectiles for a
+top-down space shooter, viewed from directly overhead. 16 panels in a
+strict 4-column x 4-row grid (each panel exactly 448x256 px, separated
+by thin dark gutters). Each panel one projectile on pure black
+backdrop with thin signature-color rim. Each projectile drawn pointing
+UP toward the top of its panel (so the engine can rotate it at runtime).
+
+Row 1 — Sakura, Rin, Yue, Aria primary attacks:
+  P1 Sakura — pink electric needle bolt, jagged lightning trail.
+  P2 Rin — cyan railgun slug, long spike with frost halo.
+  P3 Yue — crimson moon-blade arc projectile.
+  P4 Aria — magenta wind-blade boomerang.
+
+Row 2 — Lia, Ade, Devi, BRIGHT primary attacks:
+  P5 Lia — orange flame missile with trailing ember tail.
+  P6 Ade — gold heavy-shell round with star burst around it.
+  P7 Devi — violet bio-toxin orb with green smoke trail.
+  P8 BRIGHT — indigo + white twin-beam shaft.
+
+Row 3 — ULT-mode projectiles (4 example heroes, more spectacular):
+  P9 Sakura ULT — full-frame pink lightning storm.
+  P10 Rin ULT — triple cyan rail-laser column.
+  P11 Yue ULT — crescent fan-blade barrage (3 blades nested).
+  P12 Aria ULT — magenta sonic shockwave ring.
+
+Row 4 — More ULT projectiles + alt:
+  P13 Lia ULT — orange firestorm bomb with shockwave.
+  P14 Ade ULT — gold solar flare explosion.
+  P15 Devi ULT — violet poison cloud sphere.
+  P16 BRIGHT ULT — pure white-indigo solar lance, blinding core.
+
+CRITICAL: top-down view, every projectile points UP, 4x4 even grid,
+pure black backdrops. Vivid signature colors, each easily readable
+at small sprite size.""",
 }
 
 
