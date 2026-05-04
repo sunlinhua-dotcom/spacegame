@@ -1,18 +1,62 @@
-node_modules
+# Pure dev-time artifacts — not referenced by index.html / src/, so don't
+# ship them in the nginx container. Runtime asset list lives in src/ under
+# loadTexture() / SAMPLE_PATHS; anything outside those paths is generation
+# byproduct (raw/black/transparent variants kept in git for re-processing).
+
+# Git + tooling
 .git
 .gitignore
+.dockerignore
+.github
+.claude
 .runtime
 .workbuddy
 .playwright-cli
 .playwright-mcp
+node_modules
+package-lock.json
+package.json
 tmp
 output
-*.MOV
-*.mov
-visual-qa-*.png
-earth-defense-*.png
-.DS_Store
 __pycache__
 *.pyc
 Dockerfile
-.dockerignore
+
+# Source images that get post-processed into final/
+assets/generated/individual/raw
+assets/generated/individual/black
+assets/generated/individual/transparent
+assets/generated/characters/raw
+assets/generated/characters/transparent
+assets/generated/polish/raw
+assets/generated/polish/black
+assets/generated/polish/transparent
+assets/generated/upgrades/raw
+assets/generated/upgrades/black
+assets/generated/upgrades/transparent
+assets/generated/bosses/raw
+assets/generated/bosses/black
+assets/generated/bosses/transparent
+assets/generated/images
+assets/generated/sprites
+assets/generated/manifest.json
+
+# Audio packs no longer used by audio.js (replaced by mixkit-premium + cc0-techno)
+assets/audio/source
+assets/audio/premium
+assets/audio/kenney-interface
+assets/audio/kenney-sci-fi
+assets/audio/musicgen-earth-defense.wav
+assets/audio/musicgen-trance
+assets/audio/opengameart-powerup
+
+# QA / scratch
+visual-qa-*.png
+earth-defense-*.png
+*.MOV
+*.mov
+*.mp4
+animationbg.mp4
+
+# OS
+.DS_Store
