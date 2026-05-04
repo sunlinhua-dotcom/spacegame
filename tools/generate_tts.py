@@ -43,17 +43,23 @@ if "platform.xiaomimimo.com" in BASE_URL:
 # Voice design prompts — one per speaker. The HEROES list in heroes.js carries
 # voiceDesc strings; this script keeps a copy here so the TTS layer doesn't
 # need to import the JS module. Boss + narrator voices are also defined here.
+EN_PRONUNCIATION_HINT = (
+    " 重要:文本中所有英文单词(如 BRIGHT, ULT, ORBIT-S, DIGIREPUB, Lia, Devi, Rin, Yue, Aria, Sakura, Ade)"
+    "请按英文单词整体发音连读,不要逐字母拼读,不要把字母分开。Lia 读 Lee-ah,Aria 读 Ah-ree-ah,"
+    "BRIGHT 读 brait,DIGIREPUB 读 dij-i-re-pub,ORBIT-S 读 or-bit ess。"
+)
+
 VOICE_PROMPTS = {
-    "bright":   "沉稳威严的男性指挥官,中低音,30岁左右,略带电子通讯滤镜的清晰咬字,语速适中,镇定不紧绷",
-    "lia":      "热带活力少女,中音偏亮,葡萄牙语口音的中文,自信高昂,语速中等偏快,带巴西阳光感",
-    "devi":     "温柔治愈型女声,印度英语口音的中文,中音偏低,语速稍慢,带有神秘的草药低语感",
-    "rin":      "冷静狙击手,清亮中音,韩式简练咬字,语速精准不拖,情绪克制",
-    "yue":      "古典禅意女声,中音,语调如诗般起伏,偏空灵,有月光般的柔和延展",
-    "ade":      "深沉有力的女声,中低音,带非洲鼓点般的节奏感,坚定而温暖",
-    "sakura":   "甜美少女音,日式柔气中文发音,语速轻盈,带樱花飘落般的轻盈尾音",
-    "aria":     "优雅指挥家女声,中音,法式韵律,如风过琴弦的清亮,语速从容",
-    "boss":     "低沉如熔岩沸腾的男低音,带火山轰鸣残响,缓慢威严,扭曲恶意的咬字",
-    "narrator": "电影级旁白男声,沉稳深邃,中低音,叙事感强,适合科幻片开场字幕",
+    "bright":   "沉稳威严的男性指挥官,中低音,30岁左右,略带电子通讯滤镜的清晰咬字,语速适中,镇定不紧绷。" + EN_PRONUNCIATION_HINT,
+    "lia":      "热带活力少女,中音偏亮,葡萄牙语口音的中文,自信高昂,语速中等偏快,带巴西阳光感。" + EN_PRONUNCIATION_HINT,
+    "devi":     "温柔治愈型女声,印度英语口音的中文,中音偏低,语速稍慢,带有神秘的草药低语感。" + EN_PRONUNCIATION_HINT,
+    "rin":      "冷静狙击手,清亮中音,韩式简练咬字,语速精准不拖,情绪克制。" + EN_PRONUNCIATION_HINT,
+    "yue":      "古典禅意女声,中音,语调如诗般起伏,偏空灵,有月光般的柔和延展。" + EN_PRONUNCIATION_HINT,
+    "ade":      "深沉有力的女声,中低音,带非洲鼓点般的节奏感,坚定而温暖。" + EN_PRONUNCIATION_HINT,
+    "sakura":   "甜美少女音,日式柔气中文发音,语速轻盈,带樱花飘落般的轻盈尾音。" + EN_PRONUNCIATION_HINT,
+    "aria":     "优雅指挥家女声,中音,法式韵律,如风过琴弦的清亮,语速从容。" + EN_PRONUNCIATION_HINT,
+    "boss":     "低沉如熔岩沸腾的男低音,带火山轰鸣残响,缓慢威严,扭曲恶意的咬字。" + EN_PRONUNCIATION_HINT,
+    "narrator": "电影级旁白男声,沉稳深邃,中低音,叙事感强,适合科幻片开场字幕。" + EN_PRONUNCIATION_HINT,
 }
 
 

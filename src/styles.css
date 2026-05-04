@@ -891,7 +891,13 @@ canvas {
   font-size: 14px;
   font-weight: 700;
   color: rgba(241, 250, 255, 0.95);
-  line-height: 1.4;
+  line-height: 1.5;
+  /* Mixed CN/EN text: don't split English words across lines, but allow
+     wraps at Chinese-English boundaries. Prevents "BRI / GHT" type splits. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+  hyphens: none;
 }
 
 .dialogue-skip {

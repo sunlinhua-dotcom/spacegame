@@ -65,15 +65,16 @@ const STORAGE_KEY = "edr-roguelite-v1";
 export function loadProgress() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0 };
+    if (!raw) return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0, prologueSeen: false };
     const obj = JSON.parse(raw);
     return {
       unlockedHeroes: Array.isArray(obj.unlockedHeroes) ? obj.unlockedHeroes : ["lia"],
       bestStage: typeof obj.bestStage === "number" ? obj.bestStage : 1,
       totalRuns: typeof obj.totalRuns === "number" ? obj.totalRuns : 0,
+      prologueSeen: !!obj.prologueSeen,
     };
   } catch (e) {
-    return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0 };
+    return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0, prologueSeen: false };
   }
 }
 

@@ -201,7 +201,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-techrave2";
+const ASSET_VERSION = "20260504-juicy1";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -1403,11 +1403,14 @@ function createEnemyVisual(kind, size) {
     return visual;
   }
 
-  visual.tail = createSprite(tex.barrageProjectile, size * 0.7, size * 2.95, { additive: true, opacity: 0.72, color: 0xffa33d });
-  visual.tail.position.set(0, -size * 0.98, -0.03);
-  visual.flare = createSprite(tex.explosionCore, size * 1.7, size * 1.7, { additive: true, opacity: 0.25, color: 0xff9d42 });
+  // Gold meteor — the iconic streaker. Make the flame tail dominate so the
+  // overall silhouette reads as "gold streak" even when the central bestiary
+  // sprite is overridden later by spawnEnemies.
+  visual.tail = createSprite(tex.barrageProjectile, size * 0.92, size * 3.4, { additive: true, opacity: 0.95, color: 0xffd166 });
+  visual.tail.position.set(0, -size * 1.05, -0.03);
+  visual.flare = createSprite(tex.explosionCore, size * 2.1, size * 2.1, { additive: true, opacity: 0.42, color: 0xffb24a });
   visual.core = createSprite(tex.charEnemyMeteor, size * 1.6, size * 1.6, { opacity: 0.98 });
-  visual.rim = makeEnergyRing(size * 0.46, size * 0.05, 0xffd06c, 0.34);
+  visual.rim = makeEnergyRing(size * 0.46, size * 0.05, 0xffd066, 0.55);
   group.add(visual.tail, visual.flare, visual.core, visual.rim);
   return visual;
 }
@@ -4037,13 +4040,16 @@ function prefillSwarm() {
 // based on enemy.kind ("meteor"/"bolt"/"saucer"). We keep that fallback for
 // shape variety + per-archetype trail color, but override the central sprite
 // with the new td-{bestiaryKind}.png so the player sees the full bestiary.
+// Lean toward "meteor" archetype on stage-1 fodder so the iconic golden
+// flame streak that defined the previous build stays the dominant visual.
+// Saucer / bolt are reserved for thematic special types (energy, fast).
 const _bestiaryToLegacyKind = {
-  "crystal-stalker": "bolt",   "magma-worm": "meteor",
-  "bio-beetle":      "saucer", "shadow-cone": "bolt",
+  "crystal-stalker": "meteor", "magma-worm": "meteor",
+  "bio-beetle":      "meteor", "shadow-cone": "bolt",
   "ion-sentinel":    "saucer", "magma-spider": "meteor",
   "void-hunter":     "bolt",   "bio-cloud":   "saucer",
   "storm-wraith":    "bolt",   "gold-carapace": "meteor",
-  "mirror-splitter": "bolt",   "gravity-pulse": "saucer",
+  "mirror-splitter": "meteor", "gravity-pulse": "saucer",
   "hook-reaper":     "meteor", "mega-asteroid": "meteor",
   "shadow-apostle":  "bolt",
 };
@@ -4074,8 +4080,10 @@ function spawnEnemies(dt) {
     // Apply per-stage difficulty curve from balance.js so later stages
     // ramp meaningfully — enemyHp×, enemySpeed× scale per STAGE_BALANCE.
     const bal = getStageBalance(state.stageLevel);
-    const size = (def?.size ?? rand(28, 48)) * 0.85 + pressure.stage * 6;
-    const speed = ((def?.speed ?? rand(30, 56)) * 0.5 + pressure.combined * 34 + state.waveIndex * 0.8) * (bal?.enemySpeed || 1);
+    // Restore the punchy original sizes/speeds — the earlier 0.85× and 0.5×
+    // multipliers had drained the streaking-meteor energy users remembered.
+    const size = (def?.size ?? rand(28, 48)) + pressure.stage * 6;
+    const speed = ((def?.speed ?? rand(30, 56)) * 0.85 + pressure.combined * 34 + state.waveIndex * 0.8) * (bal?.enemySpeed || 1);
     const hp = ((def?.hp ?? 1) + Math.floor(pressure.stage * 3.2 + pressure.wave * 2.2)) * (bal?.enemyHp || 1);
     const enemy = createRegularEnemy({
       x: pos.x,
@@ -4457,18 +4465,22 @@ function shoot(from, target, spread = 0) {
   if (!target) return;
   const base = angleTo(from, target);
   const shots = 1 + Math.min(2, state.splitShot);
-  // Bullet visual scales with permanent stats so the player SEES upgrades
-  // working: bigger sprites, brighter color when laser/beam tech unlocked.
   const widthMul = 1 + (state.bulletDamage - 1) * 0.18 + state.bulletPierce * 0.06;
   const lengthMul = 1 + (state.bulletDamage - 1) * 0.22 + state.laserLevel * 0.04;
-  // Tint shifts cyan → white → pale-gold as upgrades stack.
   const tint = state.beamLevel > 0 ? 0xc9faff : state.laserLevel > 0 ? 0xe6ffff : 0xb6f5ff;
   const trailColor = state.laserLevel > 0 ? 0xb1f5ff : 0x72f8ff;
+  // Spawn bullets at the ship's NOSE, not its center. Ship faces the target
+  // (interceptor) or outward from earth (hero), so push the bullet origin
+  // ~half the ship's radius along its facing direction. Without this it
+  // looks like the rear of the sprite is firing.
+  const noseOffset = (from.size || 64) * 0.45;
+  const noseDx = Math.cos(base) * noseOffset;
+  const noseDy = Math.sin(base) * noseOffset;
   for (let i = 0; i < shots; i++) {
     const offset = shots === 1 ? 0 : (i - (shots - 1) / 2) * (0.08 + spread);
     const bullet = {
-      x: from.x,
-      y: from.y,
+      x: from.x + noseDx,
+      y: from.y + noseDy,
       vx: Math.cos(base + offset) * (540 + state.laserLevel * 18),
       vy: Math.sin(base + offset) * (540 + state.laserLevel * 18),
       life: 1.05,
@@ -5126,21 +5138,28 @@ if (ui.startBtn) {
     // Brief 100% confirmation pause so the bar visibly settles.
     await new Promise((r) => setTimeout(r, 240));
 
-    // Hide the title overlay, then prologue → Lia intro → stage 1.
+    // Hide the title overlay, then prologue → Lia intro → stage 1. Returning
+    // players skip the prologue + hero intro (kept around for the first run
+    // for narrative impact, but skipped after that to preserve flow).
     if (ui.titlePanel) ui.titlePanel.hidden = true;
+    const startGameplay = () => {
+      state.last = performance.now();
+      state.mode = "playing";
+      state.message = "地球防御系统启动中";
+      updateHud();
+    };
+    if (progress.prologueSeen) {
+      startGameplay();
+      return;
+    }
     state.mode = "prologue";
     state.message = "PROLOGUE";
     updateHud();
     playPrologue(PROLOGUE, () => {
-      // First-time hero introduction: Lia (or whichever hero is first
-      // unlocked per persistent progress).
+      progress.prologueSeen = true;
+      saveProgress(progress);
       const firstHero = activeHeroes[0]?.id || "lia";
-      playHeroIntro(firstHero, () => {
-        state.last = performance.now();
-        state.mode = "playing";
-        state.message = "地球防御系统启动中";
-        updateHud();
-      });
+      playHeroIntro(firstHero, startGameplay);
     });
   });
 }
