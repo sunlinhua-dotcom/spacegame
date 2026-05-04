@@ -76,6 +76,10 @@ const ui = {
   heroIntroCountry: document.getElementById("heroIntroCountry"),
   heroIntroPassive: document.getElementById("heroIntroPassive"),
   heroIntroUlt: document.getElementById("heroIntroUlt"),
+  bossReveal: document.getElementById("bossReveal"),
+  bossRevealImg: document.getElementById("bossRevealImg"),
+  bossRevealName: document.getElementById("bossRevealName"),
+  bossRevealAbility: document.getElementById("bossRevealAbility"),
   miniBossTag: document.getElementById("miniBossTag"),
   miniBossName: document.getElementById("miniBossName"),
   miniBossHpFill: document.getElementById("miniBossHpFill"),
@@ -208,11 +212,21 @@ const _ua = navigator.userAgent || "";
 const _deviceMemory = navigator.deviceMemory || 4; // missing on Safari → assume mid
 const _cores = navigator.hardwareConcurrency || 4;
 const _isOldiOS = /iPhone OS (\d+)_/.test(_ua) && parseInt(RegExp.$1, 10) < 16;
+// Android: most mid-range devices ship with weaker GPUs (Mali / Adreno 6xx-)
+// than Apple's A-series, so default to low-tier on any Android < 13. Modern
+// flagships (Android 13+ + 8 GB RAM + 8 cores) get the regular path.
+const _androidVer = _ua.match(/Android (\d+)/);
+const _isOlderAndroid = _androidVer && parseInt(_androidVer[1], 10) < 13;
+const _isAndroid = /Android/.test(_ua);
 const PERF_LOW =
   qaParams.get("perf") === "low" ||
   _deviceMemory <= 3 ||
   _cores <= 4 ||
-  _isOldiOS;
+  _isOldiOS ||
+  _isOlderAndroid ||
+  // Mid-tier Android (≥13 but limited memory/cores) still wants the
+  // lighter path — only flagship-class Androids skip it.
+  (_isAndroid && (_deviceMemory < 6 || _cores < 8));
 const PERF = {
   low: PERF_LOW,
   // DPR cap. 1.0 on low-end halves the pixel count vs DPR=2; even mid-tier
@@ -645,6 +659,48 @@ if (ui.heroIntro) {
   ui.heroIntro.addEventListener("pointerdown", dismissHeroIntro);
 }
 
+/* ─────────────── Boss reveal cinematic ───────────────
+ * Full-screen warning when a boss spawns. Pauses gameplay, shows the
+ * boss frame portrait + name + ability, then dismisses on tap or
+ * after a 2.4 s timer so the player isn't trapped reading. */
+const _bossRevealState = { onDone: null, autoTimer: null };
+
+function playBossReveal(bossConfig, onDone = null) {
+  if (!ui.bossReveal || !bossConfig) { if (onDone) onDone(); return; }
+  _bossRevealState.onDone = onDone;
+  const idx = String(bossConfig.level).padStart(2, "0");
+  const slug = bossConfig.slug || "molten-asteroid";
+  if (ui.bossRevealImg) {
+    ui.bossRevealImg.src = `assets/generated/bosses/frames/boss-${idx}-${slug}-frame-00.png?v=${ASSET_VERSION}`;
+  }
+  if (ui.bossRevealName) ui.bossRevealName.textContent = bossConfig.name;
+  if (ui.bossRevealAbility) ui.bossRevealAbility.textContent = bossConfig.ability || "";
+  ui.bossReveal.hidden = false;
+  ui.bossReveal.style.animation = "none";
+  // eslint-disable-next-line no-unused-expressions
+  ui.bossReveal.offsetHeight;
+  ui.bossReveal.style.animation = "";
+  // Auto-dismiss after 2.4 s so the player isn't blocked.
+  if (_bossRevealState.autoTimer) clearTimeout(_bossRevealState.autoTimer);
+  _bossRevealState.autoTimer = setTimeout(dismissBossReveal, 2400);
+}
+
+function dismissBossReveal() {
+  if (!ui.bossReveal || ui.bossReveal.hidden) return;
+  ui.bossReveal.hidden = true;
+  if (_bossRevealState.autoTimer) {
+    clearTimeout(_bossRevealState.autoTimer);
+    _bossRevealState.autoTimer = null;
+  }
+  const cb = _bossRevealState.onDone;
+  _bossRevealState.onDone = null;
+  if (cb) cb();
+}
+
+if (ui.bossReveal) {
+  ui.bossReveal.addEventListener("pointerdown", dismissBossReveal);
+}
+
 /* ─────────────── ULT cinematic ───────────────
  * Two layers run together:
  *   1. CSS frame card (portrait + ULT name + signature glow)
@@ -778,6 +834,7 @@ function playUltCinematic(heroId) {
 // themselves so they don't compete with the modal for player attention.
 function isModalActive() {
   if (state.mode === "title" || state.mode === "prologue" || state.mode === "heroIntro") return true;
+  if (state.mode === "bossReveal") return true;
   if (state.mode === "paused" || state.mode === "levelUp" || state.mode === "shop") return true;
   if (state.mode === "gameOver" || state.mode === "victory") return true;
   return false;
@@ -4044,6 +4101,27 @@ function spawnEnemies(dt) {
 function spawnBoss() {
   if (state.boss) return;
   const config = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
+  // Phase-7: cinematic reveal before the boss enters the playfield.
+  // Pauses gameplay (state.mode = "bossReveal" → modal-active) so wave
+  // spawn + enemy update freeze while the warning plays.
+  if (!_bossRevealShownForStage[state.stageLevel]) {
+    _bossRevealShownForStage[state.stageLevel] = true;
+    state.mode = "bossReveal";
+    playBossReveal(config, () => {
+      state.last = performance.now();
+      state.mode = "playing";
+      _spawnBossActual();
+    });
+    return;
+  }
+  _spawnBossActual();
+}
+
+const _bossRevealShownForStage = {};
+
+function _spawnBossActual() {
+  if (state.boss) return;
+  const config = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
   const bal = getStageBalance(state.stageLevel);
   const bossHpMul = bal?.bossHp || 1;
   const maxHp = Math.round(config.maxHp * (1 + state.levelCount * 0.035) * bossHpMul);
@@ -4903,7 +4981,7 @@ function frame(now) {
   const dt = Math.min(0.033, (now - state.last) / 1000);
   state.last = now;
   state.time += dt;
-  if (state.mode === "paused" || state.mode === "prologue") {
+  if (state.mode === "paused" || state.mode === "prologue" || state.mode === "heroIntro" || state.mode === "bossReveal") {
     updateExplosions(dt);
     updatePolishEffects(dt);
   } else {

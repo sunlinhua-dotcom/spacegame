@@ -331,6 +331,133 @@ canvas {
   margin-top: 1px;
 }
 
+/* ───────────── Boss reveal cinematic ─────────────
+ * Full-screen warning when a boss appears: red-tinted background,
+ * black bars sliding in from top/bottom (cinematic letterbox), big
+ * boss frame portrait, name + ability text. Auto-advances after
+ * ~2.4 s, tap-to-skip. */
+.boss-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 91, 39, 0.55) 0%, rgba(40, 4, 0, 0.92) 50%, rgba(0, 0, 0, 0.97) 100%);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: bossRevealIn 380ms cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+.boss-reveal[hidden] { display: none; }
+@keyframes bossRevealIn { from { opacity: 0; } }
+
+/* Sliding letterbox bars top + bottom — pure cinematic feel */
+.boss-reveal-bars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.boss-reveal-bars span {
+  position: absolute;
+  left: 0; right: 0;
+  height: 64px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.85));
+  animation: bossRevealBar 420ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+.boss-reveal-bars span:first-child { top: 0; }
+.boss-reveal-bars span:last-child  { bottom: 0; transform: rotate(180deg); animation-delay: 60ms; }
+@keyframes bossRevealBar {
+  from { transform: translateY(-100%); }
+}
+.boss-reveal-bars span:last-child { animation-name: bossRevealBarBottom; }
+@keyframes bossRevealBarBottom { from { transform: translateY(100%); } }
+
+.boss-reveal-frame {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  width: min(86%, 460px);
+  padding: 18px 20px 22px;
+  background: linear-gradient(165deg, rgba(40, 8, 8, 0.86) 0%, rgba(8, 4, 4, 0.95) 100%);
+  border: 2px solid rgba(255, 91, 39, 0.85);
+  box-shadow:
+    0 0 64px rgba(255, 91, 39, 0.6),
+    inset 0 0 40px rgba(255, 91, 39, 0.18);
+  text-align: center;
+  animation: bossRevealFrame 600ms 180ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+
+@keyframes bossRevealFrame {
+  from { opacity: 0; transform: translateY(28px) scale(0.92); }
+}
+
+.boss-reveal-eyebrow {
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.36em;
+  color: rgba(255, 200, 130, 0.92);
+  text-shadow: 0 0 16px rgba(255, 91, 39, 0.7);
+  animation: bossRevealPulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes bossRevealPulse {
+  to { color: rgba(255, 240, 200, 1); text-shadow: 0 0 24px rgba(255, 91, 39, 0.95); }
+}
+
+.boss-reveal-portrait {
+  width: min(220px, 60vw);
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 91, 39, 0.45);
+  box-shadow: 0 0 28px rgba(255, 91, 39, 0.55);
+}
+
+.boss-reveal-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.boss-reveal-name {
+  font-size: clamp(28px, 8vw, 44px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: linear-gradient(120deg, #fff4c1, #ff8a3a 60%, #ffd28a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.boss-reveal-ability {
+  font-family: "SF Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(255, 230, 200, 0.88);
+  margin-top: 4px;
+}
+
+.boss-reveal-cta {
+  position: absolute;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "SF Mono", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: rgba(255, 200, 130, 0.6);
+  animation: heroIntroPulse 1.4s ease-in-out infinite;
+}
+
 /* ───────────── Hero introduction cinematic ─────────────
  * Full-screen splash when a new pilot is unlocked. Action portrait pops
  * in, country-tinted ray streaks fan out behind, name + skills card

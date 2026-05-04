@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-ult2" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-finalpush1" />
   </head>
   <body>
     <main class="shell">
@@ -100,6 +100,24 @@
             </div>
             <div class="prologue-skip">tap to advance · 长按跳过</div>
           </div>
+        </div>
+
+        <!-- Boss reveal cinematic — full-screen warning when a stage's boss
+             appears. Red-tinted backdrop + boss frame portrait + name +
+             ability sub. Auto-advances after 2.4 s, tap to skip. -->
+        <div id="bossReveal" class="boss-reveal" hidden aria-live="polite">
+          <div class="boss-reveal-bars" aria-hidden="true">
+            <span></span><span></span>
+          </div>
+          <div class="boss-reveal-frame">
+            <div class="boss-reveal-eyebrow">⚠ BOSS APPROACHING ⚠</div>
+            <div class="boss-reveal-portrait">
+              <img id="bossRevealImg" alt="" />
+            </div>
+            <div class="boss-reveal-name" id="bossRevealName">熔核陨星</div>
+            <div class="boss-reveal-ability" id="bossRevealAbility">火山裂隙核心</div>
+          </div>
+          <div class="boss-reveal-cta">▶ 点击迎战</div>
         </div>
 
         <!-- Hero introduction cinematic: full-screen splash when a new pilot
@@ -293,6 +311,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-ult2"></script>
+    <script type="module" src="src/game-three.js?v=20260504-finalpush1"></script>
   </body>
 </html>

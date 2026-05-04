@@ -86,17 +86,36 @@ export class AudioEngine {
     } catch (e) { /* legacy webkit can throw; safe to ignore */ }
 
     if (this.ctx.state === "suspended") await this.ctx.resume();
-    // Use direct setValueAtTime instead of setTargetAtTime — the latter takes
-    // a few frames to ramp up and can leave the gain mid-transition (=quiet)
-    // if iOS suspends the ctx during the ramp.
     this.master.gain.cancelScheduledValues(this.ctx.currentTime);
     this.master.gain.setValueAtTime(MASTER_AUDIBLE, this.ctx.currentTime);
     this.enabled = true;
-    await this.loadSamples();
+
+    // iPhone fix: don't AWAIT loadSamples() — that blocks music for 5-10s
+    // on slow connections + the gesture context can expire by then. Instead
+    // start the synthesizer fallback music IMMEDIATELY (so the player has
+    // sound straight after ENGAGE), then upgrade to the real music sample
+    // when its buffer is decoded.
     if (!this.started) {
       this.started = true;
-      this.startMusic();
+      this.startFallbackMusic();
     }
+    // Background-load samples; swap fallback → real music as soon as the
+    // music buffer is available.
+    this.loadSamples().then(() => {
+      if (this.samples.music && this.samples.music.length) {
+        this.stopFallbackMusic();
+        this.startMusic();
+      }
+    });
+  }
+
+  stopFallbackMusic() {
+    for (const node of this.fallbackNodes) {
+      try { node.stop?.(); node.disconnect?.(); } catch (e) { /* ignore */ }
+    }
+    this.fallbackNodes = [];
+    for (const t of this.fallbackTimers) clearInterval(t);
+    this.fallbackTimers = [];
   }
 
   createContext() {
