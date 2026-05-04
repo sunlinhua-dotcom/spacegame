@@ -1115,8 +1115,9 @@ canvas {
   from { opacity: 0; transform: translateY(6px); }
 }
 
-/* === BRIGHT.SUN banner — explicit framed card so the author credit reads
-       as a single deliberate header, not floating text === */
+/* === BRIGHT.SUN banner — solid violet card, white type for maximum legibility
+       (the previous dark-violet-on-violet read as "subtle"; this reads as
+       "premium publisher card") === */
 .title-banner {
   position: relative;
   display: grid;
@@ -1124,25 +1125,25 @@ canvas {
   justify-items: center;
   width: 100%;
   padding: 16px 24px 18px;
-  border: 1.5px solid rgba(199, 125, 255, 0.7);
-  background:
-    linear-gradient(180deg, rgba(40, 14, 64, 0.85) 0%, rgba(20, 6, 36, 0.92) 100%),
-    repeating-linear-gradient(0deg, rgba(199, 125, 255, 0.06) 0px, rgba(199, 125, 255, 0.06) 1px, transparent 1px, transparent 4px);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: linear-gradient(180deg, #b365ff 0%, #8a3fe6 60%, #6a25c2 100%);
   box-shadow:
-    0 0 42px rgba(199, 125, 255, 0.32),
-    inset 0 0 28px rgba(199, 125, 255, 0.18);
+    0 0 56px rgba(199, 125, 255, 0.55),
+    0 0 18px rgba(199, 125, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   line-height: 1;
   animation: titleBlockIn 700ms 60ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
 }
 
-/* Diamond corner accents — defines the banner shape, sci-fi marquee feel */
+/* Diamond corner accents — pinned to the four corners as a marquee detail */
 .title-banner-corner {
   position: absolute;
-  width: 9px;
-  height: 9px;
-  border: 1.5px solid rgba(199, 125, 255, 0.95);
-  background: #160826;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  background: #6a25c2;
   transform: rotate(45deg);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 .title-banner-corner-tl { top: -6px; left: -6px; }
 .title-banner-corner-tr { top: -6px; right: -6px; }
@@ -1156,7 +1157,7 @@ canvas {
   letter-spacing: 0.46em;
   text-indent: 0.46em;
   text-transform: uppercase;
-  color: rgba(199, 125, 255, 0.95);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .title-banner-name {
@@ -1165,13 +1166,9 @@ canvas {
   letter-spacing: 0.08em;
   text-indent: 0.08em;
   color: #ffffff;
-  background: linear-gradient(180deg, #ffffff 0%, #e2c2ff 35%, #c77dff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
   text-shadow:
-    0 0 32px rgba(199, 125, 255, 0.75),
-    0 0 8px rgba(199, 125, 255, 0.95);
+    0 0 24px rgba(255, 255, 255, 0.5),
+    0 1px 0 rgba(0, 0, 0, 0.18);
   margin-top: 4px;
 }
 
@@ -1182,7 +1179,7 @@ canvas {
   font-weight: 700;
   letter-spacing: 0.36em;
   text-indent: 0.36em;
-  color: rgba(199, 125, 255, 0.62);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* === Hero icon — the brand mark, gently floating === */

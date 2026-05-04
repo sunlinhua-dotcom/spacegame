@@ -275,21 +275,14 @@ const polishShowcaseByCategory = {
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   Audio — preload samples on import
+   Asset loading — unified progress counter
    ═══════════════════════════════════════════════════════════════ */
-const audio = new AudioEngine();
-// Plug audio loading into the unified progress counter.
-audio.onItemQueued = reportAssetQueued;
-audio.onItemDone = reportAssetLoaded;
-audio.preload();
-
-/* ═══════════════════════════════════════════════════════════════
-   Three.js Setup
-   ═══════════════════════════════════════════════════════════════ */
-// LoadingManager tracks every texture fetch so the title screen can show a
-// progress bar when 开始游戏 is tapped. Audio loads tick into the same counter
-// via reportAssetLoaded() so the bar reflects total bytes-to-go, not just
-// textures. Resolves a one-shot promise the click handler awaits.
+// Tracks every texture fetch (via THREE.LoadingManager) plus every audio
+// sample (via AudioEngine.onItemQueued/Done callbacks) so the title-screen
+// progress bar reflects total bytes-to-go, not just textures. Resolves a
+// one-shot promise the 开始游戏 click handler awaits.
+// IMPORTANT: declared *before* the audio block so audio.preload()'s
+// reportAssetQueued calls don't hit a temporal-dead-zone for these `let`s.
 const loadingManager = new THREE.LoadingManager();
 let _assetsLoadedCount = 0;
 let _assetsTotalCount = 0;
@@ -310,8 +303,8 @@ function reportAssetLoaded() { _assetsLoadedCount += 1; _emitProgress(); }
 function reportAssetQueued() { _assetsTotalCount += 1; _emitProgress(); }
 loadingManager.onStart = () => _emitProgress();
 loadingManager.onProgress = (_url, loaded, total) => {
-  // Texture-side counter: replace our texture-portion. Audio adds on top.
-  // We trust LoadingManager's count for textures; it doesn't double-count.
+  // Texture-side counter: trust LoadingManager's running tally for textures;
+  // audio increments via the queued/done callbacks on top.
   _assetsLoadedCount = Math.max(_assetsLoadedCount, loaded);
   _assetsTotalCount = Math.max(_assetsTotalCount, total);
   _emitProgress();
@@ -321,6 +314,15 @@ loadingManager.onLoad = () => {
   _emitProgress();
 };
 function onAssetProgress(fn) { _progressListeners.add(fn); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Audio — preload samples on import
+   ═══════════════════════════════════════════════════════════════ */
+const audio = new AudioEngine();
+// Plug audio loading into the unified progress counter.
+audio.onItemQueued = reportAssetQueued;
+audio.onItemDone = reportAssetLoaded;
+audio.preload();
 
 const loader = new THREE.TextureLoader(loadingManager);
 const scene = new THREE.Scene();
