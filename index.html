@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-rogue5" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-heroin1" />
   </head>
   <body>
     <main class="shell">
@@ -100,6 +100,29 @@
             </div>
             <div class="prologue-skip">tap to advance · 长按跳过</div>
           </div>
+        </div>
+
+        <!-- Hero introduction cinematic: full-screen splash when a new pilot
+             joins the squad. Played once per stage transition (Lia at game
+             start, then one hero per cleared stage). Tap to continue. -->
+        <div id="heroIntro" class="hero-intro" hidden aria-live="polite">
+          <div class="hero-intro-rays" aria-hidden="true"></div>
+          <div class="hero-intro-frame">
+            <div class="hero-intro-portrait">
+              <img id="heroIntroImg" alt="" />
+            </div>
+            <div class="hero-intro-meta">
+              <div class="hero-intro-eyebrow" id="heroIntroEyebrow">NEW PILOT JOINS</div>
+              <div class="hero-intro-name" id="heroIntroName">Lia</div>
+              <div class="hero-intro-country" id="heroIntroCountry">BR · 热带烈焰</div>
+              <div class="hero-intro-divider"></div>
+              <dl class="hero-intro-skills">
+                <div><dt>专属</dt><dd id="heroIntroPassive">焚尽 · 弹幕附燃</dd></div>
+                <div><dt>必杀</dt><dd id="heroIntroUlt">巨陨炎涌</dd></div>
+              </dl>
+            </div>
+          </div>
+          <div class="hero-intro-cta">▶ 点击集结</div>
         </div>
 
         <!-- ULT cinematic: full-screen flash with character portrait + ult
@@ -270,6 +293,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-rogue5"></script>
+    <script type="module" src="src/game-three.js?v=20260504-heroin1"></script>
   </body>
 </html>

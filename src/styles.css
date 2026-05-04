@@ -331,6 +331,190 @@ canvas {
   margin-top: 1px;
 }
 
+/* ───────────── Hero introduction cinematic ─────────────
+ * Full-screen splash when a new pilot is unlocked. Action portrait pops
+ * in, country-tinted ray streaks fan out behind, name + skills card
+ * slides up. Tap to continue. Sits between prologue (z-11) and modal
+ * panels (z-10), z-12 so nothing else competes. */
+.hero-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 45%, var(--hero-tint, rgba(199, 125, 255, 0.32)) 0%, rgba(2, 6, 14, 0.94) 60%, rgba(0, 0, 0, 0.98) 100%);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: heroIntroIn 540ms cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+.hero-intro[hidden] { display: none; }
+@keyframes heroIntroIn { from { opacity: 0; } }
+
+/* Spinning rays behind the portrait — country color, low opacity, sci-fi
+   broadcast feel. */
+.hero-intro-rays {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%,
+      transparent 0deg,
+      var(--hero-tint, rgba(199, 125, 255, 0.18)) 6deg,
+      transparent 12deg,
+      transparent 30deg);
+  opacity: 0.55;
+  animation: heroIntroRays 8s linear infinite;
+  mix-blend-mode: screen;
+}
+@keyframes heroIntroRays { to { transform: rotate(360deg); } }
+
+.hero-intro-frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.1fr);
+  gap: 18px;
+  width: min(86%, 480px);
+  padding: 20px 22px 22px;
+  background: linear-gradient(165deg, rgba(8, 12, 24, 0.86) 0%, rgba(2, 4, 12, 0.96) 100%);
+  border: 2px solid var(--hero-tint, rgba(199, 125, 255, 0.85));
+  box-shadow:
+    0 0 64px var(--hero-tint, rgba(199, 125, 255, 0.55)),
+    inset 0 0 48px var(--hero-tint, rgba(199, 125, 255, 0.18));
+  clip-path: polygon(20px 0%, 100% 0%, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0% 100%, 0% 20px);
+  animation: heroIntroFrame 700ms 120ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+
+@keyframes heroIntroFrame {
+  from { opacity: 0; transform: translateY(28px) scale(0.94); }
+}
+
+.hero-intro-portrait {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 32px var(--hero-tint, rgba(199, 125, 255, 0.45));
+  aspect-ratio: 358 / 256;
+}
+
+.hero-intro-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: heroIntroFloat 4.2s ease-in-out infinite;
+}
+
+@keyframes heroIntroFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-3px) scale(1.015); }
+}
+
+.hero-intro-meta {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  text-align: left;
+  min-width: 0;
+}
+
+.hero-intro-eyebrow {
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: var(--hero-tint, rgba(199, 125, 255, 0.95));
+}
+
+.hero-intro-name {
+  font-size: clamp(28px, 7.4vw, 42px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  text-shadow: 0 0 28px var(--hero-tint, rgba(199, 125, 255, 0.7));
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.hero-intro-country {
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hero-intro-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--hero-tint, rgba(199, 125, 255, 0.6)), transparent);
+  margin: 6px 0 4px;
+}
+
+.hero-intro-skills {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+}
+
+.hero-intro-skills > div {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hero-intro-skills dt {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.hero-intro-skills dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.hero-intro-cta {
+  position: absolute;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "SF Mono", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: rgba(255, 255, 255, 0.5);
+  animation: heroIntroPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes heroIntroPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.95; }
+}
+
+@media (max-width: 410px) {
+  .hero-intro-frame {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 18px 18px;
+  }
+  .hero-intro-portrait { aspect-ratio: 358 / 200; }
+  .hero-intro-name { font-size: clamp(24px, 7.4vw, 36px); }
+  .hero-intro-country { font-size: 10px; letter-spacing: 0.28em; }
+}
+
 /* ───────────── Prologue intro overlay ─────────────
  * Shown ONCE between ENGAGE click and gameplay. 7 narrator lines,
  * auto-advance with progress bar, tap-to-advance, long-press to skip. */

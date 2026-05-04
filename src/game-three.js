@@ -69,6 +69,13 @@ const ui = {
   ultCinematicPortrait: document.getElementById("ultCinematicPortrait"),
   ultCinematicName: document.getElementById("ultCinematicName"),
   ultCinematicHero: document.getElementById("ultCinematicHero"),
+  heroIntro: document.getElementById("heroIntro"),
+  heroIntroImg: document.getElementById("heroIntroImg"),
+  heroIntroEyebrow: document.getElementById("heroIntroEyebrow"),
+  heroIntroName: document.getElementById("heroIntroName"),
+  heroIntroCountry: document.getElementById("heroIntroCountry"),
+  heroIntroPassive: document.getElementById("heroIntroPassive"),
+  heroIntroUlt: document.getElementById("heroIntroUlt"),
   miniBossTag: document.getElementById("miniBossTag"),
   miniBossName: document.getElementById("miniBossName"),
   miniBossHpFill: document.getElementById("miniBossHpFill"),
@@ -558,6 +565,66 @@ if (ui.prologueOverlay) {
   });
 }
 
+/* ─────────────── Hero introduction cinematic ───────────────
+ * Splash screen when a new pilot joins the squad. Plays once per stage
+ * transition (Lia at game start, then one new hero per cleared stage).
+ * Tap to dismiss → run onDone callback (next stage start). */
+const _heroIntroState = { hero: null, onDone: null, voicePath: null };
+
+function playHeroIntro(heroId, onDone = null) {
+  const hero = getHero(heroId);
+  if (!hero || !ui.heroIntro) { if (onDone) onDone(); return; }
+  _heroIntroState.hero = hero;
+  _heroIntroState.onDone = onDone;
+  // Set color custom property for the border + ray streaks.
+  const r = (hero.color >> 16) & 0xff, g = (hero.color >> 8) & 0xff, b = hero.color & 0xff;
+  ui.heroIntro.style.setProperty("--hero-tint", `rgba(${r}, ${g}, ${b}, 0.85)`);
+  // Action portrait — large, cinematic.
+  if (ui.heroIntroImg) {
+    ui.heroIntroImg.src = `assets/cast/${hero.actionPortrait || hero.portrait}.png?v=${ASSET_VERSION}`;
+  }
+  if (ui.heroIntroEyebrow) {
+    ui.heroIntroEyebrow.textContent = hero.id === "bright" ? "COMMANDER ENGAGES" : "NEW PILOT JOINS";
+  }
+  if (ui.heroIntroName) ui.heroIntroName.textContent = hero.name;
+  if (ui.heroIntroCountry) ui.heroIntroCountry.textContent = `${hero.country} · ${hero.title}`;
+  if (ui.heroIntroPassive) ui.heroIntroPassive.textContent = `${hero.passive.id ? "" : ""}${hero.skillCardName || hero.passive.desc}`;
+  if (ui.heroIntroUlt) ui.heroIntroUlt.textContent = hero.ult.name;
+  ui.heroIntro.hidden = false;
+  // Restart entrance animation
+  ui.heroIntro.style.animation = "none";
+  // eslint-disable-next-line no-unused-expressions
+  ui.heroIntro.offsetHeight;
+  ui.heroIntro.style.animation = "";
+  // Try to play the hero's first stage-enter line as a "self-introduction"
+  // voice clip if it's available (the hero's intro stage matches their
+  // unlock stage one-to-one: lia=1, devi=2, …, bright=8).
+  const heroStageMap = { lia: 1, devi: 2, rin: 3, yue: 4, ade: 5, sakura: 6, aria: 7, bright: 8 };
+  const stage = heroStageMap[hero.id];
+  if (stage) {
+    // Find first line in stage-enter where this hero speaks.
+    const enterLines = getEvent(stage, "stage-enter");
+    let idx = enterLines.findIndex((ln) => ln.speaker === hero.id);
+    if (idx >= 0) {
+      playLineVoice(`stage-${stage}`, idx, hero.id, "stage-enter");
+    }
+  }
+}
+
+function dismissHeroIntro() {
+  if (!ui.heroIntro || ui.heroIntro.hidden) return;
+  ui.heroIntro.hidden = true;
+  stopVoice();
+  const cb = _heroIntroState.onDone;
+  _heroIntroState.hero = null;
+  _heroIntroState.onDone = null;
+  if (cb) cb();
+}
+
+if (ui.heroIntro) {
+  ui.heroIntro.addEventListener("pointerdown", dismissHeroIntro);
+}
+
 /* ─────────────── ULT cinematic ───────────────
  * Two layers run together:
  *   1. CSS frame card (portrait + ULT name + signature glow)
@@ -643,7 +710,7 @@ function playUltCinematic(heroId) {
 // victory / title / prologue) is showing — auxiliary HUD widgets should hide
 // themselves so they don't compete with the modal for player attention.
 function isModalActive() {
-  if (state.mode === "title" || state.mode === "prologue") return true;
+  if (state.mode === "title" || state.mode === "prologue" || state.mode === "heroIntro") return true;
   if (state.mode === "paused" || state.mode === "levelUp" || state.mode === "shop") return true;
   if (state.mode === "gameOver" || state.mode === "victory") return true;
   return false;
@@ -4651,11 +4718,23 @@ function completeBoss(enemy) {
   state.stageLevel += 1;
   state.waveIndex = 1;
   // Refresh active heroes + ult gauges for the new stage.
+  const oldHeroIds = activeHeroes.map((h) => h.id);
   activeHeroes = activeHeroesForStage(state.stageLevel);
   heroGauges = new HeroGauges(activeHeroes);
+  // Find the new hero that joined this stage (if any) — show their
+  // introduction cinematic before the upgrade-card panel.
+  const newHero = activeHeroes.find((h) => !oldHeroIds.includes(h.id));
   state.message = `第 ${state.stageLevel} 关开始：${bossConfigs[state.stageLevel - 1].name} 正在逼近`;
   showStageThemeBurst(1.05);
-  startLevelUp({ source: "boss" });
+  if (newHero) {
+    // Pause gameplay, show intro, then open the upgrade-card panel.
+    state.mode = "heroIntro";
+    playHeroIntro(newHero.id, () => {
+      startLevelUp({ source: "boss" });
+    });
+  } else {
+    startLevelUp({ source: "boss" });
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -4853,17 +4932,21 @@ if (ui.startBtn) {
     // Brief 100% confirmation pause so the bar visibly settles.
     await new Promise((r) => setTimeout(r, 240));
 
-    // Hide the title overlay, then play the prologue scroll before the
-    // first wave starts. After prologue finishes, transition to playing.
+    // Hide the title overlay, then prologue → Lia intro → stage 1.
     if (ui.titlePanel) ui.titlePanel.hidden = true;
     state.mode = "prologue";
     state.message = "PROLOGUE";
     updateHud();
     playPrologue(PROLOGUE, () => {
-      state.last = performance.now();
-      state.mode = "playing";
-      state.message = "地球防御系统启动中";
-      updateHud();
+      // First-time hero introduction: Lia (or whichever hero is first
+      // unlocked per persistent progress).
+      const firstHero = activeHeroes[0]?.id || "lia";
+      playHeroIntro(firstHero, () => {
+        state.last = performance.now();
+        state.mode = "playing";
+        state.message = "地球防御系统启动中";
+        updateHud();
+      });
     });
   });
 }
