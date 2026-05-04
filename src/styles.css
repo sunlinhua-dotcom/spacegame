@@ -1086,6 +1086,12 @@ canvas {
   padding: 0;
   align-items: stretch;
   justify-items: stretch;
+  /* Without minmax(0, 1fr) the grid column auto-sizes to min-content of its
+     item — and a non-wrapping word like "BRIGHT.SUN" forces that min-content
+     wider than the stage on desktop, pushing the banner past the right edge.
+     Pinning the column to fit the parent fixes that overflow. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
 }
 
 /* ═══════════════════════════════════════════════════════════════
