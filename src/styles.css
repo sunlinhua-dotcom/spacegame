@@ -1088,118 +1088,184 @@ canvas {
   justify-items: stretch;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Title screen — magazine-cover hierarchy:
+   1. BRIGHT.SUN (artist) at the top, electric violet
+   2. PRESENTS divider
+   3. Hero icon (the brand mark)
+   4. EARTH DEFENSE (the work) with CN subtitle
+   5. 开始游戏 button + progress bar (loads inline after click)
+   6. DIGIREPUB STUDIO · 2026 attribution at the bottom
+   ═══════════════════════════════════════════════════════════════ */
 .title-stage {
   position: relative;
-  display: grid;
-  grid-template-rows: 1fr auto auto;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-items: center;
-  gap: 32px;
+  justify-content: space-between;
   width: 100%;
   height: 100%;
-  padding: max(26px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
+  padding: max(28px, env(safe-area-inset-top)) 24px max(22px, env(safe-area-inset-bottom));
   text-align: center;
-  /* Subtle fade-in for the whole composition */
-  animation: titleStageIn 600ms cubic-bezier(0.22, 0.85, 0.32, 1);
+  font-family: "SF Pro Display", "Inter", "Helvetica Neue", system-ui, sans-serif;
+  animation: titleStageIn 700ms cubic-bezier(0.22, 0.85, 0.32, 1);
 }
 
 @keyframes titleStageIn {
   from { opacity: 0; transform: translateY(6px); }
 }
 
-/* === Hero typography === */
-.title-hero {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 0;
-  padding: 14px 0 6px;
-  position: relative;
-}
-
-.title-hero-line {
-  display: block;
-  width: 100%;
-  font-family: "SF Pro Display", "Inter", "Helvetica Neue", system-ui, sans-serif;
-  /* Sized so "DEFENSE" (7 wide chars at weight 900) always fits the stage. */
-  font-size: clamp(40px, 12.5vw, 78px);
-  font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -0.025em;
-  background: linear-gradient(180deg, #f1faff 0%, var(--cyan-soft) 38%, var(--cyan) 70%, #4eb6cc 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 40px rgba(124, 232, 255, 0.18);
-  animation: titleHeroIn 700ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
-}
-
-.title-hero-line-1 { animation-delay: 80ms; }
-.title-hero-line-2 {
-  animation-delay: 200ms;
-  background: linear-gradient(180deg, var(--gold) 0%, #ff8a3a 60%, #c75a26 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-top: -0.08em;
-}
-
-@keyframes titleHeroIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.96); letter-spacing: 0.02em; }
-}
-
-.title-hero-cn {
-  margin-top: 14px;
-  font-size: clamp(11px, 2.6vw, 14px);
-  font-weight: 700;
-  letter-spacing: 0.5em;
-  color: rgba(241, 250, 255, 0.78);
-  text-indent: 0.5em; /* compensate for trailing letter-spacing */
-  animation: titleHeroIn 700ms 320ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
-}
-
-/* Decorative side bars flanking the Chinese subtitle */
-.title-hero-cn::before,
-.title-hero-cn::after {
-  content: "";
-  display: inline-block;
-  width: 22px;
-  height: 1px;
-  background: rgba(124, 232, 255, 0.55);
-  vertical-align: middle;
-  margin: 0 14px 3px;
-}
-
-/* === Engage button — dual-language sci-fi button === */
-.title-engage {
+/* === BRIGHT.SUN banner — explicit framed card so the author credit reads
+       as a single deliberate header, not floating text === */
+.title-banner {
   position: relative;
   display: grid;
   gap: 6px;
-  align-content: center;
   justify-items: center;
-  width: min(280px, 80%);
-  margin: 0 auto;
-  padding: 18px 26px 16px;
+  width: 100%;
+  padding: 16px 24px 18px;
+  border: 1.5px solid rgba(199, 125, 255, 0.7);
+  background:
+    linear-gradient(180deg, rgba(40, 14, 64, 0.85) 0%, rgba(20, 6, 36, 0.92) 100%),
+    repeating-linear-gradient(0deg, rgba(199, 125, 255, 0.06) 0px, rgba(199, 125, 255, 0.06) 1px, transparent 1px, transparent 4px);
+  box-shadow:
+    0 0 42px rgba(199, 125, 255, 0.32),
+    inset 0 0 28px rgba(199, 125, 255, 0.18);
+  line-height: 1;
+  animation: titleBlockIn 700ms 60ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+
+/* Diamond corner accents — defines the banner shape, sci-fi marquee feel */
+.title-banner-corner {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid rgba(199, 125, 255, 0.95);
+  background: #160826;
+  transform: rotate(45deg);
+}
+.title-banner-corner-tl { top: -6px; left: -6px; }
+.title-banner-corner-tr { top: -6px; right: -6px; }
+.title-banner-corner-bl { bottom: -6px; left: -6px; }
+.title-banner-corner-br { bottom: -6px; right: -6px; }
+
+.title-banner-eyebrow {
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.46em;
+  text-indent: 0.46em;
+  text-transform: uppercase;
+  color: rgba(199, 125, 255, 0.95);
+}
+
+.title-banner-name {
+  font-size: clamp(38px, 11.5vw, 60px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
+  color: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #e2c2ff 35%, #c77dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 32px rgba(199, 125, 255, 0.75),
+    0 0 8px rgba(199, 125, 255, 0.95);
+  margin-top: 4px;
+}
+
+.title-banner-tagline {
+  margin-top: 6px;
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.36em;
+  text-indent: 0.36em;
+  color: rgba(199, 125, 255, 0.62);
+}
+
+/* === Hero icon — the brand mark, gently floating === */
+.title-hero-art {
+  margin: 0;
+  width: clamp(132px, 36vw, 184px);
+  height: clamp(132px, 36vw, 184px);
+  filter: drop-shadow(0 22px 48px rgba(199, 125, 255, 0.32))
+          drop-shadow(0 0 18px rgba(124, 232, 255, 0.18));
+  animation: titleBlockIn 800ms 320ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+
+.title-hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 28px;
+  display: block;
+  animation: titleHeroFloat 4.6s ease-in-out infinite;
+}
+
+@keyframes titleHeroFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* === Game title === */
+.title-game {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  line-height: 1;
+  animation: titleBlockIn 700ms 460ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+
+.title-game-en {
+  font-size: clamp(28px, 8vw, 44px);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  background: linear-gradient(180deg, #f1faff 0%, var(--cyan-soft) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 32px rgba(124, 232, 255, 0.22);
+}
+
+.title-game-cn {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+  color: rgba(241, 250, 255, 0.7);
+}
+
+/* === CTA cluster: button + progress bar (mutually exclusive) === */
+.title-cta {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  width: 100%;
+  animation: titleBlockIn 700ms 600ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+
+.title-engage {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 38px;
   border: 1px solid rgba(124, 232, 255, 0.55);
-  background: linear-gradient(
-    180deg,
-    rgba(8, 56, 78, 0.55) 0%,
-    rgba(4, 26, 38, 0.72) 100%
-  );
+  background: linear-gradient(180deg, rgba(8, 56, 78, 0.55) 0%, rgba(4, 26, 38, 0.78) 100%);
   color: var(--text);
   cursor: pointer;
   transition: transform 160ms cubic-bezier(0.22, 0.85, 0.32, 1),
     border-color 160ms ease, box-shadow 160ms ease;
   box-shadow:
-    inset 0 0 24px rgba(124, 232, 255, 0.18),
-    0 0 36px rgba(124, 232, 255, 0.12);
-  /* Notched corners using clip-path — subtle sci-fi touch */
+    inset 0 0 22px rgba(124, 232, 255, 0.16),
+    0 0 38px rgba(124, 232, 255, 0.14);
   clip-path: polygon(
     14px 0%, 100% 0%, 100% calc(100% - 14px),
     calc(100% - 14px) 100%, 0% 100%, 0% 14px
   );
   -webkit-tap-highlight-color: transparent;
-  animation: titleStageIn 700ms 480ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
 }
 
 .title-engage:hover {
@@ -1210,30 +1276,21 @@ canvas {
     0 0 64px rgba(124, 232, 255, 0.32);
 }
 
-.title-engage:active {
-  transform: translateY(0) scale(0.98);
-}
+.title-engage:active { transform: translateY(0) scale(0.98); }
 
 .title-engage:focus-visible {
   outline: none;
   border-color: var(--gold);
   box-shadow:
-    inset 0 0 32px rgba(255, 209, 102, 0.22),
+    inset 0 0 28px rgba(255, 209, 102, 0.2),
     0 0 36px rgba(255, 209, 102, 0.34);
 }
 
-.title-engage-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
+.title-engage.is-loading {
+  display: none;
 }
 
 .title-engage-marker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
   font-size: 12px;
   color: var(--cyan);
   animation: engageMarker 1.4s ease-in-out infinite;
@@ -1245,98 +1302,99 @@ canvas {
 }
 
 .title-engage-en {
-  font-family: "SF Pro Display", "Inter", system-ui, sans-serif;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 900;
-  letter-spacing: 0.3em;
-  text-indent: 0.3em;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
   background: linear-gradient(180deg, #ffffff 0%, var(--cyan-soft) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.title-engage-cn {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.6em;
-  text-indent: 0.6em;
-  color: rgba(124, 232, 255, 0.7);
+/* === Loading progress bar === */
+.title-progress {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(280px, 80%);
 }
 
-/* === Footer credits — author headline, studio supporting === */
-.title-foot {
-  display: grid;
-  gap: 18px;
-  justify-items: center;
+.title-progress.is-visible {
+  display: flex;
+  animation: titleBlockIn 360ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+}
+
+.title-progress-track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.title-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: linear-gradient(90deg, #c77dff 0%, #7ce8ff 100%);
+  box-shadow: 0 0 14px rgba(199, 125, 255, 0.6);
+  border-radius: 999px;
+  transition: width 220ms ease;
+}
+
+.title-progress-label {
   font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.36em;
+  text-indent: 0.36em;
+  text-transform: uppercase;
+  color: rgba(124, 232, 255, 0.78);
 }
 
-.title-foot-line {
-  height: 1px;
-  width: min(180px, 60%);
-  background: linear-gradient(90deg, transparent, rgba(199, 125, 255, 0.55), transparent);
-}
-
-.title-credits {
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-  line-height: 1;
-}
-
-.title-credit-eyebrow {
+/* === Bottom studio attribution === */
+.title-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: rgba(199, 125, 255, 0.78);
-  margin-bottom: 2px;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  color: rgba(241, 250, 255, 0.42);
+  animation: titleBlockIn 700ms 720ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
 }
 
-.title-credit-name {
-  font-size: clamp(34px, 9vw, 52px);
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  font-family: "SF Pro Display", "Inter", "Helvetica Neue", system-ui, sans-serif;
+.title-foot-year {
+  color: rgba(241, 250, 255, 0.28);
 }
 
-.title-credit-creator {
-  /* Game creator — electric violet. Distinct from gold/cyan/magenta/emerald
-     used elsewhere in the UI; reserved for the headline author credit. */
-  color: #c77dff;
-  text-shadow:
-    0 0 24px rgba(199, 125, 255, 0.65),
-    0 0 8px rgba(199, 125, 255, 0.85),
-    0 0 2px rgba(255, 255, 255, 0.4);
+@keyframes titleBlockIn {
+  from { opacity: 0; transform: translateY(10px); }
 }
 
-.title-credit-studio {
-  margin-top: 4px;
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.32em;
-  color: rgba(241, 250, 255, 0.46);
-}
-
-/* Compact title for phone viewports.
-   410 (not 390) so iPhone 14/15 Pro at 393 viewport gets the compact styling
-   too — the stage is now inset 20px from viewport edges. */
+/* Compact title for phone viewports (≤410 catches iPhone 14/15 Pro) */
 @media (max-width: 410px) {
   .title-stage {
-    gap: 22px;
     padding: max(20px, env(safe-area-inset-top)) 18px max(16px, env(safe-area-inset-bottom));
   }
-  .title-hero { padding: 8px 0 2px; }
-  .title-hero-line { font-size: clamp(38px, 12vw, 64px); letter-spacing: -0.03em; }
-  .title-hero-cn { font-size: 11px; letter-spacing: 0.36em; margin-top: 10px; }
-  .title-engage { padding: 14px 22px 12px; width: min(240px, 84%); }
-  .title-engage-en { font-size: 19px; letter-spacing: 0.26em; }
-  .title-engage-cn { font-size: 10px; letter-spacing: 0.46em; }
-  .title-credit-eyebrow { font-size: 9px; letter-spacing: 0.34em; }
-  .title-credit-name { font-size: clamp(36px, 10.5vw, 50px); letter-spacing: 0.12em; }
-  .title-credit-studio { font-size: 11px; letter-spacing: 0.28em; }
+  .title-banner { padding: 14px 18px 16px; }
+  .title-banner-eyebrow { font-size: 9px; letter-spacing: 0.4em; }
+  .title-banner-name { font-size: clamp(34px, 10.5vw, 48px); letter-spacing: 0.05em; }
+  .title-banner-tagline { font-size: 9px; letter-spacing: 0.32em; }
+  .title-brand-tagline { font-size: 10px; letter-spacing: 0.36em; }
+  .title-divider { font-size: 8px; letter-spacing: 0.4em; gap: 10px; width: min(220px, 70%); }
+  .title-hero-art { width: clamp(120px, 34vw, 160px); height: clamp(120px, 34vw, 160px); }
+  .title-game-en { font-size: clamp(26px, 8.5vw, 38px); }
+  .title-game-cn { font-size: 10px; letter-spacing: 0.42em; }
+  .title-engage { padding: 14px 30px; gap: 12px; }
+  .title-engage-en { font-size: 16px; letter-spacing: 0.28em; }
+  .title-progress { width: min(240px, 84%); }
+  .title-foot { font-size: 9px; letter-spacing: 0.28em; }
 }
 
 .overlay-gameover .overlay-card {

@@ -49,6 +49,9 @@ const ui = {
   restartVictoryBtn: document.getElementById("restartVictoryBtn"),
   titlePanel: document.getElementById("titlePanel"),
   startBtn: document.getElementById("startBtn"),
+  titleProgress: document.getElementById("titleProgress"),
+  titleProgressFill: document.getElementById("titleProgressFill"),
+  titleProgressLabel: document.getElementById("titleProgressLabel"),
   miniBossTag: document.getElementById("miniBossTag"),
   miniBossName: document.getElementById("miniBossName"),
   miniBossHpFill: document.getElementById("miniBossHpFill"),
@@ -275,12 +278,51 @@ const polishShowcaseByCategory = {
    Audio — preload samples on import
    ═══════════════════════════════════════════════════════════════ */
 const audio = new AudioEngine();
+// Plug audio loading into the unified progress counter.
+audio.onItemQueued = reportAssetQueued;
+audio.onItemDone = reportAssetLoaded;
 audio.preload();
 
 /* ═══════════════════════════════════════════════════════════════
    Three.js Setup
    ═══════════════════════════════════════════════════════════════ */
-const loader = new THREE.TextureLoader();
+// LoadingManager tracks every texture fetch so the title screen can show a
+// progress bar when 开始游戏 is tapped. Audio loads tick into the same counter
+// via reportAssetLoaded() so the bar reflects total bytes-to-go, not just
+// textures. Resolves a one-shot promise the click handler awaits.
+const loadingManager = new THREE.LoadingManager();
+let _assetsLoadedCount = 0;
+let _assetsTotalCount = 0;
+let _assetsResolve = null;
+const _allAssetsReady = new Promise((r) => { _assetsResolve = r; });
+const _progressListeners = new Set();
+function _emitProgress() {
+  const total = Math.max(_assetsTotalCount, 1);
+  const ratio = Math.min(1, _assetsLoadedCount / total);
+  for (const fn of _progressListeners) fn(ratio, _assetsLoadedCount, _assetsTotalCount);
+  if (_assetsLoadedCount >= _assetsTotalCount && _assetsTotalCount > 0 && _assetsResolve) {
+    const r = _assetsResolve;
+    _assetsResolve = null;
+    r();
+  }
+}
+function reportAssetLoaded() { _assetsLoadedCount += 1; _emitProgress(); }
+function reportAssetQueued() { _assetsTotalCount += 1; _emitProgress(); }
+loadingManager.onStart = () => _emitProgress();
+loadingManager.onProgress = (_url, loaded, total) => {
+  // Texture-side counter: replace our texture-portion. Audio adds on top.
+  // We trust LoadingManager's count for textures; it doesn't double-count.
+  _assetsLoadedCount = Math.max(_assetsLoadedCount, loaded);
+  _assetsTotalCount = Math.max(_assetsTotalCount, total);
+  _emitProgress();
+};
+loadingManager.onLoad = () => {
+  _assetsLoadedCount = Math.max(_assetsLoadedCount, _assetsTotalCount);
+  _emitProgress();
+};
+function onAssetProgress(fn) { _progressListeners.add(fn); }
+
+const loader = new THREE.TextureLoader(loadingManager);
 const scene = new THREE.Scene();
 // Z range expanded so SphereGeometry-based earth (radius 64 + atmosphere 78)
 // isn't clipped by the near plane. Negative near is valid for orthographic.
@@ -4248,15 +4290,35 @@ if (ui.restartVictoryBtn) {
 }
 
 if (ui.startBtn) {
-  ui.startBtn.addEventListener("click", () => {
-    // Fire-and-forget audio unlock — never block the title→playing transition
-    // on a multi-megabyte sample download. Music kicks in a few seconds later
-    // when the buffers are ready, but the player is already in the game.
+  ui.startBtn.addEventListener("click", async () => {
+    // Hide button, swap in the progress bar.
+    ui.startBtn.classList.add("is-loading");
+    ui.titleProgress?.classList.add("is-visible");
+
+    // Kick the audio unlock right inside the user gesture (iOS requires this);
+    // sample download will tick into the unified progress counter.
     if (!audio.started) {
       audio.start()
         .then(() => audio.setEnabled(state.soundOn))
         .catch((err) => console.warn("audio unlock failed", err));
     }
+
+    // Wire the bar to the unified asset counter.
+    const updateBar = (ratio, loaded, total) => {
+      const pct = Math.round(ratio * 100);
+      if (ui.titleProgressFill) ui.titleProgressFill.style.width = `${pct}%`;
+      if (ui.titleProgressLabel) ui.titleProgressLabel.textContent = `载入 ${pct}%`;
+    };
+    onAssetProgress(updateBar);
+    // Paint current state (loads have been running since page-load).
+    updateBar(_assetsLoadedCount / Math.max(_assetsTotalCount, 1), _assetsLoadedCount, _assetsTotalCount);
+
+    // Wait for every queued asset to finish.
+    await _allAssetsReady;
+    updateBar(1, _assetsTotalCount, _assetsTotalCount);
+    // Brief 100% confirmation pause so the bar visibly settles.
+    await new Promise((r) => setTimeout(r, 240));
+
     // Reset clock so swarm prefilled while title was up doesn't get a giant dt.
     state.last = performance.now();
     state.mode = "playing";

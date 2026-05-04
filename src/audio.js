@@ -124,16 +124,32 @@ export class AudioEngine {
 
   async loadSamples() {
     if (this.samplePromise) return this.samplePromise;
+    // Each path is one tick toward the unified loading bar (game-three.js
+    // owns the counter and surface). onItemQueued increments the total,
+    // onItemDone increments the completed count.
+    if (this.onItemQueued) {
+      for (const paths of Object.values(SAMPLE_PATHS)) {
+        for (const _ of (Array.isArray(paths) ? paths : [paths])) this.onItemQueued();
+      }
+    }
+    const tickDone = () => { if (this.onItemDone) this.onItemDone(); };
     this.samplePromise = Promise.all(
       Object.entries(SAMPLE_PATHS).map(async ([key, paths]) => {
         try {
           const list = Array.isArray(paths) ? paths : [paths];
           this.samples[key] = await Promise.all(
             list.map(async (path) => {
-              const response = await fetch(`${path}?v=${SAMPLE_VERSION}`);
-              if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-              const buffer = await response.arrayBuffer();
-              return this.ctx.decodeAudioData(buffer.slice(0));
+              try {
+                const response = await fetch(`${path}?v=${SAMPLE_VERSION}`);
+                if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+                const buffer = await response.arrayBuffer();
+                const decoded = await this.ctx.decodeAudioData(buffer.slice(0));
+                tickDone();
+                return decoded;
+              } catch (e) {
+                tickDone();
+                throw e;
+              }
             })
           );
         } catch (error) {

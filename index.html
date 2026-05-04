@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-author1" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-progress1" />
   </head>
   <body>
     <main class="shell">
@@ -119,27 +119,42 @@
 
         <div id="titlePanel" class="overlay overlay-title">
           <div class="title-stage">
-            <div class="title-hero">
-              <span class="title-hero-line title-hero-line-1">EARTH</span>
-              <span class="title-hero-line title-hero-line-2">DEFENSE</span>
-              <span class="title-hero-cn">地&nbsp;&nbsp;球&nbsp;&nbsp;防&nbsp;&nbsp;御&nbsp;&nbsp;战</span>
-            </div>
+            <header class="title-banner">
+              <span class="title-banner-corner title-banner-corner-tl"></span>
+              <span class="title-banner-corner title-banner-corner-tr"></span>
+              <span class="title-banner-corner title-banner-corner-bl"></span>
+              <span class="title-banner-corner title-banner-corner-br"></span>
+              <span class="title-banner-eyebrow">A GAME BY · 游戏制作人</span>
+              <span class="title-banner-name">BRIGHT.SUN</span>
+              <span class="title-banner-tagline">Bright · 开荒手作</span>
+            </header>
 
-            <button id="startBtn" type="button" class="title-engage">
-              <span class="title-engage-row">
+            <figure class="title-hero-art" aria-hidden="true">
+              <img src="assets/brand/icon-512.png" alt="" width="512" height="512" />
+            </figure>
+
+            <h1 class="title-game">
+              <span class="title-game-en">EARTH DEFENSE</span>
+              <span class="title-game-cn">地 球 防 御 战</span>
+            </h1>
+
+            <div class="title-cta">
+              <button id="startBtn" type="button" class="title-engage">
                 <span class="title-engage-marker">▶</span>
                 <span class="title-engage-en">开 始 游 戏</span>
-              </span>
-              <span class="title-engage-cn">START</span>
-            </button>
+              </button>
+
+              <div id="titleProgress" class="title-progress" aria-hidden="true">
+                <div class="title-progress-track">
+                  <div id="titleProgressFill" class="title-progress-fill"></div>
+                </div>
+                <div id="titleProgressLabel" class="title-progress-label">载入 0%</div>
+              </div>
+            </div>
 
             <footer class="title-foot">
-              <div class="title-foot-line"></div>
-              <div class="title-credits">
-                <span class="title-credit-eyebrow">GAME BY · 游戏制作人</span>
-                <span class="title-credit-name title-credit-creator">BRIGHT.SUN</span>
-                <span class="title-credit-studio">DIGIREPUB · STUDIO</span>
-              </div>
+              <span class="title-foot-studio">DIGIREPUB STUDIO</span>
+              <span class="title-foot-year">· 2026 ·</span>
             </footer>
           </div>
         </div>
@@ -211,6 +226,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-techrave2"></script>
+    <script type="module" src="src/game-three.js?v=20260504-progress1"></script>
   </body>
 </html>
