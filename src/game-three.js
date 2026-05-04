@@ -3722,29 +3722,66 @@ function prefillSwarm() {
   }
 }
 
+// Phase-7 (chunk B): map new bestiary kinds → legacy visual archetype.
+// The old createEnemyVisual chooses one of three layered Three.js setups
+// based on enemy.kind ("meteor"/"bolt"/"saucer"). We keep that fallback for
+// shape variety + per-archetype trail color, but override the central sprite
+// with the new td-{bestiaryKind}.png so the player sees the full bestiary.
+const _bestiaryToLegacyKind = {
+  "crystal-stalker": "bolt",   "magma-worm": "meteor",
+  "bio-beetle":      "saucer", "shadow-cone": "bolt",
+  "ion-sentinel":    "saucer", "magma-spider": "meteor",
+  "void-hunter":     "bolt",   "bio-cloud":   "saucer",
+  "storm-wraith":    "bolt",   "gold-carapace": "meteor",
+  "mirror-splitter": "bolt",   "gravity-pulse": "saucer",
+  "hook-reaper":     "meteor", "mega-asteroid": "meteor",
+  "shadow-apostle":  "bolt",
+};
+
 function spawnEnemies(dt) {
   if (state.waveIndex >= wavesPerStage || state.boss) return;
   const pressure = stagePressure();
   const rate = 1.8 + pressure.stage * 4.2 + pressure.wave * 5.4 + state.levelCount * 0.22;
   state.enemyCarry += rate * dt;
+  // Pre-roll the wave plan so we draw the same population the bestiary
+  // promises (per-stage bag from STAGE_BAGS). Cache per stage+wave.
+  if (!state._wavePlanKey || state._wavePlanKey !== `${state.stageLevel}.${state.waveIndex}`) {
+    state._wavePlanKey = `${state.stageLevel}.${state.waveIndex}`;
+    state._wavePlan = planWave(state.stageLevel, state.waveIndex, wavesPerStage);
+    state._wavePlanIdx = 0;
+  }
   while (state.enemyCarry > 1) {
     state.enemyCarry -= 1;
     const baseAngle = rand(-Math.PI, Math.PI);
     const radius = rand(620, 760);
     const pos = pointOnCircle(baseAngle, radius);
     const targetAngle = baseAngle + Math.PI + rand(-0.08, 0.08);
-    const size = rand(28, 48) + pressure.stage * 6;
-    const enemyRoll = Math.random();
-    const kind = enemyRoll < 0.58 ? "meteor" : enemyRoll < 0.82 ? "bolt" : "saucer";
-    createRegularEnemy({
+    const bestiaryKind = state._wavePlan.length
+      ? state._wavePlan[(state._wavePlanIdx++) % state._wavePlan.length]
+      : null;
+    const def = bestiaryKind ? ENEMY_TYPES[bestiaryKind] : null;
+    const legacyKind = bestiaryKind ? (_bestiaryToLegacyKind[bestiaryKind] || "meteor") : (Math.random() < 0.58 ? "meteor" : Math.random() < 0.55 ? "bolt" : "saucer");
+    const size = (def?.size ?? rand(28, 48)) * 0.85 + pressure.stage * 6;
+    const speed = (def?.speed ?? rand(30, 56)) * 0.5 + pressure.combined * 34 + state.waveIndex * 0.8;
+    const hp = (def?.hp ?? 1) + Math.floor(pressure.stage * 3.2 + pressure.wave * 2.2);
+    const enemy = createRegularEnemy({
       x: pos.x,
       y: pos.y,
       angle: targetAngle,
-      speed: rand(30, 56) + pressure.combined * 34 + state.waveIndex * 0.8,
-      hp: 1 + Math.floor(pressure.stage * 3.2 + pressure.wave * 2.2),
+      speed,
+      hp,
       size,
-      kind,
+      kind: legacyKind,
     });
+    enemy.bestiaryKind = bestiaryKind;
+    enemy.bestiaryMove = def?.move || null;
+    enemy.spawnRadius = Math.hypot(enemy.x - C.x, enemy.y - C.y);
+    enemy.t = 0;
+    // Override the core sprite with the bestiary's td-{kind} top-down art.
+    if (bestiaryKind && enemy.visual?.core && tex[`td-${bestiaryKind}`]) {
+      enemy.visual.core.material.map = tex[`td-${bestiaryKind}`];
+      enemy.visual.core.material.needsUpdate = true;
+    }
   }
 }
 
@@ -4304,11 +4341,25 @@ function updateEnemies(dt) {
 
     if (e.isBoss) {
       e.bossPhase += dt * (0.32 + e.bossConfig.level * 0.012);
+      // Phase-7: boss-half dialogue, fires once when HP first crosses 50%.
+      if (!e.halfDialogueDone && e.hp / e.maxHp <= 0.5 && state.mode === "playing") {
+        e.halfDialogueDone = true;
+        const halfLines = getEvent(state.stageLevel, "boss-half");
+        if (halfLines.length) dialoguePlay(halfLines, `stage-${state.stageLevel}`, "boss-half");
+      }
       // Boss state machine: PATROL (full orbit) ↔ CHARGE (dive at Earth then retreat)
       e.bossChargeTimer = (e.bossChargeTimer ?? 5 + Math.random() * 3) - dt;
       if (e.bossChargeTimer <= 0 && !e.bossCharging) {
         e.bossCharging = true;
         e.bossChargeStart = state.time;
+        // Phase-7: boss-ult-charge dialogue (once per stage). Triggered the
+        // first time the boss starts a charge, so the player gets the warning
+        // exactly when the visual tell appears.
+        if (!e.ultChargeDialogueDone && state.mode === "playing") {
+          e.ultChargeDialogueDone = true;
+          const ultLines = getEvent(state.stageLevel, "boss-ult-charge");
+          if (ultLines.length) dialoguePlay(ultLines, `stage-${state.stageLevel}`, "boss-ult-charge");
+        }
         addPolishEffect("polishBossChargeLane", (e.x + C.x) * 0.5, (e.y + C.y) * 0.5, 1, {
           width: Math.min(150, e.size * 0.78),
           height: Math.max(230, e.radius * 0.82),
@@ -4391,9 +4442,17 @@ function updateEnemies(dt) {
 
     const oldX = e.x - Math.cos(e.angle) * 46;
     const oldY = e.y - Math.sin(e.angle) * 46;
-    const heading = e.angle + Math.sin(e.wobble) * 0.035;
-    e.x += Math.cos(heading) * e.speed * dt;
-    e.y += Math.sin(heading) * e.speed * dt;
+    // Phase-7 (chunk B): if this enemy was tagged with a bestiary kind, use
+    // its custom movement function (sine-wave / spiral / orbit / blink / etc).
+    // Otherwise fall back to the legacy linear-toward-Earth path.
+    if (e.bestiaryMove) {
+      e.t = (e.t || 0) + dt;
+      e.bestiaryMove(e, dt, { cx: C.x, cy: C.y, spawnRadius: e.spawnRadius || 700 });
+    } else {
+      const heading = e.angle + Math.sin(e.wobble) * 0.035;
+      e.x += Math.cos(heading) * e.speed * dt;
+      e.y += Math.sin(heading) * e.speed * dt;
+    }
     const dxC = e.x - C.x;
     const dyC = e.y - C.y;
     e.radius = Math.sqrt(dxC * dxC + dyC * dyC);
