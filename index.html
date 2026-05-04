@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-rogue1" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-rogue3" />
   </head>
   <body>
     <main class="shell">
@@ -87,6 +87,33 @@
         <div id="miniBossTag" class="mini-boss-tag" hidden>
           <div class="mini-boss-name" id="miniBossName">小 Boss</div>
           <div class="mini-boss-hp"><span id="miniBossHpFill"></span></div>
+        </div>
+
+        <!-- Prologue: full-screen narrator intro shown once after ENGAGE,
+             before gameplay starts. Auto-advances 7 lines, tap-to-skip. -->
+        <div id="prologueOverlay" class="prologue-overlay" hidden aria-live="polite">
+          <div class="prologue-content">
+            <div class="prologue-eyebrow">PROLOGUE · 应援协议</div>
+            <div class="prologue-text" id="prologueText">…</div>
+            <div class="prologue-progress">
+              <span id="prologueProgressFill"></span>
+            </div>
+            <div class="prologue-skip">tap to advance · 长按跳过</div>
+          </div>
+        </div>
+
+        <!-- ULT cinematic: full-screen flash with character portrait + ult
+             name when a hero's gauge fills and triggers their ultimate. -->
+        <div id="ultCinematic" class="ult-cinematic" hidden aria-hidden="true">
+          <div class="ult-cinematic-flash"></div>
+          <div class="ult-cinematic-frame">
+            <img id="ultCinematicPortrait" alt="" />
+            <div class="ult-cinematic-text">
+              <div class="ult-cinematic-eyebrow" id="ultCinematicEyebrow">ULTIMATE</div>
+              <div class="ult-cinematic-name" id="ultCinematicName">必杀技</div>
+              <div class="ult-cinematic-hero" id="ultCinematicHero">HERO</div>
+            </div>
+          </div>
         </div>
 
         <!-- Per-stage dialogue overlay; rendered above the playfield, below
@@ -243,6 +270,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-rogue1"></script>
+    <script type="module" src="src/game-three.js?v=20260504-rogue3"></script>
   </body>
 </html>

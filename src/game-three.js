@@ -62,6 +62,13 @@ const ui = {
   dialogueSpeaker: document.getElementById("dialogueSpeaker"),
   dialogueText: document.getElementById("dialogueText"),
   ultGauges: document.getElementById("ultGauges"),
+  prologueOverlay: document.getElementById("prologueOverlay"),
+  prologueText: document.getElementById("prologueText"),
+  prologueProgressFill: document.getElementById("prologueProgressFill"),
+  ultCinematic: document.getElementById("ultCinematic"),
+  ultCinematicPortrait: document.getElementById("ultCinematicPortrait"),
+  ultCinematicName: document.getElementById("ultCinematicName"),
+  ultCinematicHero: document.getElementById("ultCinematicHero"),
   miniBossTag: document.getElementById("miniBossTag"),
   miniBossName: document.getElementById("miniBossName"),
   miniBossHpFill: document.getElementById("miniBossHpFill"),
@@ -422,7 +429,18 @@ function dialogueAdvance() {
 }
 
 function updateDialogue(dt) {
+  // During modal panels (level-up / shop / pause / etc.) pause the dialogue
+  // timer + hide the box. Player attention should be on the modal. Dialogue
+  // resumes when modal closes.
+  if (isModalActive() && _dialogueState.lines.length) {
+    if (ui.dialogueBox && !ui.dialogueBox.hidden) ui.dialogueBox.hidden = true;
+    return;
+  }
   if (!_dialogueState.lines.length) return;
+  // If we hid it during a modal and now it's re-showing, restore.
+  if (ui.dialogueBox && ui.dialogueBox.hidden) {
+    dialogueShowLine(_dialogueState.lines[_dialogueState.idx]);
+  }
   _dialogueState.timer += dt;
   if (_dialogueState.timer >= _dialogueState.lineDuration) {
     dialogueAdvance();
@@ -435,9 +453,103 @@ if (ui.dialogueBox) {
   });
 }
 
+/* ─────────────── Prologue ─────────────── */
+const _prologueState = { lines: [], idx: 0, timer: 0, lineDuration: 0, onDone: null, done: false };
+
+function showPrologueLine(line) {
+  if (!ui.prologueText) return;
+  ui.prologueText.textContent = line.text;
+  ui.prologueText.style.animation = "none";
+  // eslint-disable-next-line no-unused-expressions
+  ui.prologueText.offsetHeight;
+  ui.prologueText.style.animation = "";
+  if (ui.prologueProgressFill) {
+    const pct = ((_prologueState.idx + 1) / _prologueState.lines.length) * 100;
+    ui.prologueProgressFill.style.width = `${pct}%`;
+  }
+}
+
+function playPrologue(lines, onDone) {
+  if (!ui.prologueOverlay || _prologueState.done) {
+    if (onDone) onDone();
+    return;
+  }
+  _prologueState.lines = lines.slice();
+  _prologueState.idx = 0;
+  _prologueState.timer = 0;
+  _prologueState.lineDuration = (lines[0]?.durationMs || 2400) / 1000;
+  _prologueState.onDone = onDone || null;
+  ui.prologueOverlay.hidden = false;
+  showPrologueLine(lines[0]);
+}
+
+function prologueAdvance() {
+  _prologueState.idx += 1;
+  if (_prologueState.idx >= _prologueState.lines.length) {
+    if (ui.prologueOverlay) ui.prologueOverlay.hidden = true;
+    _prologueState.done = true;
+    _prologueState.lines = [];
+    if (_prologueState.onDone) _prologueState.onDone();
+    return;
+  }
+  const line = _prologueState.lines[_prologueState.idx];
+  _prologueState.timer = 0;
+  _prologueState.lineDuration = (line.durationMs || 2400) / 1000;
+  showPrologueLine(line);
+}
+
+function updatePrologue(dt) {
+  if (!_prologueState.lines.length) return;
+  _prologueState.timer += dt;
+  if (_prologueState.timer >= _prologueState.lineDuration) prologueAdvance();
+}
+
+if (ui.prologueOverlay) {
+  ui.prologueOverlay.addEventListener("pointerdown", () => {
+    if (_prologueState.lines.length) prologueAdvance();
+  });
+}
+
+/* ─────────────── ULT cinematic ─────────────── */
+function playUltCinematic(heroId) {
+  const hero = getHero(heroId);
+  if (!hero || !ui.ultCinematic) return;
+  // Color from hero — fed to CSS via custom property
+  const r = (hero.color >> 16) & 0xff;
+  const g = (hero.color >> 8) & 0xff;
+  const b = hero.color & 0xff;
+  const colorRgba = (a) => `rgba(${r}, ${g}, ${b}, ${a})`;
+  ui.ultCinematic.style.setProperty("--ult-color", colorRgba(0.92));
+  if (ui.ultCinematicPortrait) {
+    ui.ultCinematicPortrait.src = `assets/cast/${hero.actionPortrait || hero.portrait}.png?v=${ASSET_VERSION}`;
+  }
+  if (ui.ultCinematicName) ui.ultCinematicName.textContent = hero.ult.name;
+  if (ui.ultCinematicHero) ui.ultCinematicHero.textContent = hero.name;
+  ui.ultCinematic.hidden = false;
+  // Restart the keyframe animations
+  ui.ultCinematic.style.animation = "none";
+  // eslint-disable-next-line no-unused-expressions
+  ui.ultCinematic.offsetHeight;
+  ui.ultCinematic.style.animation = "";
+  // Hide after the 1.4s cinematic completes.
+  setTimeout(() => { if (ui.ultCinematic) ui.ultCinematic.hidden = true; }, 1400);
+}
+
+// Returns true when a fullscreen panel (level-up / shop / pause / game-over /
+// victory / title / prologue) is showing — auxiliary HUD widgets should hide
+// themselves so they don't compete with the modal for player attention.
+function isModalActive() {
+  if (state.mode === "title" || state.mode === "prologue") return true;
+  if (state.mode === "paused" || state.mode === "levelUp" || state.mode === "shop") return true;
+  if (state.mode === "gameOver" || state.mode === "victory") return true;
+  return false;
+}
+
 // Render the ULT-gauges strip — one slot per active hero.
 function renderUltGauges() {
   if (!ui.ultGauges) return;
+  // Hide during modal panels so they don't sit on top of the upgrade cards.
+  if (isModalActive()) { ui.ultGauges.hidden = true; return; }
   const active = activeHeroes;
   if (!active.length) { ui.ultGauges.hidden = true; return; }
   ui.ultGauges.hidden = false;
@@ -3276,20 +3388,31 @@ function triggerUpgradeShowcase(upgrade) {
    Defenders
    ═══════════════════════════════════════════════════════════════ */
 function rebuildDefenders() {
-  const target = Math.min(24, state.gunLevel * 3);
-  // Defender size grows subtly with gunLevel so gunmounts feel beefier each upgrade.
-  const size = Math.min(72, 46 + state.gunLevel * 1.6);
+  // Each active hero contributes 1 base defender; gunLevel adds duplicates.
+  // So Stage 1 (Lia only) starts with 1 Lia mech, gunLevel up = +1 Lia, etc.
+  // Stage 2+ rotates Lia / Devi / ... so each hero gets equal screen presence.
+  const heroes = activeHeroes.length ? activeHeroes : [HEROES[0]];
+  const target = Math.min(24, Math.max(heroes.length, state.gunLevel * heroes.length));
+  // Defender size — heroes are the visual stars now, scale them up so they're
+  // clearly recognizable. Used to be 46-72; now 100-160 for full pilot read.
+  const size = Math.min(160, 110 + state.gunLevel * 4);
   // Ambient halo unlocks once player has 5+ upgrades — visible "buffed" state.
   const useHalo = state.levelCount >= 5;
+  const heroAspect = 414 / 474; // td-{hero}.png native aspect
+
   while (state.defenders.length < target) {
     const index = state.defenders.length;
-    const baseSprite = makeSprite(tex[planeTextureKeys[index % planeTextureKeys.length]], size, size, { opacity: 0.98 });
+    const hero = heroes[index % heroes.length];
+    const texKey = `td-${hero.id}`;
+    const baseSprite = makeSprite(tex[texKey], size * heroAspect, size, { opacity: 0.98 });
     let halo = null;
     if (useHalo) {
-      halo = makeSprite(tex.explosionCore, size * 1.7, size * 1.7, { additive: true, opacity: 0.18, color: 0x9bf7ff });
+      halo = makeSprite(tex.explosionCore, size * 1.5, size * 1.5, { additive: true, opacity: 0.22, color: hero.color });
       halo.position.z = 3.9;
     }
     state.defenders.push({
+      heroId: hero.id,
+      heroIdx: index % heroes.length,
       angle: (Math.PI * 2 * index) / Math.max(1, target),
       orbit: rand(148, 224),
       cooldown: rand(0.05, 0.45),
@@ -3297,6 +3420,9 @@ function rebuildDefenders() {
       mesh: baseSprite,
       halo,
       size,
+      texKey,         // track current sprite so ULT-swap is detectable
+      ultTexKey: `td-${hero.id}-ult`,
+      heroColor: hero.color,
     });
   }
   while (state.defenders.length > target) {
@@ -3304,14 +3430,22 @@ function rebuildDefenders() {
     disposeObject(old.mesh);
     if (old.halo) disposeObject(old.halo);
   }
-  // Existing defenders also resize / regrow halo when gunLevel changes.
+  // Existing defenders also resize / regrow halo when gunLevel changes, and
+  // hot-swap the sprite to ULT variant if the hero's gauge is active.
   for (const def of state.defenders) {
     if (def.size !== size) {
-      def.mesh.scale.set(size, size, 1);
+      def.mesh.scale.set(size * heroAspect, size, 1);
       def.size = size;
     }
+    const wantsUlt = heroGauges.isUltActive(def.heroId);
+    const wantedKey = wantsUlt ? def.ultTexKey : `td-${def.heroId}`;
+    if (def.texKey !== wantedKey) {
+      def.mesh.material.map = tex[wantedKey];
+      def.mesh.material.needsUpdate = true;
+      def.texKey = wantedKey;
+    }
     if (useHalo && !def.halo) {
-      def.halo = makeSprite(tex.explosionCore, size * 1.7, size * 1.7, { additive: true, opacity: 0.18, color: 0x9bf7ff });
+      def.halo = makeSprite(tex.explosionCore, size * 1.5, size * 1.5, { additive: true, opacity: 0.22, color: def.heroColor });
       def.halo.position.z = 3.9;
     }
   }
@@ -4380,7 +4514,7 @@ function frame(now) {
   const dt = Math.min(0.033, (now - state.last) / 1000);
   state.last = now;
   state.time += dt;
-  if (state.mode === "paused") {
+  if (state.mode === "paused" || state.mode === "prologue") {
     updateExplosions(dt);
     updatePolishEffects(dt);
   } else {
@@ -4391,6 +4525,7 @@ function frame(now) {
   updateBossHud();
   updateMiniBossTag();
   // Phase-7 hooks
+  updatePrologue(dt);
   updateDialogue(dt);
   renderUltGauges();
   // Auto-fire any ULT whose gauge is full + cooldown clear.
@@ -4402,6 +4537,18 @@ function frame(now) {
     audio.boom();
     state.message = `${hero.name} ULT · ${hero.ult.name}`;
     updateHud();
+    playUltCinematic(heroId);
+    // Bulk damage — clear all currently-onscreen non-boss enemies as
+    // the ULT visually slams the field. Boss takes a bigger chunk.
+    for (const e of state.enemies) {
+      if (e.isBoss) {
+        e.hp -= e.maxHp * 0.12;
+      } else if (e.isMiniBoss) {
+        e.hp -= e.maxHp * 0.6;
+      } else {
+        e.hp = 0; // fodder + mid wiped on-screen
+      }
+    }
   }
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
@@ -4511,11 +4658,18 @@ if (ui.startBtn) {
     // Brief 100% confirmation pause so the bar visibly settles.
     await new Promise((r) => setTimeout(r, 240));
 
-    // Reset clock so swarm prefilled while title was up doesn't get a giant dt.
-    state.last = performance.now();
-    state.mode = "playing";
-    state.message = "地球防御系统启动中";
+    // Hide the title overlay, then play the prologue scroll before the
+    // first wave starts. After prologue finishes, transition to playing.
+    if (ui.titlePanel) ui.titlePanel.hidden = true;
+    state.mode = "prologue";
+    state.message = "PROLOGUE";
     updateHud();
+    playPrologue(PROLOGUE, () => {
+      state.last = performance.now();
+      state.mode = "playing";
+      state.message = "地球防御系统启动中";
+      updateHud();
+    });
   });
 }
 

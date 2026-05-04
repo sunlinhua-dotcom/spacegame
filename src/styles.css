@@ -331,16 +331,215 @@ canvas {
   margin-top: 1px;
 }
 
+/* ───────────── Prologue intro overlay ─────────────
+ * Shown ONCE between ENGAGE click and gameplay. 7 narrator lines,
+ * auto-advance with progress bar, tap-to-advance, long-press to skip. */
+.prologue-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(40, 14, 64, 0.82) 0%, rgba(2, 6, 14, 0.96) 70%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.98));
+  backdrop-filter: blur(6px) saturate(110%);
+  -webkit-backdrop-filter: blur(6px) saturate(110%);
+  cursor: pointer;
+  animation: prologueIn 480ms cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+.prologue-overlay[hidden] { display: none; }
+@keyframes prologueIn { from { opacity: 0; } }
+
+.prologue-content {
+  display: grid;
+  gap: 28px;
+  width: min(86%, 480px);
+  text-align: center;
+}
+
+.prologue-eyebrow {
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.46em;
+  text-indent: 0.46em;
+  text-transform: uppercase;
+  color: rgba(199, 125, 255, 0.78);
+}
+
+.prologue-text {
+  font-size: clamp(20px, 5.5vw, 30px);
+  font-weight: 800;
+  line-height: 1.45;
+  color: rgba(241, 250, 255, 0.95);
+  text-shadow: 0 0 28px rgba(124, 232, 255, 0.28);
+  min-height: 5em;
+  animation: prologueLineIn 360ms cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+@keyframes prologueLineIn {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+.prologue-progress {
+  position: relative;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.prologue-progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: linear-gradient(90deg, #c77dff 0%, #7ce8ff 100%);
+  box-shadow: 0 0 8px rgba(199, 125, 255, 0.6);
+  transition: width 200ms linear;
+}
+
+.prologue-skip {
+  font-family: "SF Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.36em;
+  color: rgba(241, 250, 255, 0.34);
+}
+
+/* ───────────── ULT cinematic ─────────────
+ * Full-screen flash when a hero's ULT fires. Character portrait pops in,
+ * ULT name slams across the screen in their signature color, plus a
+ * radial flash + screen shake. ~1.4s total, then fades out and gameplay
+ * continues. Z-index sits below modal panels but above gauges/dialogue. */
+.ult-cinematic {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  animation: ultCinematicShake 1.4s cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+.ult-cinematic[hidden] { display: none; }
+
+@keyframes ultCinematicShake {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-3px, 2px); }
+  20%  { transform: translate(2px, -3px); }
+  30%  { transform: translate(-2px, 1px); }
+  40%  { transform: translate(2px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+.ult-cinematic-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%,
+    var(--ult-color, rgba(255, 209, 102, 0.85)) 0%,
+    var(--ult-color, rgba(255, 209, 102, 0.45)) 30%,
+    transparent 70%);
+  mix-blend-mode: screen;
+  animation: ultCinematicFlash 1.4s ease-out;
+}
+
+@keyframes ultCinematicFlash {
+  0%   { opacity: 0; transform: scale(0.4); }
+  15%  { opacity: 1; transform: scale(1.0); }
+  35%  { opacity: 0.85; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+.ult-cinematic-frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 22px;
+  align-items: center;
+  padding: 20px 28px 22px 22px;
+  background: linear-gradient(120deg, rgba(2, 6, 14, 0.86) 0%, rgba(20, 8, 36, 0.94) 100%);
+  border: 2px solid var(--ult-color, rgba(255, 209, 102, 0.95));
+  box-shadow: 0 0 60px var(--ult-color, rgba(255, 209, 102, 0.6)), inset 0 0 40px var(--ult-color, rgba(255, 209, 102, 0.2));
+  clip-path: polygon(20px 0%, 100% 0%, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0% 100%, 0% 20px);
+  animation: ultCinematicFrame 1.4s cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+
+@keyframes ultCinematicFrame {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.86); }
+  18%  { opacity: 1; transform: translateY(0) scale(1.04); }
+  30%  { transform: translateY(0) scale(1.0); }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-12px) scale(0.96); }
+}
+
+.ult-cinematic-frame img {
+  width: 168px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 0 24px var(--ult-color, rgba(255, 209, 102, 0.6));
+}
+
+.ult-cinematic-text {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  min-width: 0;
+}
+
+.ult-cinematic-eyebrow {
+  font-family: "SF Mono", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ult-cinematic-name {
+  font-size: clamp(28px, 7vw, 44px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--ult-color, #ffd166);
+  text-shadow: 0 0 22px var(--ult-color, rgba(255, 209, 102, 0.7));
+  line-height: 1.1;
+}
+
+.ult-cinematic-hero {
+  font-family: "SF Mono", monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.38em;
+  text-indent: 0.38em;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* Mobile compact */
+@media (max-width: 410px) {
+  .ult-cinematic-frame {
+    grid-template-columns: 120px 1fr;
+    gap: 14px;
+    padding: 14px 18px 16px 16px;
+    width: min(86%, 360px);
+  }
+  .ult-cinematic-frame img { width: 120px; height: 144px; }
+  .ult-cinematic-name { font-size: clamp(22px, 7.5vw, 32px); }
+  .ult-cinematic-hero { font-size: 10px; letter-spacing: 0.3em; }
+  .prologue-text { font-size: clamp(18px, 5vw, 24px); }
+}
+
 /* ───────────── Dialogue box (boss arrival, character banter) ─────────────
- * Pinned above the controls bar so it never covers the boss sprite. Slides
- * in from the bottom; auto-advances on a timer; tap anywhere on the box to
- * skip to the next line. */
+ * Sits one slot above the boss banner so when both fire on boss arrival
+ * they stack cleanly: banner hugs the controls, dialogue sits 80px higher
+ * with portrait + speaker. Hidden during modal panels (level-up / shop /
+ * pause / game-over / victory / title / prologue) via JS isModalActive(). */
 .dialogue-box {
   position: absolute;
   z-index: 8;
   left: max(12px, env(safe-area-inset-left));
   right: max(12px, env(safe-area-inset-right));
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 76px);
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 168px);
   display: grid;
   grid-template-columns: 64px 1fr;
   gap: 12px;
@@ -415,15 +614,15 @@ canvas {
 }
 
 /* ───────────── ULT gauges row — one slot per active hero ─────────────
- * Sits just above the dialogue box (and the controls bar). Each slot:
- * tiny portrait + a circular fill that rises from 0% to 100% as kills
- * accumulate. When full, the gauge flashes + the hero's ult fires. */
+ * Pinned below the top HUD (under the wave-progress bar) so the gauges
+ * have a permanent home that never collides with the bottom dialogue or
+ * boss banner. Hidden via JS isModalActive() while modal panels are open. */
 .ult-gauges {
   position: absolute;
   z-index: 7;
   left: max(12px, env(safe-area-inset-left));
   right: max(12px, env(safe-area-inset-right));
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 156px);
+  top: calc(max(12px, env(safe-area-inset-top)) + 88px);
   display: flex;
   gap: 6px;
   justify-content: center;
