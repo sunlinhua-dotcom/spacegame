@@ -1584,7 +1584,15 @@ function updateEnemyVisual(enemy, dt) {
     return;
   }
 
-  visual.group.rotation.z = -enemy.angle + Math.PI / 2;
+  // Rotate the whole visual group (flame tail, flare, core, rim) to match
+  // the enemy's ACTUAL motion direction. e.facing is updated every frame by
+  // the bestiary move primitives (sine-weave, spiral, dive, ...); falling
+  // back to e.angle covers swarm + early-frame cases. Without this, the
+  // flame trail stayed glued to the spawn direction even as the enemy
+  // wobbled/spiraled — the visual was lying about where the enemy was
+  // headed, making bullets seem to miss it.
+  const motionAngle = enemy.facing != null ? enemy.facing : enemy.angle;
+  visual.group.rotation.z = -motionAngle + Math.PI / 2;
   if (visual.core?.material) visual.core.material.rotation += enemy.spin * dt * 0.45;
   if (visual.tail?.material) {
     visual.tail.material.opacity = 0.46 + Math.sin(state.time * 11 + enemy.wobble) * 0.16;
