@@ -380,25 +380,29 @@ let heroGauges = new HeroGauges(activeHeroes);
 const _dialogueState = { lines: [], idx: 0, timer: 0, lineDuration: 0, onDone: null, sceneKey: null, eventName: null };
 let _voiceAudio = null;
 
+// iOS Safari blocks each `new Audio().play()` after the initial user-gesture
+// unless the same Audio instance is reused. So we build ONE Audio element
+// the first time we need to speak, then keep swapping its src — that path
+// stays unlocked and replays through the whole dialogue.
 function stopVoice() {
   if (_voiceAudio) {
     try { _voiceAudio.pause(); _voiceAudio.currentTime = 0; } catch (e) { /* ignore */ }
-    _voiceAudio = null;
   }
 }
 
 function playLineVoice(sceneKey, idx, speaker, eventName = null) {
-  stopVoice();
-  if (!sceneKey) return;
+  if (!sceneKey) { stopVoice(); return; }
   const idx2 = String(idx).padStart(2, "0");
-  // Stage scripts use event-prefixed file names (stage-enter-00-boss.mp3);
-  // prologue / epilogue use plain idx (00-narrator.mp3).
   const fname = eventName ? `${eventName}-${idx2}-${speaker}.mp3` : `${idx2}-${speaker}.mp3`;
   const path = `assets/voice/${sceneKey}/${fname}?v=${ASSET_VERSION}`;
-  const audio = new Audio(path);
-  audio.volume = 0.85;
-  audio.play().catch(() => { /* missing file or autoplay blocked — fine */ });
-  _voiceAudio = audio;
+  if (!_voiceAudio) {
+    _voiceAudio = new Audio();
+    _voiceAudio.preload = "auto";
+    _voiceAudio.volume = 1.0;
+  }
+  try { _voiceAudio.pause(); _voiceAudio.currentTime = 0; } catch (e) { /* ignore */ }
+  _voiceAudio.src = path;
+  _voiceAudio.play().catch(() => { /* missing file or autoplay blocked — fine */ });
 }
 
 function dialogueShowLine(line) {
@@ -407,14 +411,27 @@ function dialogueShowLine(line) {
   const speakerLabel = speakerHero ? speakerHero.name :
     line.speaker === "boss" ? "BOSS" :
     line.speaker === "narrator" ? "" : line.speaker.toUpperCase();
-  const portraitKey = speakerHero ? speakerHero.portrait :
-    line.speaker === "boss" ? null :
-    null;
+  // Portrait resolution: hero → cast/{portrait}.png; boss → current
+  // bossConfig's frame-00 sprite; narrator → no portrait.
+  let portraitSrc = null;
+  if (speakerHero) {
+    portraitSrc = `assets/cast/${speakerHero.portrait}.png?v=${ASSET_VERSION}`;
+  } else if (line.speaker === "boss") {
+    const bossConfig = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
+    if (bossConfig) {
+      // Boss frame files: boss-{NN}-{slug}-frame-00.png — pull from texture
+      // map by guessing the loaded key. game-three loads them as
+      // `boss-N-frame-0` style; fallback to the polished card-portrait if
+      // the frame texture key isn't found.
+      const idx = String(bossConfig.level).padStart(2, "0");
+      portraitSrc = `assets/generated/bosses/frames/boss-${idx}-${bossConfig.slug || ""}-frame-00.png?v=${ASSET_VERSION}`;
+    }
+  }
   if (ui.dialogueSpeaker) ui.dialogueSpeaker.textContent = speakerLabel;
   if (ui.dialogueText) ui.dialogueText.textContent = line.text;
   if (ui.dialoguePortrait) {
-    if (portraitKey) {
-      ui.dialoguePortrait.src = `assets/cast/${portraitKey}.png?v=${ASSET_VERSION}`;
+    if (portraitSrc) {
+      ui.dialoguePortrait.src = portraitSrc;
       ui.dialoguePortrait.style.visibility = "visible";
     } else {
       ui.dialoguePortrait.style.visibility = "hidden";
@@ -461,9 +478,8 @@ function dialogueAdvance() {
 }
 
 function updateDialogue(dt) {
-  // During modal panels (level-up / shop / pause / etc.) pause the dialogue
-  // timer + hide the box. Player attention should be on the modal. Dialogue
-  // resumes when modal closes.
+  // During modal panels (level-up / shop / pause / etc.) hide the box.
+  // Dialogue resumes when modal closes.
   if (isModalActive() && _dialogueState.lines.length) {
     if (ui.dialogueBox && !ui.dialogueBox.hidden) ui.dialogueBox.hidden = true;
     return;
@@ -473,10 +489,8 @@ function updateDialogue(dt) {
   if (ui.dialogueBox && ui.dialogueBox.hidden) {
     dialogueShowLine(_dialogueState.lines[_dialogueState.idx]);
   }
-  _dialogueState.timer += dt;
-  if (_dialogueState.timer >= _dialogueState.lineDuration) {
-    dialogueAdvance();
-  }
+  // No auto-advance — player taps the box to read the next line. Voice clip
+  // plays through; if user wants to pace ahead they can tap.
 }
 
 if (ui.dialogueBox) {
@@ -533,9 +547,9 @@ function prologueAdvance() {
 }
 
 function updatePrologue(dt) {
+  // Player taps prologueOverlay to advance — no auto-timer. The voice clip
+  // plays out at its own pace; player skips by tapping again.
   if (!_prologueState.lines.length) return;
-  _prologueState.timer += dt;
-  if (_prologueState.timer >= _prologueState.lineDuration) prologueAdvance();
 }
 
 if (ui.prologueOverlay) {
@@ -544,10 +558,66 @@ if (ui.prologueOverlay) {
   });
 }
 
-/* ─────────────── ULT cinematic ─────────────── */
+/* ─────────────── ULT cinematic ───────────────
+ * Two layers run together:
+ *   1. CSS frame card (portrait + ULT name + signature glow)
+ *   2. Three.js scene burst — colored expanding shockwaves at Earth,
+ *      explosion bursts at each defender's position, and a screen-wide
+ *      particle storm in the hero's signature color. Distinct enough
+ *      per-hero via color + shape variation. */
+function playUltSceneEffect(hero) {
+  // Color tint applied to all sprites this ULT spawns.
+  const tint = hero.color;
+
+  // Big radial pulse from Earth — 3 staggered shockwaves, ~1.6s total.
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 1.5, {
+        life: 0.95, grow: 0.55, spin: -1.2, opacity: 0.85, z: 8.6, color: tint,
+      });
+      addPolishEffect("polishBossRageAura", C.x, C.y, earthRadius * 2.4, {
+        life: 0.7, grow: 0.42, spin: 1.4, opacity: 0.65, z: 8.4, color: tint,
+      });
+    }, i * 240);
+  }
+
+  // Screen-wide glitter storm — 28 small flashes scattered behind action.
+  for (let i = 0; i < 28; i++) {
+    setTimeout(() => {
+      const px = rand(-W * 0.42, W * 0.42) + C.x;
+      const py = rand(-H * 0.42, H * 0.42) + C.y;
+      spawnInterceptFlash(px, py, 0.7 + Math.random() * 0.5);
+    }, i * 35);
+  }
+
+  // Explosion at each defender position so the squad visibly "fires" the
+  // ult in unison — gives the player feedback that the team did it.
+  if (state.defenders) {
+    for (const def of state.defenders) {
+      addExplosion(def.x, def.y, 1.3);
+      addPolishEffect("polishBossRageAura", def.x, def.y, def.size * 1.6, {
+        life: 0.55, grow: 0.18, spin: 1.0, opacity: 0.9, z: 4.2, color: tint,
+      });
+    }
+  }
+
+  // Final central detonation when the burst cycle finishes.
+  setTimeout(() => {
+    addExplosion(C.x, C.y, 2.4);
+    triggerScreenShake(0.6, 14);
+  }, 700);
+
+  // Quick early shake to prime the moment.
+  triggerScreenShake(0.42, 10);
+  audio.boom();
+  setTimeout(() => audio.boom(), 320);
+}
+
 function playUltCinematic(heroId) {
   const hero = getHero(heroId);
   if (!hero || !ui.ultCinematic) return;
+  // 1. Three.js scene burst (radial pulses + per-defender explosion + glitter).
+  playUltSceneEffect(hero);
   // Color from hero — fed to CSS via custom property
   const r = (hero.color >> 16) & 0xff;
   const g = (hero.color >> 8) & 0xff;
@@ -600,8 +670,14 @@ function renderUltGauges() {
       img.alt = h.name;
       const fill = document.createElement("div");
       fill.className = "ult-slot-fill";
+      // Permanent "ULT" label so the gauge reads as a UI element, not a
+      // floating portrait. Sits over the bottom of the slot.
+      const label = document.createElement("div");
+      label.className = "ult-slot-label";
+      label.textContent = "ULT";
       slot.appendChild(img);
       slot.appendChild(fill);
+      slot.appendChild(label);
       ui.ultGauges.appendChild(slot);
     }
   }
@@ -3444,9 +3520,10 @@ function rebuildDefenders() {
   // Stage 2+ rotates Lia / Devi / ... so each hero gets equal screen presence.
   const heroes = activeHeroes.length ? activeHeroes : [HEROES[0]];
   const target = Math.min(24, Math.max(heroes.length, state.gunLevel * heroes.length));
-  // Defender size — heroes are the visual stars now, scale them up so they're
-  // clearly recognizable. Used to be 46-72; now 100-160 for full pilot read.
-  const size = Math.min(160, 110 + state.gunLevel * 4);
+  // Defender size — heroes feel like companions orbiting Earth, not main
+  // visual anchors. Big enough to read silhouette + signature color, small
+  // enough not to overlap Earth or each other.
+  const size = Math.min(110, 76 + state.gunLevel * 2.6);
   // Ambient halo unlocks once player has 5+ upgrades — visible "buffed" state.
   const useHalo = state.levelCount >= 5;
   const heroAspect = 414 / 474; // td-{hero}.png native aspect
@@ -3465,7 +3542,10 @@ function rebuildDefenders() {
       heroId: hero.id,
       heroIdx: index % heroes.length,
       angle: (Math.PI * 2 * index) / Math.max(1, target),
-      orbit: rand(148, 224),
+      // Hero mech orbits FURTHER from Earth than the regular interceptors —
+      // gives a clear visual hierarchy: Earth at center, hero squadron in
+      // an outer protective ring, swarm enemies converging from beyond.
+      orbit: rand(220, 290),
       cooldown: rand(0.05, 0.45),
       born: state.gameTime,
       mesh: baseSprite,
@@ -4171,7 +4251,11 @@ function updateCombat(dt) {
     defender.x = fromX + (orbitX - fromX) * launch;
     defender.y = fromY + (orbitY - fromY) * launch;
     setXY(defender.mesh, defender.x, defender.y, 4);
-    defender.mesh.material.rotation = -a + Math.PI / 2;
+    // Engine glow always points at Earth — i.e. sprite "up" points outward.
+    // The td-{hero}.png art has nose UP / engine DOWN, so this is just
+    // outward angle - π/2 (THREE.Sprite up at rotation 0 = +Y in world).
+    const outwardAngle = Math.atan2(defender.y - C.y, defender.x - C.x);
+    defender.mesh.material.rotation = outwardAngle - Math.PI / 2;
     if (defender.halo) {
       setXY(defender.halo, defender.x, defender.y, 3.9);
       defender.halo.material.opacity = 0.16 + Math.sin(state.time * 4 + defender.angle) * 0.06;

@@ -114,8 +114,10 @@ export class AudioEngine {
     this.master.gain.value = 0;
     this.musicGain = this.ctx.createGain();
     this.sfxGain = this.ctx.createGain();
-    this.musicGain.gain.value = 0.78;
-    this.sfxGain.gain.value = 0.92;
+    // Lower music + SFX so dialogue TTS (HTML5 Audio at 1.0) reads clearly.
+    // Was 0.78 / 0.92 — felt washed out vs voice.
+    this.musicGain.gain.value = 0.38;
+    this.sfxGain.gain.value = 0.55;
 
     this.musicGain.connect(this.master);
     this.sfxGain.connect(this.master);
