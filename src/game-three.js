@@ -414,7 +414,21 @@ function stopVoice() {
 function duckMusic(amount) {
   if (!audio.musicGain || !audio.ctx) return;
   audio.musicGain.gain.cancelScheduledValues(audio.ctx.currentTime);
-  audio.musicGain.gain.setTargetAtTime(amount, audio.ctx.currentTime, 0.08);
+  audio.musicGain.gain.setTargetAtTime(amount, audio.ctx.currentTime, 0.06);
+}
+
+// Hold music silent for the entire prologue / hero-intro / boss-reveal
+// span so dialogue lines never compete with the techno track. Per-line
+// duck levels are too low — the player still heard music wash over the
+// voice after each clip ended. Manual hold + release fixes that.
+let _voiceHoldDepth = 0;
+function holdMusicForVoice() {
+  _voiceHoldDepth += 1;
+  duckMusic(0.0);
+}
+function releaseMusicHold() {
+  _voiceHoldDepth = Math.max(0, _voiceHoldDepth - 1);
+  if (_voiceHoldDepth === 0) duckMusic(0.62);
 }
 
 function playLineVoice(sceneKey, idx, speaker, eventName = null, opts = {}) {
@@ -432,9 +446,13 @@ function playLineVoice(sceneKey, idx, speaker, eventName = null, opts = {}) {
   _voiceAudio.onpause = null;
   _voiceAudio.src = path;
   _voiceAudio.playbackRate = opts.rate || 1.0;
-  // Duck the music while voice plays so the line reads clearly.
-  duckMusic(0.18);
-  const restore = () => duckMusic(0.62);
+  // Duck the music to inaudible while voice plays. 0.06 (≈10× quieter than
+  // the 0.62 baseline) is low enough that even iPhone speakers don't bleed
+  // music through Lia's voice, but the music never fully fades to keep the
+  // session alive (Web Audio context dies if it's silent for too long on
+  // some Safari versions).
+  duckMusic(0.06);
+  const restore = () => { if (_voiceHoldDepth === 0) duckMusic(0.62); };
   _voiceAudio.onended = () => { restore(); if (opts.onEnded) opts.onEnded(); };
   _voiceAudio.onpause = () => { if (_voiceAudio.currentTime >= _voiceAudio.duration - 0.05) restore(); };
   _voiceAudio.play().catch(() => { /* missing file or autoplay blocked — fine */ });
@@ -568,6 +586,10 @@ function playPrologue(lines, onDone) {
   _prologueState.timer = 0;
   _prologueState.lineDuration = (lines[0]?.durationMs || 2400) / 1000;
   _prologueState.onDone = onDone || null;
+  // Hold music silent for the entire prologue so each TTS line lands clean
+  // — without this the music swelled in between lines while the overlay
+  // stayed up.
+  holdMusicForVoice();
   ui.prologueOverlay.hidden = false;
   showPrologueLine(lines[0]);
 }
@@ -578,6 +600,7 @@ function prologueAdvance() {
     if (ui.prologueOverlay) ui.prologueOverlay.hidden = true;
     _prologueState.done = true;
     _prologueState.lines = [];
+    releaseMusicHold();
     if (_prologueState.onDone) _prologueState.onDone();
     return;
   }
@@ -610,6 +633,7 @@ function playHeroIntro(heroId, onDone = null) {
   if (!hero || !ui.heroIntro) { if (onDone) onDone(); return; }
   _heroIntroState.hero = hero;
   _heroIntroState.onDone = onDone;
+  holdMusicForVoice();
   // Set color custom property for the border + ray streaks.
   const r = (hero.color >> 16) & 0xff, g = (hero.color >> 8) & 0xff, b = hero.color & 0xff;
   ui.heroIntro.style.setProperty("--hero-tint", `rgba(${r}, ${g}, ${b}, 0.85)`);
@@ -649,6 +673,7 @@ function dismissHeroIntro() {
   if (!ui.heroIntro || ui.heroIntro.hidden) return;
   ui.heroIntro.hidden = true;
   stopVoice();
+  releaseMusicHold();
   const cb = _heroIntroState.onDone;
   _heroIntroState.hero = null;
   _heroIntroState.onDone = null;
@@ -4463,7 +4488,21 @@ function nearestEnemy(from, maxRadius = Infinity) {
    ═══════════════════════════════════════════════════════════════ */
 function shoot(from, target, spread = 0) {
   if (!target) return;
-  const base = angleTo(from, target);
+  // Lead-aim: enemies in this game move continuously toward Earth's center
+  // (or along bestiary patterns) — aim at where the target WILL be by the
+  // time the bullet arrives. Without this, fast meteors and hard-charging
+  // mini-bosses get easily missed since the bullet aims at the enemy's
+  // current pos and lands behind by the time it gets there.
+  const bulletSpeed = 620 + state.laserLevel * 18;
+  const dxT = target.x - from.x;
+  const dyT = target.y - from.y;
+  const dist = Math.sqrt(dxT * dxT + dyT * dyT);
+  const tof = dist / bulletSpeed;
+  const tvx = Math.cos(target.angle || 0) * (target.speed || 0);
+  const tvy = Math.sin(target.angle || 0) * (target.speed || 0);
+  const aimX = target.x + tvx * tof;
+  const aimY = target.y + tvy * tof;
+  const base = Math.atan2(aimY - from.y, aimX - from.x);
   const shots = 1 + Math.min(2, state.splitShot);
   const widthMul = 1 + (state.bulletDamage - 1) * 0.18 + state.bulletPierce * 0.06;
   const lengthMul = 1 + (state.bulletDamage - 1) * 0.22 + state.laserLevel * 0.04;
@@ -4481,8 +4520,8 @@ function shoot(from, target, spread = 0) {
     const bullet = {
       x: from.x + noseDx,
       y: from.y + noseDy,
-      vx: Math.cos(base + offset) * (540 + state.laserLevel * 18),
-      vy: Math.sin(base + offset) * (540 + state.laserLevel * 18),
+      vx: Math.cos(base + offset) * bulletSpeed,
+      vy: Math.sin(base + offset) * bulletSpeed,
       life: 1.05,
       damage: state.bulletDamage,
       pierce: state.bulletPierce,
@@ -4643,7 +4682,10 @@ function updateBullets(dt) {
         if (enemy.hp <= 0) continue;
         const dx = b.x - enemy.x;
         const dy = b.y - enemy.y;
-        const r = enemy.size * 0.55 + 7;
+        // Generous hitbox — the gold meteor's visible flame tail is now
+        // ~3.4× size, so a tight 0.55× hitbox felt like bullets were
+        // passing through the fire. 0.78× + 14 covers the mid-body.
+        const r = enemy.size * 0.78 + 14;
         if (dx * dx + dy * dy < r * r) {
           applyHitDamage(enemy, b.damage, b.x, b.y);
           addExplosion(b.x, b.y, 0.42);
@@ -5118,8 +5160,15 @@ if (ui.startBtn) {
     // sample download will tick into the unified progress counter.
     if (!audio.started) {
       audio.start()
-        .then(() => audio.setEnabled(state.soundOn))
+        .then(() => {
+          audio.setEnabled(state.soundOn);
+          // Engage SFX — confirms the button press to the player and gives
+          // the title-screen → prologue handoff a punchy beat.
+          audio.levelUp();
+        })
         .catch((err) => console.warn("audio unlock failed", err));
+    } else {
+      audio.levelUp();
     }
 
     // Wire the bar to the unified asset counter.

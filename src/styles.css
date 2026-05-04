@@ -682,11 +682,15 @@ canvas {
 .prologue-text {
   font-size: clamp(20px, 5.5vw, 30px);
   font-weight: 800;
-  line-height: 1.45;
+  line-height: 1.5;
   color: rgba(241, 250, 255, 0.95);
   text-shadow: 0 0 28px rgba(124, 232, 255, 0.28);
   min-height: 5em;
   animation: prologueLineIn 360ms cubic-bezier(0.22, 0.85, 0.32, 1);
+  word-break: normal;
+  overflow-wrap: anywhere;
+  hyphens: none;
+  max-width: 100%;
 }
 @keyframes prologueLineIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -891,13 +895,17 @@ canvas {
   font-size: 14px;
   font-weight: 700;
   color: rgba(241, 250, 255, 0.95);
-  line-height: 1.5;
-  /* Mixed CN/EN text: don't split English words across lines, but allow
-     wraps at Chinese-English boundaries. Prevents "BRI / GHT" type splits. */
-  word-break: keep-all;
-  overflow-wrap: break-word;
+  line-height: 1.55;
+  /* Mixed CN/EN: CJK wraps naturally at any character (word-break: normal),
+     English wraps at spaces, and overflow-wrap kicks in for long ALL-CAPS
+     tokens (BRIGHT.SUN, DIGIREPUB) that would otherwise overflow. The
+     earlier `keep-all` rule turned each Chinese sentence into one giant
+     "word" that ran off the box. */
+  word-break: normal;
+  overflow-wrap: anywhere;
   white-space: normal;
   hyphens: none;
+  max-width: 100%;
 }
 
 .dialogue-skip {
@@ -1833,7 +1841,12 @@ canvas {
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.46em;
+  /* The trick to keep letter-spaced text visually centered: pad the line
+     with the trailing letter-space's worth of indent so the optical center
+     matches the geometric center. Without text-align: center as well, the
+     grid `justify-items: center` only centers the box, not the text inside. */
   text-indent: 0.46em;
+  text-align: center;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
 }
@@ -1843,6 +1856,7 @@ canvas {
   font-weight: 900;
   letter-spacing: 0.08em;
   text-indent: 0.08em;
+  text-align: center;
   color: #ffffff;
   text-shadow:
     0 0 24px rgba(255, 255, 255, 0.5),
@@ -1857,6 +1871,7 @@ canvas {
   font-weight: 700;
   letter-spacing: 0.36em;
   text-indent: 0.36em;
+  text-align: center;
   color: rgba(255, 255, 255, 0.7);
 }
 

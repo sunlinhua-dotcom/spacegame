@@ -1,14 +1,19 @@
-const SAMPLE_VERSION = "20260504-techrave2";
+const SAMPLE_VERSION = "20260504-juicy1";
 
 // Master audible target. 0.5 leaves headroom for the compressor while staying
 // loud enough to be heard on a phone speaker in a noisy room.
 const MASTER_AUDIBLE = 0.5;
 
 const SAMPLE_PATHS = {
+  // Four-track rotation. tech-rave kicks the title screen (smallest file →
+  // fastest first paint); the longer tracks (alphatron 4:40, robotic-city
+  // 3:12, city-on-speed 2:50) carry actual gameplay. Game-three picks one
+  // by stage so the player hears variety across a full run.
   music: [
-    // Single track — author wants tech-rave as the default; mp3 (1.4MB) loads
-    // ~8x faster than the original wav (11MB).
-    "assets/audio/cc0-techno/tech-rave.mp3"
+    "assets/audio/cc0-techno/tech-rave.mp3",
+    "assets/audio/cc0-techno/alphatron.mp3",
+    "assets/audio/cc0-techno/robotic-city.mp3",
+    "assets/audio/cc0-techno/city-on-speed.mp3"
   ],
   fire: [
     "assets/audio/mixkit-premium/fire-1.mp3",
@@ -208,16 +213,53 @@ export class AudioEngine {
 
   startMusic() {
     if (!this.ctx || !this.enabled || this.musicSource) return;
-    const source = this.playSample("music", {
-      loop: true,
-      gain: 0.86,
-      destination: this.musicGain
-    });
-    if (source) {
-      this.musicSource = source;
+    if (!this.samples.music?.length) {
+      this.startFallbackMusic();
       return;
     }
-    this.startFallbackMusic();
+    // Rotate tracks rather than loop a single one — when the current track
+    // ends, queue the next so the player hears variety across a long
+    // session. Index is shuffled at start so a returning player isn't stuck
+    // hearing the same opener every run.
+    if (this.musicTrackIdx == null) {
+      this.musicTrackIdx = Math.floor(Math.random() * this.samples.music.length);
+    }
+    this._playNextTrack();
+  }
+
+  _playNextTrack() {
+    if (!this.ctx || !this.enabled) return;
+    const tracks = this.samples.music;
+    if (!tracks?.length) return;
+    const buffer = tracks[this.musicTrackIdx % tracks.length];
+    this.musicTrackIdx = (this.musicTrackIdx + 1) % tracks.length;
+    const source = this.ctx.createBufferSource();
+    const gain = this.ctx.createGain();
+    source.buffer = buffer;
+    source.loop = false;
+    gain.gain.value = 0.86;
+    source.connect(gain).connect(this.musicGain);
+    source.onended = () => {
+      // Only auto-advance if WE are still the current track (not stopped or
+      // replaced by a manual cycleMusic() call).
+      if (this.musicSource === source) {
+        this.musicSource = null;
+        this._playNextTrack();
+      }
+    };
+    source.start();
+    this.musicSource = source;
+  }
+
+  cycleMusic() {
+    // Manual track change — used on stage transitions so each fresh stage
+    // gets a fresh beat. Callers shouldn't need to know about the rotation
+    // index; just ask for the next track.
+    if (this.musicSource) {
+      try { this.musicSource.onended = null; this.musicSource.stop(); } catch (e) { /* ignore */ }
+      this.musicSource = null;
+    }
+    this._playNextTrack();
   }
 
   startFallbackMusic() {

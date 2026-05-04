@@ -44,10 +44,37 @@ if "platform.xiaomimimo.com" in BASE_URL:
 # voiceDesc strings; this script keeps a copy here so the TTS layer doesn't
 # need to import the JS module. Boss + narrator voices are also defined here.
 EN_PRONUNCIATION_HINT = (
-    " 重要:文本中所有英文单词(如 BRIGHT, ULT, ORBIT-S, DIGIREPUB, Lia, Devi, Rin, Yue, Aria, Sakura, Ade)"
-    "请按英文单词整体发音连读,不要逐字母拼读,不要把字母分开。Lia 读 Lee-ah,Aria 读 Ah-ree-ah,"
-    "BRIGHT 读 brait,DIGIREPUB 读 dij-i-re-pub,ORBIT-S 读 or-bit ess。"
+    " 重要:文本中的英文请按整词连读发音,不要逐字母拼读。"
+    "Lia 读 Lee-ah,Devi 读 De-vi,Rin 读 Rin,Yue 读 Yue,"
+    "Ade 读 Ah-day,Sakura 读 Sa-ku-ra,Aria 读 Ah-ree-ah。"
 )
+
+# Phonetic replacement table — MiMo's TTS spells English brand words
+# letter-by-letter no matter how strict the prompt is. Replace them with
+# Chinese-phonetic equivalents in the spoken text only (the on-screen text
+# stays English in dialogue.js). Lookup is longest-first to avoid partial
+# overlaps eating each other (e.g. ORBIT-S vs ORBIT).
+PHONETIC_FIXES = [
+    ("DIGIREPUB", "迪吉瑞普"),   # dí jí ruì pǔ
+    ("ORBIT-S",   "奥比特艾斯"),  # ào bǐ tè ài sī
+    ("BRIGHT",    "布莱特"),     # bù lái tè
+    ("ULT",       "奥特"),       # à wò tè (close to "alt")
+    ("Sakura",    "莎库拉"),
+    ("Aria",      "艾瑞亚"),
+    ("Devi",      "德维"),
+    ("Lia",       "莉亚"),
+    ("Rin",       "凛"),
+    ("Yue",       "月"),
+    ("Ade",       "艾蒂"),
+]
+
+
+def to_speakable(text: str) -> str:
+    """Swap brand words with Chinese phonetics for TTS only."""
+    out = text
+    for en, zh in PHONETIC_FIXES:
+        out = out.replace(en, zh)
+    return out
 
 VOICE_PROMPTS = {
     "bright":   "沉稳威严的男性指挥官,中低音,30岁左右,略带电子通讯滤镜的清晰咬字,语速适中,镇定不紧绷。" + EN_PRONUNCIATION_HINT,
@@ -115,11 +142,13 @@ def synth_line(text: str, voice_prompt: str, out_path: Path) -> bool:
         print(f"  [skip] {out_path.name}", flush=True)
         return True
 
+    spoken = to_speakable(text)
+
     body = {
         "model": MODEL,
         "messages": [
             {"role": "user", "content": voice_prompt},
-            {"role": "assistant", "content": text},
+            {"role": "assistant", "content": spoken},
         ],
         "audio": {"format": OUTPUT_FORMAT},
     }
