@@ -230,6 +230,37 @@ export const HEROES = [
   },
 ];
 
+/* ─────────────── Master Yin — guest support character ───────────
+   Original side character, unlocks at stage 1 wave 10 as a mid-stage
+   reward (the player's first "you got something extra" moment).
+   He is NOT a pilot — has no top-down sprite, no orbit slot, no ULT
+   gauge. Instead he's a permanent passive: his "嘲讽" (taunt) skill
+   slows every enemy on the field by ENEMY_SLOW_FACTOR once unlocked,
+   and his portrait appears as a small badge next to the HUD.
+   ─────────────────────────────────────────────────────────────── */
+
+export const MASTER_YIN = {
+  id: "yin",
+  name: "殷师傅",
+  fullName: "殷师傅 · 居酒屋客座助阵",
+  country: "CN",
+  portrait: "yin-master",
+  // 0.78 = 22% slow. Strong enough to feel a difference on stage 2+
+  // (where enemies start moving fast), gentle enough not to break
+  // the mid-stage power curve.
+  enemySlowFactor: 0.78,
+  skill: {
+    name: "嘲讽",
+    desc: "全场敌人移动减速 22%",
+  },
+  unlock: {
+    stage: 1,
+    wave: 10,
+    eyebrow: "GUEST PILOT",
+    blurb: "居酒屋的殷师傅赶来助阵 —— 一句嘲讽,所有怪物都得放慢脚步。",
+  },
+};
+
 /* ─────────────── Per-stage active heroes ────────────────────────
    Stage N has heroes [0..N-1]. So stage 1 has 1 hero (Lia), stage 2
    has 2 (Lia + Devi), ... stage 8 has all 8. Stages 9 / 10 still

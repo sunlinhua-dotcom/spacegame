@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { AudioEngine } from "./audio.js?v=20260504-techrave2";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
 import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260504-rogue1";
-import { HEROES, activeHeroesForStage, getHero, HeroGauges } from "./heroes.js?v=20260504-rogue1";
+import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260504-juicy3";
 import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260504-rogue1";
 import { PROLOGUE, EPILOGUE, getEvent } from "./dialogue.js?v=20260504-rogue1";
 
@@ -80,6 +80,8 @@ const ui = {
   bossRevealImg: document.getElementById("bossRevealImg"),
   bossRevealName: document.getElementById("bossRevealName"),
   bossRevealAbility: document.getElementById("bossRevealAbility"),
+  yinIntro: document.getElementById("yinIntro"),
+  yinBadge: document.getElementById("yinBadge"),
   miniBossTag: document.getElementById("miniBossTag"),
   miniBossName: document.getElementById("miniBossName"),
   miniBossHpFill: document.getElementById("miniBossHpFill"),
@@ -201,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy1";
+const ASSET_VERSION = "20260504-juicy3";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -726,6 +728,46 @@ if (ui.bossReveal) {
   ui.bossReveal.addEventListener("pointerdown", dismissBossReveal);
 }
 
+/* ─────────────── 殷师傅 unlock celebration ───────────────
+ * Fired at stage 1 wave 10 the FIRST time. Pauses gameplay for the
+ * splash, plays the levelUp jingle, then auto-dismisses after 3 s
+ * (also tap-to-dismiss). Music holds silent for the duration so the
+ * moment lands clean. */
+const _yinIntroState = { autoTimer: null, prevMode: null };
+
+function showYinUnlockOverlay() {
+  if (!ui.yinIntro) return;
+  _yinIntroState.prevMode = state.mode;
+  state.mode = "yinIntro";
+  holdMusicForVoice();
+  ui.yinIntro.hidden = false;
+  ui.yinIntro.style.animation = "none";
+  // eslint-disable-next-line no-unused-expressions
+  ui.yinIntro.offsetHeight;
+  ui.yinIntro.style.animation = "";
+  if (_yinIntroState.autoTimer) clearTimeout(_yinIntroState.autoTimer);
+  _yinIntroState.autoTimer = setTimeout(dismissYinIntro, 3200);
+}
+
+function dismissYinIntro() {
+  if (!ui.yinIntro || ui.yinIntro.hidden) return;
+  ui.yinIntro.hidden = true;
+  if (_yinIntroState.autoTimer) {
+    clearTimeout(_yinIntroState.autoTimer);
+    _yinIntroState.autoTimer = null;
+  }
+  releaseMusicHold();
+  if (_yinIntroState.prevMode) {
+    state.mode = _yinIntroState.prevMode;
+    state.last = performance.now();
+  }
+  _yinIntroState.prevMode = null;
+}
+
+if (ui.yinIntro) {
+  ui.yinIntro.addEventListener("pointerdown", dismissYinIntro);
+}
+
 /* ─────────────── ULT cinematic ───────────────
  * Two layers run together:
  *   1. CSS frame card (portrait + ULT name + signature glow)
@@ -859,7 +901,7 @@ function playUltCinematic(heroId) {
 // themselves so they don't compete with the modal for player attention.
 function isModalActive() {
   if (state.mode === "title" || state.mode === "prologue" || state.mode === "heroIntro") return true;
-  if (state.mode === "bossReveal") return true;
+  if (state.mode === "bossReveal" || state.mode === "yinIntro") return true;
   if (state.mode === "paused" || state.mode === "levelUp" || state.mode === "shop") return true;
   if (state.mode === "gameOver" || state.mode === "victory") return true;
   return false;
@@ -1145,6 +1187,9 @@ const state = {
   // the AudioContext is unlocked on the initial pointerdown anywhere on the stage.
   soundOn: true,
   miniBossesDefeated: 0,
+  // 殷师傅 ("嘲讽") guest support. Re-enables on each run if the player
+  // already unlocked him in a prior session, so the slow buff carries over.
+  yinActive: !!progress.yinUnlocked,
   message: "地球防御系统启动中",
 };
 
@@ -2457,8 +2502,12 @@ function reset() {
     moneyMul: 1,
     levelUpSource: "timer",
     miniBossesDefeated: 0,
+    // Carry the Master Yin unlock across runs — once unlocked, the slow
+    // applies from the start of each new run.
+    yinActive: !!progress.yinUnlocked,
     message: "地球防御系统启动中",
   });
+  if (ui.yinBadge) ui.yinBadge.hidden = !progress.yinUnlocked;
   rebuildDefenders();
   hideLevelPanel();
   hideShopPanel();
@@ -3883,6 +3932,13 @@ function updateWave(dt) {
   state.waveTimer = 0;
   state.waveIndex += 1;
   state.enemyCarry += state.waveIndex % 5 === 0 ? 4.2 : 1.3;
+  // Stage 1, wave 10 → unlock 殷师傅 (Master Yin) as a guest support.
+  // First-time only; localStorage persists the flag across sessions.
+  if (state.stageLevel === MASTER_YIN.unlock.stage
+      && state.waveIndex === MASTER_YIN.unlock.wave
+      && !state.yinActive) {
+    triggerYinUnlock();
+  }
   if (state.waveIndex >= wavesPerStage) {
     state.waveIndex = wavesPerStage;
     spawnBoss();
@@ -3891,6 +3947,17 @@ function updateWave(dt) {
     state.message = `第 ${state.stageLevel} 关 / 第 ${state.waveIndex} 波`;
     updateHud();
   }
+}
+
+function triggerYinUnlock() {
+  state.yinActive = true;
+  if (!progress.yinUnlocked) {
+    progress.yinUnlocked = true;
+    saveProgress(progress);
+  }
+  showYinUnlockOverlay();
+  if (ui.yinBadge) ui.yinBadge.hidden = false;
+  audio.levelUp();
 }
 
 const miniBossKinds = ["meteor", "bolt", "saucer"];
@@ -4714,9 +4781,18 @@ function updateBullets(dt) {
 /* ═══════════════════════════════════════════════════════════════
    Enemy Update (swap-and-pop)
    ═══════════════════════════════════════════════════════════════ */
-function updateEnemies(dt) {
+function updateEnemies(realDt) {
+  // 殷师傅 (Master Yin) "嘲讽" — once unlocked at stage 1 wave 10, fodder /
+  // swarm enemies move at MASTER_YIN.enemySlowFactor (0.78 = 22% slower)
+  // for the rest of the run. Bosses + mini-bosses keep full speed so their
+  // scripted choreography stays readable.
+  const yinSlow = state.yinActive ? MASTER_YIN.enemySlowFactor : 1;
+  const slowedDt = realDt * yinSlow;
+
   for (let i = state.enemies.length - 1; i >= 0; i--) {
     const e = state.enemies[i];
+    // Per-enemy dt: bosses/mini-bosses unaffected, everyone else slowed.
+    const dt = (e.isBoss || e.isMiniBoss) ? realDt : slowedDt;
 
     if (e.isSwarm) {
       e.x += Math.cos(e.angle) * e.speed * dt;

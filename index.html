@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-juicy1" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-juicy3" />
   </head>
   <body>
     <main class="shell">
@@ -141,6 +141,36 @@
             </div>
           </div>
           <div class="hero-intro-cta">▶ 点击集结</div>
+        </div>
+
+        <!-- 殷师傅 unlock celebration — fired once at stage 1 wave 10. Full
+             portrait + skill blurb + tap to continue. After it dismisses,
+             a small badge stays in the HUD area to signal "嘲讽 ON". -->
+        <div id="yinIntro" class="yin-intro" hidden aria-live="polite">
+          <div class="yin-intro-rays" aria-hidden="true"></div>
+          <div class="yin-intro-frame">
+            <div class="yin-intro-portrait">
+              <img id="yinIntroImg" src="assets/cast/yin-master.png?v=20260504-juicy3" alt="" />
+            </div>
+            <div class="yin-intro-meta">
+              <div class="yin-intro-eyebrow">GUEST PILOT · 客座助阵</div>
+              <div class="yin-intro-name">殷师傅</div>
+              <div class="yin-intro-country">居酒屋掌勺 · 中国</div>
+              <div class="yin-intro-divider"></div>
+              <dl class="yin-intro-skills">
+                <div><dt>技能</dt><dd>嘲讽 · 全场敌人减速 22%</dd></div>
+                <div><dt>登场</dt><dd>第 1 关 第 10 波</dd></div>
+              </dl>
+            </div>
+          </div>
+          <div class="yin-intro-cta">▶ 点击集结</div>
+        </div>
+
+        <!-- HUD badge: appears in the corner once 殷师傅 is active so the
+             player remembers his slow buff is on. -->
+        <div id="yinBadge" class="yin-badge" hidden aria-hidden="true">
+          <img src="assets/cast/yin-master.png?v=20260504-juicy3" alt="" />
+          <span class="yin-badge-tag">嘲讽</span>
         </div>
 
         <!-- ULT cinematic: full-screen flash with character portrait + ult
@@ -311,6 +341,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-juicy1"></script>
+    <script type="module" src="src/game-three.js?v=20260504-juicy3"></script>
   </body>
 </html>

@@ -327,6 +327,51 @@ Row 4 — More ULT projectiles + alt:
 CRITICAL: top-down view, every projectile points UP, 4x4 even grid,
 pure black backdrops. Vivid signature colors, each easily readable
 at small sprite size.""",
+
+    "yin_master": """A 1024x1024 character splash for an ORIGINAL side-character
+in a sci-fi space defense game. ONE FIGURE ONLY, centered, no panels.
+
+Subject: 殷师傅 (Master Yin), a Chinese sushi chef in his mid-40s,
+chubby friendly build, short black flat-top haircut (平头, military cut).
+Square kind face, warm smile, small twinkle in the eyes. He stands
+calmly in front of the viewer. Confident peaceful presence — NOT a
+warrior, but the kind of bystander whose mere presence calms the
+chaos around him.
+
+Outfit: traditional Japanese black sushi-chef sakumue (作務衣) —
+black short-sleeve cross-front jacket with white cloth ties at the
+waist, wide cuffs, short hem. A small embroidered swallow bird patch
+(燕 / sparrow / robin-style songbird) sits over his LEFT CHEST,
+visible and crisp. Black wide cropped trousers, traditional dark
+zōri sandals.
+
+Pose: standing relaxed, both hands free. RIGHT hand holding a long
+sushi knife loosely pointed downward (resting, not threatening).
+LEFT hand raised palm-up at chest height in a calm welcoming
+"please come" gesture — this is his "taunt" stance: he's drawing
+attention with steady ease, not aggression.
+
+Background: deep dark navy gradient with soft warm orange paper-
+lantern glow behind him (suggests izakaya counter), no specific
+furniture, no text. Soft golden rim light from behind.
+
+Style: Korean MMORPG splash art, NIKKE / Lost Ark aesthetic. Anime
+semi-realistic, painterly linework, dramatic studio lighting,
+sharp focus on face. Match the visual language of the existing
+hero_cast sheet but distinct as a character: warm earth tones
+(black uniform, amber lantern, soft skin tone) rather than the
+mecha pilots' neon palette.
+
+CRITICAL: full body visible head-to-feet, NO weapons aimed at the
+viewer, NO mecha armor, NO gun. He is a CHEF, not a pilot.
+Pure clean backdrop, no UI elements, no text, no panel borders.""",
+}
+
+
+# Per-preset image size override. Sheet presets stay at 1792x1024;
+# single-character portraits are square 1024x1024.
+SIZES = {
+    "yin_master": "1024x1024",
 }
 
 
@@ -342,7 +387,7 @@ def generate(preset: str, out_path: Path) -> None:
     result = client.images.generate(
         model=MODEL,
         prompt=PROMPTS[preset],
-        size="1792x1024",
+        size=SIZES.get(preset, "1792x1024"),
         n=1,
     )
 
