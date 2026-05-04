@@ -139,6 +139,100 @@ Row 2 — mini-bosses:
 
 CRITICAL: 3x2 grid. Each panel one creature, no overlap. Pure black
 backgrounds. No text labels.""",
+
+    "hero_topdown": """A 1792x1024 top-down sprite sheet of 8 sci-fi mecha pilot ships,
+viewed from directly overhead (orthographic top-down camera, NOT 3/4
+perspective). 8 panels in a strict 4-column x 2-row grid (each panel
+exactly 448x512 px, separated by thin dark gutters). Each panel one
+mech sprite on pure black backdrop with thin colored rim light.
+
+Each mech is a sleek tactical sci-fi gunship facing UP (nose pointing
+toward the top edge of its panel). Engine thrust glow trailing DOWN
+toward the bottom edge. Wings spread, weapons mounted on hardpoints.
+Cockpit canopy visible as a small bright detail near the nose. Each
+mech has a unique silhouette and signature color. Ready to be used as
+a sprite that the engine rotates to face any direction.
+
+Art style: clean game-ready sprite, slight cel-shaded shading,
+high-contrast color, no perspective distortion, no character figure
+visible (mech only). Equal lighting across the panel, no harsh
+shadows on the floor.
+
+Row 1 (4 panels):
+  P1 BRIGHT-mech — flagship interceptor, indigo + white plates,
+     dual cannons, signature halo emblem. Centerpiece.
+  P2 Sakura-mech — pink-rimmed lightweight scout, thin profile,
+     cherry blossom motif, twin needle barrels.
+  P3 Rin-mech — cobalt-blue sniper craft, long-barrel rail gun
+     extending forward, slim airframe, cold white rim.
+  P4 Yue-mech — crimson classical mech, crescent-moon wing
+     ornaments, twin blades alongside the fuselage.
+
+Row 2 (4 panels):
+  P5 Aria-mech — magenta elegant interceptor, swept wings,
+     conductor-baton energy projector forward.
+  P6 Lia-mech — emerald-orange firestorm craft, wide flame-vent
+     plates, bulky look, hot orange engine.
+  P7 Ade-mech — gold heavy-armor cruiser, dome turret on top,
+     deflector plates extended.
+  P8 Devi-mech — violet biotech craft, organic-curve wings, faint
+     herbal-tech etching pattern on hull.
+
+CRITICAL: every mech faces UP. NO 3/4 perspective. NO pilot figure
+visible. 4x2 grid, even cells, pure black backdrops, thin rim light
+in each mech's signature color. No text labels.""",
+
+    "enemy_topdown": """A 1792x1024 top-down sprite sheet of 15 sci-fi alien creatures,
+viewed from directly overhead (orthographic top-down camera). 15
+panels in a strict 5-column x 3-row grid (each panel exactly
+358x341 px, separated by thin dark gutters). Each panel one creature
+on pure black backdrop with thin colored rim light.
+
+Every creature drawn as if approaching from the top of its panel —
+nose / leading edge pointing DOWN (creatures dive toward the bottom
+to attack the player's planet). Wings / appendages spread for
+recognition. Each silhouette distinct.
+
+Art style: clean game-ready sprite, slight cel-shaded shading,
+high-contrast color, no perspective distortion, even lighting,
+strong rim accent in signature color. Suitable as a 64-128px
+gameplay sprite after downscale.
+
+Row 1 — fodder (5 panels):
+  P1 Crystal Stalker — ice-cyan crystalline starfish humanoid from
+     above, sharp limbs splayed, blue rim.
+  P2 Magma Worm — orange-red molten centipede curling, ember rim.
+  P3 Bio Beetle — green-shelled beetle with mandibles forward,
+     acid-green rim.
+  P4 Shadow Cone — black tetrahedral drone with violet pulse trail
+     behind, violet rim.
+  P5 Ion Sentinel — diamond-shape energy form with concentric arc
+     rings, white rim.
+
+Row 2 — mid (5 panels):
+  P6 Magma Spider — multi-legged orange arachnid splayed, lava rim.
+  P7 Void Hunter — sleek dark stealth drone, swept wings spread,
+     red glow vents on rear, dark rim.
+  P8 Bio Cloud — translucent green vapor with insect silhouettes
+     inside, acid-green soft glow.
+  P9 Storm Wraith — purple skeletal energy spider, lightning arcs
+     around it, violet rim.
+  P10 Gold Carapace — gold turtle-mech with spike lance forward,
+     gold-amber rim.
+
+Row 3 — elite + mini-boss (5 panels):
+  P11 Mirror Splitter — twin symmetric crystal lobes, prismatic rim.
+  P12 Gravity Pulse — black orb with concentric gravity-warp rings,
+     deep purple rim.
+  P13 Hook Reaper — silver scythe-hooked monster with curved blades,
+     cold steel rim.
+  P14 Mega Asteroid — flaming asteroid round shape, lava streaks,
+     orange-red rim.
+  P15 Shadow Apostle — twin ghostly figures in mirror, ghostly
+     violet rim.
+
+CRITICAL: every creature faces DOWN. Top-down view, NOT 3/4. 5x3
+grid, even cells, pure black backdrops. No text labels.""",
 }
 
 

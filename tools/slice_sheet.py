@@ -62,6 +62,40 @@ SLICES = {
         "mega-asteroid",
         "shadow-apostle",
     ]),
+
+    "hero_topdown": (4, 2, [
+        # Row 1
+        "td-bright",
+        "td-sakura",
+        "td-rin",
+        "td-yue",
+        # Row 2
+        "td-aria",
+        "td-lia",
+        "td-ade",
+        "td-devi",
+    ]),
+
+    "enemy_topdown": (5, 3, [
+        # Row 1: fodder
+        "td-crystal-stalker",
+        "td-magma-worm",
+        "td-bio-beetle",
+        "td-shadow-cone",
+        "td-ion-sentinel",
+        # Row 2: mid
+        "td-magma-spider",
+        "td-void-hunter",
+        "td-bio-cloud",
+        "td-storm-wraith",
+        "td-gold-carapace",
+        # Row 3: elite + mini-boss
+        "td-mirror-splitter",
+        "td-gravity-pulse",
+        "td-hook-reaper",
+        "td-mega-asteroid",
+        "td-shadow-apostle",
+    ]),
 }
 
 
