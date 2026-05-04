@@ -375,7 +375,31 @@ let heroGauges = new HeroGauges(activeHeroes);
 
 // Dialogue queue — plays a list of {speaker, text} lines, auto-advancing on
 // duration timer. Tap-to-skip on the box advances immediately.
-const _dialogueState = { lines: [], idx: 0, timer: 0, lineDuration: 0, onDone: null };
+// `sceneKey` (e.g. "stage-1", "prologue") drives voice file lookup:
+//   assets/voice/{sceneKey}/{idx2}-{speaker}.mp3
+const _dialogueState = { lines: [], idx: 0, timer: 0, lineDuration: 0, onDone: null, sceneKey: null, eventName: null };
+let _voiceAudio = null;
+
+function stopVoice() {
+  if (_voiceAudio) {
+    try { _voiceAudio.pause(); _voiceAudio.currentTime = 0; } catch (e) { /* ignore */ }
+    _voiceAudio = null;
+  }
+}
+
+function playLineVoice(sceneKey, idx, speaker, eventName = null) {
+  stopVoice();
+  if (!sceneKey) return;
+  const idx2 = String(idx).padStart(2, "0");
+  // Stage scripts use event-prefixed file names (stage-enter-00-boss.mp3);
+  // prologue / epilogue use plain idx (00-narrator.mp3).
+  const fname = eventName ? `${eventName}-${idx2}-${speaker}.mp3` : `${idx2}-${speaker}.mp3`;
+  const path = `assets/voice/${sceneKey}/${fname}?v=${ASSET_VERSION}`;
+  const audio = new Audio(path);
+  audio.volume = 0.85;
+  audio.play().catch(() => { /* missing file or autoplay blocked — fine */ });
+  _voiceAudio = audio;
+}
 
 function dialogueShowLine(line) {
   if (!ui.dialogueBox) return;
@@ -402,14 +426,20 @@ function dialogueShowLine(line) {
   // eslint-disable-next-line no-unused-expressions
   ui.dialogueBox.offsetHeight;
   ui.dialogueBox.style.animation = "";
+  // Voice playback (best-effort — falls back to silence if MP3 missing).
+  playLineVoice(_dialogueState.sceneKey, _dialogueState.idx, line.speaker, _dialogueState.eventName);
 }
 
-function dialoguePlay(lines, onDone = null) {
+function dialoguePlay(lines, sceneKey = null, eventName = null, onDone = null) {
+  // sceneKey: e.g. "stage-1" or "prologue" (sub-folder under assets/voice/)
+  // eventName: e.g. "stage-enter" / "boss-half" (prefix on filename) — null for prologue/epilogue
   if (!lines || !lines.length) { if (onDone) onDone(); return; }
   _dialogueState.lines = lines.slice();
   _dialogueState.idx = 0;
   _dialogueState.timer = 0;
   _dialogueState.onDone = onDone;
+  _dialogueState.sceneKey = sceneKey;
+  _dialogueState.eventName = eventName;
   _dialogueState.lineDuration = (lines[0].durationMs || 2400) / 1000;
   dialogueShowLine(lines[0]);
 }
@@ -418,8 +448,10 @@ function dialogueAdvance() {
   _dialogueState.idx += 1;
   if (_dialogueState.idx >= _dialogueState.lines.length) {
     if (ui.dialogueBox) ui.dialogueBox.hidden = true;
+    stopVoice();
     if (_dialogueState.onDone) _dialogueState.onDone();
     _dialogueState.lines = [];
+    _dialogueState.sceneKey = null;
     return;
   }
   const line = _dialogueState.lines[_dialogueState.idx];
@@ -467,6 +499,8 @@ function showPrologueLine(line) {
     const pct = ((_prologueState.idx + 1) / _prologueState.lines.length) * 100;
     ui.prologueProgressFill.style.width = `${pct}%`;
   }
+  // Voice playback for prologue lines (assets/voice/prologue/00-narrator.mp3 …)
+  playLineVoice("prologue", _prologueState.idx, line.speaker);
 }
 
 function playPrologue(lines, onDone) {
@@ -725,10 +759,27 @@ for (const h of HEROES) {
   loadTexture(`td-${h.id}-ult`, `assets/cast/td-${h.id}-ult.png`);
   loadTexture(`wp-${h.id}`, `assets/weapons/wp-${h.id}.png`);
   loadTexture(`wp-${h.id}-ult`, `assets/weapons/wp-${h.id}-ult.png`);
-  // Portrait used by the dialogue box — HTML <img>, not a Three.js texture,
-  // but pre-warm the network cache by image element.
-  const pre = new Image();
-  pre.src = `assets/cast/${h.portrait}.png?v=${ASSET_VERSION}`;
+}
+
+// Portrait <img> elements used in DialogueBox + ULT cinematic. Use the
+// unified asset counter so the title-screen loading bar waits for them
+// — fixes "dialogue portraits show black for the first 200 ms" bug.
+const portraitPreload = [];
+function preloadHtmlImage(src) {
+  reportAssetQueued();
+  const img = new Image();
+  const tick = () => reportAssetLoaded();
+  img.onload = tick;
+  img.onerror = tick;
+  img.src = `${src}?v=${ASSET_VERSION}`;
+  portraitPreload.push(img);
+}
+for (const h of HEROES) {
+  preloadHtmlImage(`assets/cast/${h.portrait}.png`);
+  // BRIGHT also has an alt cool-side portrait used in some dialogue moments.
+  if (h.portraitCool) preloadHtmlImage(`assets/cast/${h.portraitCool}.png`);
+  // Action portrait used in the ULT cinematic card.
+  if (h.actionPortrait) preloadHtmlImage(`assets/cast/${h.actionPortrait}.png`);
 }
 for (let i = 0; i < 4; i++) loadTexture(`topdownPlane-${i}`, `${individualAssetBase}/topdown-plane-${i}.png`);
 loadTexture("alienSaucer", `${individualAssetBase}/alien-saucer.png`);
@@ -3727,9 +3778,10 @@ function spawnBoss() {
   state.enemies.push(boss);
   state.message = `第 ${state.stageLevel} 关 Boss：${config.name}`;
   showBossBanner(config.name, config.ability);
-  // Phase-7: stage-enter dialogue script (boss arrival + hero quips).
+  // Phase-7: stage-enter dialogue script (boss arrival + hero quips), with
+  // pre-rendered TTS audio under assets/voice/stage-{N}/stage-enter-NN-speaker.mp3
   const enterLines = getEvent(state.stageLevel, "stage-enter");
-  if (enterLines.length) dialoguePlay(enterLines);
+  if (enterLines.length) dialoguePlay(enterLines, `stage-${state.stageLevel}`, "stage-enter");
   addPolishEffect("polishBossWeakpointCore", boss.x, boss.y, config.size * 0.62, { life: 0.9, grow: 0.25, spin: 1.2, opacity: 0.96, z: 8.4 });
   addPolishEffect("polishDangerWarningRing", boss.x, boss.y, config.size * 1.6, { life: 1.1, grow: 0.18, spin: -1.0, opacity: 0.62, z: 7.8 });
   addExplosion(boss.x, boss.y, 1.25);
@@ -4443,7 +4495,7 @@ function completeBoss(enemy) {
   }
   // Phase-7: boss-defeat dialogue + persistent unlock.
   const defeatLines = getEvent(state.stageLevel, "boss-defeat");
-  if (defeatLines.length) dialoguePlay(defeatLines);
+  if (defeatLines.length) dialoguePlay(defeatLines, `stage-${state.stageLevel}`, "boss-defeat");
   progress = unlockHeroForStage(progress, state.stageLevel);
   saveProgress(progress);
   if (state.stageLevel >= bossConfigs.length) {
