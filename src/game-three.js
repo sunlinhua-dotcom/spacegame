@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy4";
+const ASSET_VERSION = "20260504-juicy5";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -4559,20 +4559,25 @@ function nearestEnemy(from, maxRadius = Infinity) {
    ═══════════════════════════════════════════════════════════════ */
 function shoot(from, target, spread = 0) {
   if (!target) return;
-  // Lead-aim: enemies in this game move continuously toward Earth's center
-  // (or along bestiary patterns) — aim at where the target WILL be by the
-  // time the bullet arrives. Without this, fast meteors and hard-charging
-  // mini-bosses get easily missed since the bullet aims at the enemy's
-  // current pos and lands behind by the time it gets there.
+  // Lead-aim: enemies move continuously, aim at where the target WILL be
+  // by the time the bullet arrives so they land hits. Bestiary enemies
+  // update `e.facing` per frame (the actual motion direction set by their
+  // move primitive); swarm enemies update `e.angle` instead (straight-line
+  // heading set at spawn). Pick whichever the enemy actually uses, falling
+  // back to a zero direction so a stationary target just gets aimed at
+  // its current position.
   const bulletSpeed = 620 + state.laserLevel * 18;
   const dxT = target.x - from.x;
   const dyT = target.y - from.y;
   const dist = Math.sqrt(dxT * dxT + dyT * dyT);
-  const tof = dist / bulletSpeed;
-  const tvx = Math.cos(target.angle || 0) * (target.speed || 0);
-  const tvy = Math.sin(target.angle || 0) * (target.speed || 0);
-  const aimX = target.x + tvx * tof;
-  const aimY = target.y + tvy * tof;
+  const tof = Math.min(0.6, dist / bulletSpeed); // clamp so far-away spirals don't overshoot
+  const moveAngle = target.facing != null ? target.facing : (target.angle || 0);
+  const moveSpeed = target.speed || 0;
+  // Bosses & mini-bosses move along scripted patrol patterns where lead
+  // aim adds little; aim straight at them so charge attacks land.
+  const useLead = !target.isBoss && !target.isMiniBoss;
+  const aimX = useLead ? target.x + Math.cos(moveAngle) * moveSpeed * tof : target.x;
+  const aimY = useLead ? target.y + Math.sin(moveAngle) * moveSpeed * tof : target.y;
   const base = Math.atan2(aimY - from.y, aimX - from.x);
   const shots = 1 + Math.min(2, state.splitShot);
   const widthMul = 1 + (state.bulletDamage - 1) * 0.18 + state.bulletPierce * 0.06;
@@ -5251,6 +5256,41 @@ if (ui.startBtn) {
       audio.levelUp();
     }
 
+    // iOS quirk: the HTML <audio> element used for TTS playback is governed
+    // by a SEPARATE autoplay policy from Web Audio. Web Audio is unlocked by
+    // audio.start() above, but unless this Audio element gets its first
+    // .play() call inside the click gesture, every later playLineVoice()
+    // (which fires asynchronously after asset loading + prologue overlay)
+    // gets blocked. Pre-create + play the shared element on the FIRST
+    // prologue clip muted, so it inherits the gesture; subsequent unmuted
+    // playLineVoice calls then succeed without an autoplay reject.
+    if (!_voiceAudio) {
+      _voiceAudio = new Audio();
+      _voiceAudio.preload = "auto";
+      _voiceAudio.volume = 1.0;
+    }
+    try {
+      _voiceAudio.muted = true;
+      _voiceAudio.src = `assets/voice/prologue/00-narrator.mp3?v=${ASSET_VERSION}`;
+      const p = _voiceAudio.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => {
+          try {
+            _voiceAudio.pause();
+            _voiceAudio.muted = false;
+            _voiceAudio.currentTime = 0;
+          } catch (e) { /* ignore */ }
+        }).catch(() => {
+          // Some iOS versions reject the first .play() but the element is
+          // still marked user-activated for subsequent calls. Restore mute
+          // so the next playLineVoice doesn't start silent.
+          try { _voiceAudio.muted = false; } catch (e) { /* ignore */ }
+        });
+      } else {
+        _voiceAudio.muted = false;
+      }
+    } catch (e) { /* really old browsers — ignore */ }
+
     // Wire the bar to the unified asset counter.
     const updateBar = (ratio, loaded, total) => {
       const pct = Math.round(ratio * 100);
@@ -5277,8 +5317,13 @@ if (ui.startBtn) {
       state.message = "地球防御系统启动中";
       updateHud();
     };
+    // Hero intro plays EVERY run (short, character-specific, owns the
+    // opening voice line) — only the long narrator prologue is skipped on
+    // returning visits. Without this, returning players heard zero opening
+    // TTS because both intros got bypassed together.
+    const firstHero = activeHeroes[0]?.id || "lia";
     if (progress.prologueSeen) {
-      startGameplay();
+      playHeroIntro(firstHero, startGameplay);
       return;
     }
     state.mode = "prologue";
@@ -5287,7 +5332,6 @@ if (ui.startBtn) {
     playPrologue(PROLOGUE, () => {
       progress.prologueSeen = true;
       saveProgress(progress);
-      const firstHero = activeHeroes[0]?.id || "lia";
       playHeroIntro(firstHero, startGameplay);
     });
   });
