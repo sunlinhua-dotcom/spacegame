@@ -262,7 +262,11 @@ export const MASTER_YIN = {
     desc: "全场敌人移动减速 22%",
   },
   unlock: {
-    stage: 1,
+    // Final-stage reward: clearing wave 10 of stage 10 brings 殷师傅 in
+    // for the closer. Mid-game would be too easy a buff and dilute the
+    // 8-pilot roster; saving him for the home-stretch makes it feel
+    // earned and lets the slow help finish a tough run.
+    stage: 10,
     wave: 10,
     eyebrow: "GUEST PILOT",
     blurb: "居酒屋的殷师傅赶来助阵 —— 一句嘲讽,所有怪物都得放慢脚步。",

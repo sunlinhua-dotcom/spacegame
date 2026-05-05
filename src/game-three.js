@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy5";
+const ASSET_VERSION = "20260504-juicy6";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -502,8 +502,19 @@ function dialogueShowLine(line) {
   // eslint-disable-next-line no-unused-expressions
   ui.dialogueBox.offsetHeight;
   ui.dialogueBox.style.animation = "";
-  // Voice playback (best-effort — falls back to silence if MP3 missing).
-  playLineVoice(_dialogueState.sceneKey, _dialogueState.idx, line.speaker, _dialogueState.eventName);
+  // Voice playback + auto-advance to next line when it finishes. Most players
+  // never realized the box was tappable, so the dialogue queue would just
+  // stall on screen waiting for a click; auto-advance keeps the script moving.
+  // Lock advance to the line we just queued so a voice clip that finished
+  // late (after the user already tapped past) doesn't double-advance.
+  const queuedIdx = _dialogueState.idx;
+  playLineVoice(_dialogueState.sceneKey, _dialogueState.idx, line.speaker, _dialogueState.eventName, {
+    onEnded: () => {
+      if (_dialogueState.idx === queuedIdx && _dialogueState.lines.length) {
+        dialogueAdvance();
+      }
+    },
+  });
 }
 
 function dialoguePlay(lines, sceneKey = null, eventName = null, onDone = null) {
@@ -548,8 +559,15 @@ function updateDialogue(dt) {
   if (ui.dialogueBox && ui.dialogueBox.hidden) {
     dialogueShowLine(_dialogueState.lines[_dialogueState.idx]);
   }
-  // No auto-advance — player taps the box to read the next line. Voice clip
-  // plays through; if user wants to pace ahead they can tap.
+  // Timer-based fallback advance — voice `onEnded` is the primary trigger,
+  // but if a clip is missing / blocked / fails to decode we still need to
+  // walk through the script. Use a generous duration so the voice usually
+  // ends first; the timer only fires when audio truly didn't.
+  _dialogueState.timer += dt;
+  const timerMax = (_dialogueState.lineDuration || 2.4) + 1.4;
+  if (_dialogueState.timer >= timerMax) {
+    dialogueAdvance();
+  }
 }
 
 if (ui.dialogueBox) {
@@ -820,49 +838,81 @@ function updateUltFlashes() {
 
 function playUltSceneEffect(hero) {
   const tint = hero.color;
+  // Anchor every effect to the actual hero plane that's triggering the ULT.
+  // The previous version radiated everything from Earth's center, which felt
+  // generic — the player couldn't tell WHICH pilot just fired their ult.
+  // Now the shockwaves grow from the plane sprite outward, the beam streaks
+  // forward from the nose, and per-enemy explosions chain along the plane's
+  // line-of-fire instead of being scattered randomly.
+  const heroDef = state.defenders.find((d) => d.kind === "hero" && d.heroId === hero.id);
+  const ox = heroDef ? heroDef.x : C.x;
+  const oy = heroDef ? heroDef.y : C.y;
 
-  // 1. FULLSCREEN COLOR FLASH on the canvas — guaranteed visible.
+  // 1. FULLSCREEN COLOR FLASH — keeps the moment readable through clutter.
   spawnUltScreenFlash(tint);
 
-  // 2. FIVE staggered MASSIVE shockwaves from Earth, each 3-5x earth radius.
-  //    Multiple rings overlapping in hero color so it looks like an
-  //    expanding nuclear bloom across the play area.
+  // 2. FIVE staggered shockwaves growing FROM the hero plane (not Earth).
+  //    Smaller initial size + more growth so it visually launches outward.
   for (let i = 0; i < 5; i++) {
     setTimeout(() => {
-      const baseSize = earthRadius * (3.0 + i * 0.6);
-      addPolishEffect("polishDangerWarningRing", C.x, C.y, baseSize, {
-        life: 1.4, grow: 1.1, spin: -1.4, opacity: 0.95, z: 8.6, color: tint,
+      const baseSize = (heroDef?.size || 100) * (1.4 + i * 0.7);
+      addPolishEffect("polishDangerWarningRing", ox, oy, baseSize, {
+        life: 1.4, grow: 1.6, spin: -1.4, opacity: 0.95, z: 8.6, color: tint,
       });
-      addPolishEffect("polishBossRageAura", C.x, C.y, baseSize * 0.7, {
-        life: 1.1, grow: 0.85, spin: 1.6, opacity: 0.85, z: 8.4, color: tint,
+      addPolishEffect("polishBossRageAura", ox, oy, baseSize * 0.7, {
+        life: 1.1, grow: 1.2, spin: 1.6, opacity: 0.85, z: 8.4, color: tint,
       });
     }, i * 160);
   }
 
-  // 3. Screen-wide glitter — 50 flashes scattered, longer duration.
-  for (let i = 0; i < 50; i++) {
-    setTimeout(() => {
-      const px = rand(-W * 0.45, W * 0.45) + C.x;
-      const py = rand(-H * 0.45, H * 0.45) + C.y;
-      spawnInterceptFlash(px, py, 0.8 + Math.random() * 0.7);
-    }, i * 25);
+  // 3. Forward beam — long streaking energy line in the plane's outward
+  //    direction. createEnergyBeam draws a glowing line; we feed it the
+  //    radial-outward angle so it streaks away from Earth past the hero.
+  if (heroDef) {
+    const outwardAngle = Math.atan2(heroDef.y - C.y, heroDef.x - C.x);
+    createEnergyBeam(outwardAngle, {
+      from: heroDef,
+      to: {
+        x: heroDef.x + Math.cos(outwardAngle) * 720,
+        y: heroDef.y + Math.sin(outwardAngle) * 720,
+      },
+      life: 0.62,
+      color: tint,
+      opacity: 0.95,
+      wide: true,
+    });
   }
 
-  // 4. Per-defender shockwave + explosion in hero color.
+  // 4. Particle storm originating AT the hero plane and fanning outward.
+  //    50 flashes within an outward cone, fading with distance.
+  for (let i = 0; i < 50; i++) {
+    setTimeout(() => {
+      const fanAngle = Math.atan2(oy - C.y, ox - C.x) + rand(-1.0, 1.0);
+      const dist = rand(0, 380);
+      const px = ox + Math.cos(fanAngle) * dist;
+      const py = oy + Math.sin(fanAngle) * dist;
+      spawnInterceptFlash(px, py, 0.7 + Math.random() * 0.7);
+    }, i * 22);
+  }
+
+  // 5. Companion explosion at every other defender so the squad reads as
+  //    "in synch" with the ulting hero — but the BIG burst is at the hero.
   if (state.defenders) {
     for (const def of state.defenders) {
-      addExplosion(def.x, def.y, 1.6);
-      addPolishEffect("polishBossRageAura", def.x, def.y, def.size * 2.4, {
-        life: 0.8, grow: 0.42, spin: 1.6, opacity: 0.95, z: 4.2, color: tint,
+      const isUlting = def === heroDef;
+      addExplosion(def.x, def.y, isUlting ? 2.4 : 1.0);
+      addPolishEffect("polishBossRageAura", def.x, def.y, def.size * (isUlting ? 3.2 : 1.6), {
+        life: 0.8, grow: 0.42, spin: 1.6, opacity: isUlting ? 1.0 : 0.7, z: 4.2, color: tint,
       });
     }
   }
 
-  // 5. Final earth-shattering central detonation at the end of the burst.
+  // 6. Final closing burst — at the hero plane, not Earth, so the energy
+  //    visually started AT them and is ending AT them.
   setTimeout(() => {
-    addExplosion(C.x, C.y, 4.2);
-    addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 6, {
-      life: 1.0, grow: 0.95, spin: -2.4, opacity: 1.0, z: 9.0, color: tint,
+    addExplosion(ox, oy, 4.6);
+    addPolishEffect("polishDangerWarningRing", ox, oy, (heroDef?.size || 100) * 6, {
+      life: 1.0, grow: 1.4, spin: -2.4, opacity: 1.0, z: 9.0, color: tint,
     });
     triggerScreenShake(0.95, 22);
   }, 880);
@@ -4645,12 +4695,14 @@ function updateCombat(dt) {
     defender.x = fromX + (orbitX - fromX) * launch;
     defender.y = fromY + (orbitY - fromY) * launch;
     setXY(defender.mesh, defender.x, defender.y, 4);
-    if (defender.kind === "hero") {
-      const outwardAngle = Math.atan2(defender.y - C.y, defender.x - C.x);
-      defender.mesh.material.rotation = outwardAngle - Math.PI / 2;
-    } else {
-      defender.mesh.material.rotation = -a + Math.PI / 2;
-    }
+    // Lock plane sprites to a fixed UP-facing orientation. Earlier they
+    // rotated to follow either "outward from earth" (hero) or "toward
+    // current target" (interceptor) — both produced visible spinning as
+    // the ship orbited or as targets shifted. Fixed orientation reads
+    // calmer + still looks correct because the ship is overhead-art that
+    // gets its character from the defenders' orbital motion, not its
+    // own roll.
+    defender.mesh.material.rotation = 0;
     if (defender.halo) {
       setXY(defender.halo, defender.x, defender.y, 3.9);
       defender.halo.material.opacity = 0.16 + Math.sin(state.time * 4 + defender.angle) * 0.06;
@@ -4766,10 +4818,12 @@ function updateBullets(dt) {
         if (enemy.hp <= 0) continue;
         const dx = b.x - enemy.x;
         const dy = b.y - enemy.y;
-        // Generous hitbox — the gold meteor's visible flame tail is now
-        // ~3.4× size, so a tight 0.55× hitbox felt like bullets were
-        // passing through the fire. 0.78× + 14 covers the mid-body.
-        const r = enemy.size * 0.78 + 14;
+        // Hit radius needs to match what the player SEES, not enemy.size
+        // (an internal stat). Swarm "gold streaks" use a 26×84 sprite but
+        // enemy.size is only 16 → players aim at the long flame and miss
+        // the tiny center hitbox. For swarm, hit on the streak's full
+        // length; for everyone else use the generous bestiary radius.
+        const r = enemy.isSwarm ? 36 : (enemy.size * 0.85 + 16);
         if (dx * dx + dy * dy < r * r) {
           applyHitDamage(enemy, b.damage, b.x, b.y);
           addExplosion(b.x, b.y, 0.42);
@@ -5325,18 +5379,15 @@ if (ui.startBtn) {
       state.message = "地球防御系统启动中";
       updateHud();
     };
-    // Hero intro plays EVERY run (short, character-specific, owns the
-    // opening voice line) — only the long narrator prologue is skipped on
-    // returning visits. Without this, returning players heard zero opening
-    // TTS because both intros got bypassed together.
-    const firstHero = activeHeroes[0]?.id || "lia";
-    if (progress.prologueSeen) {
-      playHeroIntro(firstHero, startGameplay);
-      return;
-    }
+    // Always play prologue + hero intro on every run. Returning players
+    // explicitly asked for the opening narration to stay (the previous
+    // skip-on-second-visit short-circuit hid the entire opening from
+    // anyone who'd played once). The voice files are tiny mp3s (<40 KB)
+    // so re-playing them costs nothing.
     state.mode = "prologue";
     state.message = "PROLOGUE";
     updateHud();
+    const firstHero = activeHeroes[0]?.id || "lia";
     playPrologue(PROLOGUE, () => {
       progress.prologueSeen = true;
       saveProgress(progress);
