@@ -36,6 +36,66 @@ export const EPILOGUE = [
   { speaker: "narrator", text: "DIGIREPUB STUDIO · 2026", durationMs: 2400 },
 ];
 
+/* ─────────────── Hero introductions (4-panel arrival story) ───
+   Each hero gets four dialogue lines that play during the intro
+   cinematic — one line per "comic panel" so the player sees a
+   mini-backstory the first time the pilot joins the squad.
+   Lines 1-3: backstory + motivation. Line 4: arrival on the
+   battlefield. Auto-advances; voice files at
+     assets/voice/hero-intro/{id}-{0..3}-{speaker}.mp3
+   ─────────────────────────────────────────────────────────── */
+
+export const HERO_INTROS = {
+  lia: [
+    { speaker: "narrator", text: "里约热内卢, 火焰桑巴的故乡。" },
+    { speaker: "lia",      text: "我妹妹被困在轨道残骸里, 我必须冲上去!" },
+    { speaker: "narrator", text: "DIGIREPUB 的火焰机甲, 选中了她。" },
+    { speaker: "lia",      text: "Lia 上线! 让这片轨道烧起来!" },
+  ],
+  devi: [
+    { speaker: "narrator", text: "孟买的草药铺, 三代相传的密方。" },
+    { speaker: "devi",     text: "毒, 也是药 —— 看你怎么用。" },
+    { speaker: "narrator", text: "她将药学融入战斗机甲的弹道。" },
+    { speaker: "devi",     text: "Devi 报到, 让我们净化这片黑暗。" },
+  ],
+  rin: [
+    { speaker: "narrator", text: "首尔射击场, 全国冠军, 八连射全靶心。" },
+    { speaker: "rin",      text: "战场不是靶场, 但精度永远是答案。" },
+    { speaker: "narrator", text: "她转入轨道防御部队的第一天就破纪录。" },
+    { speaker: "rin",      text: "Rin 就位 —— 一发, 一命中。" },
+  ],
+  yue: [
+    { speaker: "narrator", text: "苏州古园林, 月儿练剑十二年。" },
+    { speaker: "yue",      text: "剑光如月光, 静即是动。" },
+    { speaker: "narrator", text: "古典剑舞与超光速机甲的奇妙融合。" },
+    { speaker: "yue",      text: "月华降临, 静观敌之破绽。" },
+  ],
+  ade: [
+    { speaker: "narrator", text: "拉各斯港的鼓手, 节奏里能听见雷鸣。" },
+    { speaker: "ade",      text: "我们的鼓声, 召唤大地的力量。" },
+    { speaker: "narrator", text: "她以鼓点指挥战斗节奏, 队伍士气倍增。" },
+    { speaker: "ade",      text: "Ade 列阵, 让节拍带我们冲锋!" },
+  ],
+  sakura: [
+    { speaker: "narrator", text: "京都樱花季, 粉色花瓣覆盖整条街道。" },
+    { speaker: "sakura",   text: "樱花虽柔, 落地有声 —— 像我的雷电。" },
+    { speaker: "narrator", text: "她的双枪发射粉色电浆, 美如花瓣。" },
+    { speaker: "sakura",   text: "Sakura 闪现, 樱雷起舞!" },
+  ],
+  aria: [
+    { speaker: "narrator", text: "巴黎歌剧院的指挥家, 一支指挥棒吹散迷雾。" },
+    { speaker: "aria",     text: "战斗也需要节奏 —— 让我编排这场协奏。" },
+    { speaker: "narrator", text: "她的风刃如交响乐谱般精确切割。" },
+    { speaker: "aria",     text: "Aria 登场 —— 听好这段终曲。" },
+  ],
+  bright: [
+    { speaker: "narrator", text: "他从未现身, 只在通讯里指挥七位姑娘。" },
+    { speaker: "bright",   text: "她们打到这里, 我也得亲自上了。" },
+    { speaker: "narrator", text: "BRIGHT 的指挥机甲, 终于离开舰桥。" },
+    { speaker: "bright",   text: "全员就位 —— BRIGHT, 协议总指挥。" },
+  ],
+};
+
 /* ─────────────── Per-stage scripts ─────────────────────────── */
 
 export const STAGE_DIALOGUE = {

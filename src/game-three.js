@@ -4,7 +4,7 @@ import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-p
 import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260504-rogue1";
 import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260504-juicy3";
 import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260504-rogue1";
-import { PROLOGUE, EPILOGUE, getEvent } from "./dialogue.js?v=20260504-rogue1";
+import { PROLOGUE, EPILOGUE, getEvent, HERO_INTROS } from "./dialogue.js?v=20260504-juicyC";
 
 /* ═══════════════════════════════════════════════════════════════
    UI References
@@ -650,13 +650,16 @@ if (ui.prologueOverlay) {
  * Splash screen when a new pilot joins the squad. Plays once per stage
  * transition (Lia at game start, then one new hero per cleared stage).
  * Tap to dismiss → run onDone callback (next stage start). */
-const _heroIntroState = { hero: null, onDone: null, voicePath: null };
+const _heroIntroState = { hero: null, onDone: null, voicePath: null, lineIdx: 0, lines: [], lineTimer: 0 };
 
 function playHeroIntro(heroId, onDone = null) {
   const hero = getHero(heroId);
   if (!hero || !ui.heroIntro) { if (onDone) onDone(); return; }
   _heroIntroState.hero = hero;
   _heroIntroState.onDone = onDone;
+  _heroIntroState.lineIdx = 0;
+  _heroIntroState.lines = HERO_INTROS[hero.id] || [];
+  _heroIntroState.lineTimer = 0;
   holdMusicForVoice();
   // Set color custom property for the border + ray streaks.
   const r = (hero.color >> 16) & 0xff, g = (hero.color >> 8) & 0xff, b = hero.color & 0xff;
@@ -678,19 +681,52 @@ function playHeroIntro(heroId, onDone = null) {
   // eslint-disable-next-line no-unused-expressions
   ui.heroIntro.offsetHeight;
   ui.heroIntro.style.animation = "";
-  // Try to play the hero's first stage-enter line as a "self-introduction"
-  // voice clip if it's available (the hero's intro stage matches their
-  // unlock stage one-to-one: lia=1, devi=2, …, bright=8).
-  const heroStageMap = { lia: 1, devi: 2, rin: 3, yue: 4, ade: 5, sakura: 6, aria: 7, bright: 8 };
-  const stage = heroStageMap[hero.id];
-  if (stage) {
-    // Find first line in stage-enter where this hero speaks.
-    const enterLines = getEvent(stage, "stage-enter");
-    let idx = enterLines.findIndex((ln) => ln.speaker === hero.id);
-    if (idx >= 0) {
-      playLineVoice(`stage-${stage}`, idx, hero.id, "stage-enter");
-    }
+  // Show comic + dialogue line 0 immediately, auto-advance from there.
+  showHeroIntroLine();
+}
+
+// Step the hero-intro 4-line story. Each line:
+//  • Updates the comic panel (assets/cast/{id}-comic-{idx}.png) if available
+//  • Updates the dialogue text shown under the panel
+//  • Plays the line's voice (assets/voice/hero-intro/{id}-{idx}-{speaker}.mp3)
+//    and auto-advances when the audio ends.
+function showHeroIntroLine() {
+  const st = _heroIntroState;
+  if (!st.hero || !st.lines) return;
+  if (st.lineIdx >= st.lines.length) {
+    // All four lines played → close the cinematic.
+    dismissHeroIntro();
+    return;
   }
+  const line = st.lines[st.lineIdx];
+  const heroId = st.hero.id;
+  // Comic panel — falls back to the hero's action portrait if a comic
+  // panel image hasn't been generated yet, so the cinematic still works.
+  if (ui.heroIntroImg) {
+    ui.heroIntroImg.src = `assets/cast/${heroId}-comic-${st.lineIdx}.png?v=${ASSET_VERSION}`;
+    ui.heroIntroImg.onerror = () => {
+      ui.heroIntroImg.onerror = null;
+      ui.heroIntroImg.src = `assets/cast/${st.hero.actionPortrait || st.hero.portrait}.png?v=${ASSET_VERSION}`;
+    };
+  }
+  // Dialogue overlay — show the line text where the skills card used to sit.
+  if (ui.heroIntroPassive) {
+    ui.heroIntroPassive.textContent = line.text;
+  }
+  if (ui.heroIntroUlt) {
+    ui.heroIntroUlt.textContent = line.speaker === "narrator" ? "" : st.hero.name;
+  }
+  // Voice + auto-advance.
+  const queuedIdx = st.lineIdx;
+  playLineVoice("hero-intro", st.lineIdx, line.speaker, heroId, {
+    onEnded: () => {
+      if (st.lineIdx === queuedIdx && st.hero) {
+        st.lineIdx += 1;
+        showHeroIntroLine();
+      }
+    },
+  });
+  st.lineTimer = 0;
 }
 
 function dismissHeroIntro() {
@@ -705,7 +741,22 @@ function dismissHeroIntro() {
 }
 
 if (ui.heroIntro) {
-  ui.heroIntro.addEventListener("pointerdown", dismissHeroIntro);
+  // Tap advances to the next line (or dismisses on the last line). Lets
+  // impatient players read ahead while still showing the four-panel
+  // story to anyone who wants the cinematic.
+  ui.heroIntro.addEventListener("pointerdown", () => {
+    const st = _heroIntroState;
+    if (!st.hero || !st.lines?.length) {
+      dismissHeroIntro();
+      return;
+    }
+    if (st.lineIdx >= st.lines.length - 1) {
+      dismissHeroIntro();
+    } else {
+      st.lineIdx += 1;
+      showHeroIntroLine();
+    }
+  });
 }
 
 /* ─────────────── Boss reveal cinematic ───────────────
@@ -5374,6 +5425,22 @@ function frame(now) {
   if (state.mode === "paused" || state.mode === "prologue" || state.mode === "heroIntro" || state.mode === "bossReveal") {
     updateExplosions(dt);
     updatePolishEffects(dt);
+    // Hero-intro fallback: if the voice file is missing or autoplay
+    // got blocked, the auto-advance via onEnded never fires. Tick a
+    // timer so each line still advances after ~3.6 s, keeping the
+    // 4-panel story playable without voice.
+    if (state.mode === "heroIntro" && _heroIntroState.lines?.length) {
+      _heroIntroState.lineTimer += dt;
+      if (_heroIntroState.lineTimer > 3.6) {
+        _heroIntroState.lineTimer = 0;
+        _heroIntroState.lineIdx += 1;
+        if (_heroIntroState.lineIdx >= _heroIntroState.lines.length) {
+          dismissHeroIntro();
+        } else {
+          showHeroIntroLine();
+        }
+      }
+    }
   } else {
     update(dt);
   }
@@ -5581,6 +5648,7 @@ if (ui.startBtn) {
     playPrologue(PROLOGUE, () => {
       progress.prologueSeen = true;
       saveProgress(progress);
+      state.mode = "heroIntro";
       playHeroIntro(firstHero, startGameplay);
     });
   });

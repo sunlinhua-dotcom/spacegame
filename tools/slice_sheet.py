@@ -136,6 +136,17 @@ SLICES = {
         "yin-action-alt", # side-profile slicing motion
         "yin-chibi",      # SD-style icon for HUD badge
     ]),
+
+    # 4-panel origin-story comic strips, one per hero. Sliced into
+    # individual panels so playHeroIntro can show one per dialogue line.
+    "lia_comic":    (4, 1, ["lia-comic-0", "lia-comic-1", "lia-comic-2", "lia-comic-3"]),
+    "devi_comic":   (4, 1, ["devi-comic-0", "devi-comic-1", "devi-comic-2", "devi-comic-3"]),
+    "rin_comic":    (4, 1, ["rin-comic-0", "rin-comic-1", "rin-comic-2", "rin-comic-3"]),
+    "yue_comic":    (4, 1, ["yue-comic-0", "yue-comic-1", "yue-comic-2", "yue-comic-3"]),
+    "ade_comic":    (4, 1, ["ade-comic-0", "ade-comic-1", "ade-comic-2", "ade-comic-3"]),
+    "sakura_comic": (4, 1, ["sakura-comic-0", "sakura-comic-1", "sakura-comic-2", "sakura-comic-3"]),
+    "aria_comic":   (4, 1, ["aria-comic-0", "aria-comic-1", "aria-comic-2", "aria-comic-3"]),
+    "bright_comic": (4, 1, ["bright-comic-0", "bright-comic-1", "bright-comic-2", "bright-comic-3"]),
 }
 
 
