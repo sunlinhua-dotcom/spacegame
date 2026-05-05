@@ -466,13 +466,11 @@ canvas {
 .hero-intro {
   position: absolute;
   inset: 0;
-  z-index: 12;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at 50% 45%, var(--hero-tint, rgba(199, 125, 255, 0.32)) 0%, rgba(2, 6, 14, 0.94) 60%, rgba(0, 0, 0, 0.98) 100%);
-  backdrop-filter: blur(6px) saturate(120%);
-  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  overflow: hidden;
   cursor: pointer;
   pointer-events: auto;
   animation: heroIntroIn 540ms cubic-bezier(0.22, 0.85, 0.32, 1);
@@ -480,95 +478,49 @@ canvas {
 .hero-intro[hidden] { display: none; }
 @keyframes heroIntroIn { from { opacity: 0; } }
 
-/* Spinning rays behind the portrait — country color, low opacity, sci-fi
-   broadcast feel. */
-.hero-intro-rays {
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-conic-gradient(from 0deg at 50% 50%,
-      transparent 0deg,
-      var(--hero-tint, rgba(199, 125, 255, 0.18)) 6deg,
-      transparent 12deg,
-      transparent 30deg);
-  opacity: 0.55;
-  animation: heroIntroRays 8s linear infinite;
-  mix-blend-mode: screen;
-}
-@keyframes heroIntroRays { to { transform: rotate(360deg); } }
+.hero-intro-rays { display: none; }
 
-/* New layout: comic page is the FEATURE — fills the overlay top-down.
-   Below it sits a compact name strip and a single-line dialogue ribbon
-   that swaps text per line. No more sliver-thumbnail-next-to-meta. */
+/* Fullscreen layout: comic image covers the entire 9:16 viewport.
+   Meta + dialogue overlay at the bottom with dark gradient. */
 .hero-intro-frame {
   position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  gap: 12px;
-  width: min(94%, 560px);
-  max-height: calc(100% - 80px);
-  padding: 14px 14px 16px;
-  background: linear-gradient(165deg, rgba(8, 12, 24, 0.86) 0%, rgba(2, 4, 12, 0.96) 100%);
-  border: 2px solid var(--hero-tint, rgba(199, 125, 255, 0.85));
-  box-shadow:
-    0 0 64px var(--hero-tint, rgba(199, 125, 255, 0.55)),
-    inset 0 0 48px var(--hero-tint, rgba(199, 125, 255, 0.18));
-  clip-path: polygon(20px 0%, 100% 0%, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0% 100%, 0% 20px);
-  animation: heroIntroFrame 700ms 120ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
-}
-
-@keyframes heroIntroFrame {
-  from { opacity: 0; transform: translateY(28px) scale(0.94); }
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .hero-intro-comic {
-  position: relative;
-  border-radius: 6px;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 32px var(--hero-tint, rgba(199, 125, 255, 0.45));
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-intro-comic img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  display: block;
-  animation: heroIntroFloat 4.2s ease-in-out infinite;
+  object-fit: cover;
 }
 
-@keyframes heroIntroFloat {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.015); }
-}
-
-/* Slim metadata row directly under the comic — eyebrow / name / country
-   on a single horizontal line so we don't eat vertical space. */
 .hero-intro-meta {
+  position: absolute;
+  bottom: 80px;
+  left: 0; right: 0;
+  padding: 16px 20px 8px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px 12px;
-  text-align: center;
-  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--cyan-soft);
 }
 
-.hero-intro-eyebrow {
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.4em;
-  padding-left: 0.4em;
-  text-transform: uppercase;
-  color: var(--hero-tint, rgba(199, 125, 255, 0.95));
-}
+.hero-intro-eyebrow { display: none; }
 
 .hero-intro-name {
-  font-size: clamp(22px, 5.4vw, 30px);
+  font-size: clamp(18px, 4.2vw, 24px);
   font-weight: 900;
   letter-spacing: 0.04em;
   color: #ffffff;
@@ -581,54 +533,40 @@ canvas {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.28em;
-  padding-left: 0.28em;
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* Dialogue ribbon — speaker badge on the left, the line text on the
-   right. Swaps text per line as the cinematic advances. */
 .hero-intro-dialogue {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  align-items: baseline;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.55);
-  border-left: 3px solid var(--hero-tint, rgba(199, 125, 255, 0.85));
-  border-radius: 4px;
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  padding: 14px 20px 24px;
+  background: rgba(0,0,0,0.88);
+  border-top: 1px solid var(--line);
 }
 
 .hero-intro-speaker {
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  color: var(--hero-tint, rgba(199, 125, 255, 0.95));
+  font-size: 11px;
+  color: var(--gold);
   text-transform: uppercase;
-  white-space: nowrap;
+  letter-spacing: 0.08em;
 }
 
 .hero-intro-text {
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.95);
-  word-break: normal;
-  overflow-wrap: anywhere;
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
 }
 
 .hero-intro-cta {
   position: absolute;
-  bottom: max(20px, env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: "SF Mono", monospace;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.42em;
-  padding-left: 0.42em;
-  color: rgba(255, 255, 255, 0.5);
-  animation: heroIntroPulse 1.4s ease-in-out infinite;
+  top: 16px;
+  right: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 @keyframes heroIntroPulse {
@@ -637,154 +575,105 @@ canvas {
 }
 
 /* ───────────── 殷师傅 (Master Yin) unlock cinematic + HUD badge ─────────────
- * Same shape as .hero-intro but with warm amber lantern tint instead of
- * the neon hero tints — Yin is a chef from a sushi izakaya, not a pilot,
- * so the visual language stays earth-tone. */
+ * Fullscreen comic splash with story dialogue — same pattern as hero-intro
+ * but with warm amber tones. */
 .yin-intro {
   position: absolute;
   inset: 0;
-  z-index: 12;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at 50% 45%, rgba(255, 178, 74, 0.34) 0%, rgba(2, 6, 14, 0.94) 60%, rgba(0, 0, 0, 0.98) 100%);
-  backdrop-filter: blur(6px) saturate(120%);
-  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  overflow: hidden;
   cursor: pointer;
   pointer-events: auto;
   animation: heroIntroIn 540ms cubic-bezier(0.22, 0.85, 0.32, 1);
 }
 .yin-intro[hidden] { display: none; }
 
-.yin-intro-rays {
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-conic-gradient(from 0deg at 50% 50%,
-      transparent 0deg,
-      rgba(255, 178, 74, 0.18) 6deg,
-      transparent 12deg,
-      transparent 30deg);
-  opacity: 0.55;
-  animation: heroIntroRays 8s linear infinite;
-  mix-blend-mode: screen;
-}
-
 .yin-intro-frame {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.1fr);
-  gap: 18px;
-  width: min(86%, 480px);
-  padding: 20px 22px 22px;
-  background: linear-gradient(165deg, rgba(8, 12, 24, 0.86) 0%, rgba(2, 4, 12, 0.96) 100%);
-  border: 2px solid rgba(255, 178, 74, 0.85);
-  box-shadow:
-    0 0 64px rgba(255, 178, 74, 0.55),
-    inset 0 0 48px rgba(255, 178, 74, 0.18);
-  clip-path: polygon(20px 0%, 100% 0%, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0% 100%, 0% 20px);
-  animation: heroIntroFrame 700ms 120ms cubic-bezier(0.22, 0.85, 0.32, 1) backwards;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.yin-intro-portrait {
-  position: relative;
-  border-radius: 6px;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 32px rgba(255, 178, 74, 0.45);
-  aspect-ratio: 1 / 1;
+.yin-intro-comic {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.yin-intro-portrait img {
+.yin-intro-comic img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  animation: heroIntroFloat 4.2s ease-in-out infinite;
 }
 
 .yin-intro-meta {
-  display: grid;
-  gap: 6px;
-  align-content: center;
-  text-align: left;
-  min-width: 0;
-}
-
-.yin-intro-eyebrow {
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  text-transform: uppercase;
-  color: rgba(255, 178, 74, 0.95);
+  position: absolute;
+  bottom: 80px;
+  left: 0; right: 0;
+  padding: 16px 20px 8px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--cyan-soft);
 }
 
 .yin-intro-name {
-  font-size: clamp(28px, 7.4vw, 42px);
+  font-size: clamp(18px, 4.2vw, 24px);
   font-weight: 900;
   letter-spacing: 0.04em;
   color: #ffffff;
-  text-shadow: 0 0 28px rgba(255, 178, 74, 0.7);
+  text-shadow: 0 0 24px rgba(255, 178, 74, 0.7);
   line-height: 1;
-  margin-top: 2px;
 }
 
 .yin-intro-country {
   font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.32em;
-  text-indent: 0.32em;
+  letter-spacing: 0.28em;
   color: rgba(255, 255, 255, 0.7);
 }
 
-.yin-intro-divider {
-  height: 1px;
-  width: 100%;
-  background: linear-gradient(90deg, rgba(255, 178, 74, 0.6), transparent);
-  margin: 6px 0 4px;
+.yin-intro-dialogue {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  padding: 14px 20px 24px;
+  background: rgba(0,0,0,0.88);
+  border-top: 1px solid var(--line);
 }
 
-.yin-intro-skills {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+.yin-intro-speaker {
+  font-size: 11px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
-.yin-intro-skills > div {
-  display: grid;
-  grid-template-columns: 38px 1fr;
-  align-items: baseline;
-  gap: 8px;
-}
-.yin-intro-skills dt {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.32em;
-  color: rgba(255, 255, 255, 0.42);
-}
-.yin-intro-skills dd {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.92);
+
+.yin-intro-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
 }
 
 .yin-intro-cta {
   position: absolute;
-  bottom: max(20px, env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: "SF Mono", monospace;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  color: rgba(255, 255, 255, 0.5);
-  animation: heroIntroPulse 1.4s ease-in-out infinite;
+  top: 16px;
+  right: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 /* HUD badge — small framed portrait that lives in the lower-left of the
@@ -2445,9 +2334,79 @@ canvas {
   left: max(12px, env(safe-area-inset-left));
   right: max(12px, env(safe-area-inset-right));
   bottom: max(12px, env(safe-area-inset-bottom));
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
+}
+
+.hero-roster {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+}
+
+.hero-roster-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cyan);
+  box-shadow: 0 0 8px rgba(124, 232, 255, 0.35);
+  object-fit: cover;
+}
+
+.controls-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.ctrl-settings-wrap {
+  position: relative;
+}
+
+.settings-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 130px;
+  background: rgba(6, 22, 32, 0.96);
+  border: 1px solid rgba(124, 232, 255, 0.32);
+  border-radius: var(--radius-md);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55);
+  padding: 4px 0;
+  z-index: 10;
+}
+
+.settings-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 100ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-item:hover {
+  background: rgba(124, 232, 255, 0.1);
+}
+
+.settings-item:active {
+  background: rgba(124, 232, 255, 0.18);
+}
+
+.ctrl-btn-primary {
+  min-width: 90px;
+  border-color: rgba(124, 232, 255, 0.5);
+  box-shadow: inset 0 0 20px rgba(124, 232, 255, 0.12), 0 6px 18px rgba(0, 0, 0, 0.42);
 }
 
 /* Bottom control bar (重开/商店/暂停/音效) sits at z-index 4 — below the
@@ -2704,12 +2663,21 @@ canvas {
   }
 
   .controls {
+    gap: 5px;
+  }
+
+  .controls-bar {
     gap: 6px;
   }
 
   .ctrl-btn {
     min-height: 46px;
     padding: 6px 3px;
+  }
+
+  .hero-roster-avatar {
+    width: 28px;
+    height: 28px;
   }
 }
 

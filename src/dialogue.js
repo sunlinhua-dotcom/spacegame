@@ -96,6 +96,15 @@ export const HERO_INTROS = {
   ],
 };
 
+/* ─────────────── 殷师傅 intro story (guest pilot, stage 1 wave 10) ─── */
+
+export const YIN_STORY = [
+  { speaker: "殷师傅", text: "二十年前，我在东京筑地学了一把好刀功。" },
+  { speaker: "殷师傅", text: "那刀切得了金枪鱼，也切得了外星人的装甲。" },
+  { speaker: "BRIGHT", text: "殷师傅……您真的是厨师吗？" },
+  { speaker: "殷师傅", text: "来吧，让这些虫子尝尝我的嘲讽料理！全场减速 22%！" },
+];
+
 /* ─────────────── Per-stage scripts ─────────────────────────── */
 
 export const STAGE_DIALOGUE = {

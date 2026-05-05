@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-manga3" />
+    <link rel="stylesheet" href="src/styles.css?v=20260505-hpbar" />
   </head>
   <body>
     <main class="shell">
@@ -145,35 +145,31 @@
           <div class="hero-intro-cta">▶ 点击翻页</div>
         </div>
 
-        <!-- 殷师傅 unlock celebration — fired once at stage 1 wave 10. Full
-             portrait + skill blurb + tap to continue. After it dismisses,
-             a small badge stays in the HUD area to signal "嘲讽 ON".
-             Uses the full-body taunt action shot (yin-action) as the hero
-             pose; portrait close-up + chibi are reserved for other UI. -->
+        <!-- 殷师傅 unlock celebration — fired once at stage 1 wave 10. Fullscreen
+             comic splash with 4-line story dialogue, same pattern as hero intros.
+             After it dismisses, a small badge stays in the HUD area to signal
+             "嘲讽 ON". -->
         <div id="yinIntro" class="yin-intro" hidden aria-live="polite">
-          <div class="yin-intro-rays" aria-hidden="true"></div>
           <div class="yin-intro-frame">
-            <div class="yin-intro-portrait">
-              <img id="yinIntroImg" src="assets/cast/yin-portrait.png?v=20260504-manga3" alt="" />
+            <div class="yin-intro-comic">
+              <img id="yinIntroImg" src="assets/cast/yin-action.png?v=20260505-hpbar" alt="" />
             </div>
             <div class="yin-intro-meta">
-              <div class="yin-intro-eyebrow">GUEST PILOT · 客座助阵</div>
-              <div class="yin-intro-name">殷师傅</div>
-              <div class="yin-intro-country">居酒屋掌勺 · 中国</div>
-              <div class="yin-intro-divider"></div>
-              <dl class="yin-intro-skills">
-                <div><dt>技能</dt><dd>嘲讽 · 全场敌人减速 22%</dd></div>
-                <div><dt>登场</dt><dd>第 1 关 第 10 波</dd></div>
-              </dl>
+              <span class="yin-intro-name">殷师傅</span>
+              <span class="yin-intro-country">居酒屋掌勺 · 中国 · GUEST PILOT</span>
+            </div>
+            <div class="yin-intro-dialogue">
+              <span class="yin-intro-speaker" id="yinIntroSpeaker">殷师傅</span>
+              <span class="yin-intro-text" id="yinIntroText">…</span>
             </div>
           </div>
-          <div class="yin-intro-cta">▶ 点击集结</div>
+          <div class="yin-intro-cta">▶ 点击翻页</div>
         </div>
 
         <!-- HUD badge: chibi icon (SD-style mascot) — small + cheerful so
              it reads at 32px. -->
         <div id="yinBadge" class="yin-badge" hidden aria-hidden="true">
-          <img src="assets/cast/yin-chibi.png?v=20260504-manga3" alt="" />
+          <img src="assets/cast/yin-chibi.png?v=20260505-hpbar" alt="" />
           <span class="yin-badge-tag">嘲讽</span>
         </div>
 
@@ -323,18 +319,22 @@
         </div>
 
         <nav class="controls">
-          <button id="restartBtn" type="button" class="ctrl-btn">
-            <span class="ctrl-icon">↻</span><span class="ctrl-label">重开</span>
-          </button>
-          <button id="shopBtn" type="button" class="ctrl-btn">
-            <span class="ctrl-icon">⛁</span><span class="ctrl-label">商店</span>
-          </button>
-          <button id="pauseBtn" type="button" class="ctrl-btn">
-            <span class="ctrl-icon">⏸</span><span class="ctrl-label">暂停</span>
-          </button>
-          <button id="soundBtn" type="button" class="ctrl-btn">
-            <span class="ctrl-icon">🔊</span><span class="ctrl-label">音效</span>
-          </button>
+          <div class="hero-roster" id="heroRoster"></div>
+          <div class="controls-bar">
+            <button id="shopBtn" type="button" class="ctrl-btn ctrl-btn-primary">
+              <span class="ctrl-icon">⛁</span><span class="ctrl-label">商店</span>
+            </button>
+            <div class="ctrl-settings-wrap">
+              <button id="settingsBtn" type="button" class="ctrl-btn">
+                <span class="ctrl-icon">⚙</span><span class="ctrl-label">设置</span>
+              </button>
+              <div id="settingsMenu" class="settings-menu" hidden>
+                <button id="pauseBtn" type="button" class="settings-item">⏸ 暂停</button>
+                <button id="soundBtn" type="button" class="settings-item">🔊 音效</button>
+                <button id="restartBtn" type="button" class="settings-item">↻ 重开</button>
+              </div>
+            </div>
+          </div>
         </nav>
       </section>
     </main>
@@ -345,6 +345,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-manga3"></script>
+    <script type="module" src="src/game-three.js?v=20260505-hpbar"></script>
   </body>
 </html>

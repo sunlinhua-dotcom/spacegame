@@ -237,25 +237,25 @@ export const ENEMY_TYPES = {
   // ── Fodder (tier 0) ──────────────────────────────────────────────
   "crystal-stalker": {
     sprite: "td-crystal-stalker", spriteUlt: null,
-    tier: 0, hp: 1, speed: 220, dmg: 10, score: 1, size: 38,
+    tier: 0, hp: 3, speed: 220, dmg: 10, score: 1, size: 38,
     move: moveSineWeave, wobbleHz: 6, wobbleMag: 90,
     rim: 0x7fd9ff,
   },
   "magma-worm": {
     sprite: "td-magma-worm", spriteAlt: "td-magma-worm-b",
-    tier: 0, hp: 2, speed: 130, dmg: 12, score: 1, size: 44,
+    tier: 0, hp: 5, speed: 130, dmg: 12, score: 1, size: 44,
     move: moveInwardSpiral, angVel: 0.7, frameMs: 180,
     rim: 0xff7a32,
   },
   "bio-beetle": {
     sprite: "td-bio-beetle", spriteAlt: "td-bio-beetle-b",
-    tier: 0, hp: 1, speed: 175, dmg: 8, score: 1, size: 36,
+    tier: 0, hp: 4, speed: 175, dmg: 8, score: 1, size: 36,
     move: moveFlock, frameMs: 200,
     rim: 0x9eff5e,
   },
   "shadow-cone": {
     sprite: "td-shadow-cone", spriteUlt: null,
-    tier: 0, hp: 1, speed: 320, dmg: 14, score: 2, size: 30,
+    tier: 0, hp: 3, speed: 320, dmg: 14, score: 2, size: 30,
     move: moveStraight,
     rim: 0xb388ff,
   },
@@ -263,33 +263,33 @@ export const ENEMY_TYPES = {
   // ── Mid (tier 1) ─────────────────────────────────────────────────
   "ion-sentinel": {
     sprite: "td-ion-sentinel",
-    tier: 1, hp: 4, speed: 60, dmg: 0, score: 3, size: 46,
+    tier: 1, hp: 10, speed: 60, dmg: 0, score: 3, size: 46,
     move: moveOrbitHover, targetR: 280, angVel: 0.5,
     fires: { every: 1.6, kind: "pulse-wave", speed: 280, dmg: 14 },
     rim: 0xffffff,
   },
   "magma-spider": {
     sprite: "td-magma-spider", spriteAlt: "td-magma-spider-b",
-    tier: 1, hp: 6, speed: 140, dmg: 18, score: 3, size: 56,
+    tier: 1, hp: 12, speed: 140, dmg: 18, score: 3, size: 56,
     move: moveTauntSpiral, frameMs: 220,
     rim: 0xff8a3a,
   },
   "void-hunter": {
     sprite: "td-void-hunter",
-    tier: 1, hp: 3, speed: 240, dmg: 12, score: 3, size: 42,
+    tier: 1, hp: 8, speed: 240, dmg: 12, score: 3, size: 42,
     move: moveBezierDive,
     fires: { every: 1.1, kind: "bolt", speed: 360, dmg: 10 },
     rim: 0xff3060,
   },
   "bio-cloud": {
     sprite: "td-bio-cloud",
-    tier: 1, hp: 5, speed: 80, dmg: 6, score: 2, size: 64,
+    tier: 1, hp: 10, speed: 80, dmg: 6, score: 2, size: 64,
     move: moveStraight, leavesPoison: true, poisonRadius: 80, poisonDPS: 4,
     rim: 0x9eff5e,
   },
   "storm-wraith": {
     sprite: "td-storm-wraith", spriteAlt: "td-storm-wraith-b",
-    tier: 1, hp: 4, speed: 0, dmg: 22, score: 4, size: 50,
+    tier: 1, hp: 9, speed: 0, dmg: 22, score: 4, size: 50,
     move: moveBlink, frameMs: 120,
     rim: 0xb388ff,
   },
@@ -297,19 +297,19 @@ export const ENEMY_TYPES = {
   // ── Elite (tier 2) ───────────────────────────────────────────────
   "gold-carapace": {
     sprite: "td-gold-carapace",
-    tier: 2, hp: 14, speed: 130, dmg: 30, score: 8, size: 76,
+    tier: 2, hp: 28, speed: 130, dmg: 30, score: 8, size: 76,
     move: moveChargeDash, chargeFor: 1.6, armor: 0.5,
     rim: 0xffd166,
   },
   "mirror-splitter": {
     sprite: "td-mirror-splitter",
-    tier: 2, hp: 8, speed: 120, dmg: 14, score: 6, size: 60,
+    tier: 2, hp: 18, speed: 120, dmg: 14, score: 6, size: 60,
     move: moveStraight, splitsInto: "crystal-stalker", splitsCount: 2,
     rim: 0xffffff,
   },
   "gravity-pulse": {
     sprite: "td-gravity-pulse",
-    tier: 2, hp: 10, speed: 90, dmg: 0, score: 7, size: 64,
+    tier: 2, hp: 22, speed: 90, dmg: 0, score: 7, size: 64,
     move: moveReflect, reflects: true, pullRadius: 140, pullStrength: 60,
     rim: 0xb388ff,
   },
@@ -317,19 +317,19 @@ export const ENEMY_TYPES = {
   // ── Mini-boss (tier 3) ───────────────────────────────────────────
   "hook-reaper": {
     sprite: "td-hook-reaper", spriteAlt: "td-hook-reaper-b",
-    tier: 3, hp: 26, speed: 90, dmg: 35, score: 14, size: 92,
+    tier: 3, hp: 52, speed: 90, dmg: 35, score: 14, size: 92,
     move: moveSweep, frameMs: 160,
     rim: 0xc8d8ff,
   },
   "mega-asteroid": {
     sprite: "td-mega-asteroid", spriteAlt: "td-mega-asteroid-b",
-    tier: 3, hp: 40, speed: 60, dmg: 50, score: 18, size: 110,
+    tier: 3, hp: 80, speed: 60, dmg: 50, score: 18, size: 110,
     move: moveStraight, frameMs: 200, armor: 0.4,
     rim: 0xff5f1a,
   },
   "shadow-apostle": {
     sprite: "td-shadow-apostle",
-    tier: 3, hp: 22, speed: 110, dmg: 28, score: 16, size: 86,
+    tier: 3, hp: 45, speed: 110, dmg: 28, score: 16, size: 86,
     move: moveMirror, spawnsTwin: true,
     rim: 0xb388ff,
   },

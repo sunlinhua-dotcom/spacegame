@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { AudioEngine } from "./audio.js?v=20260504-techrave2";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
-import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260504-rogue1";
-import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260504-juicy3";
-import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260504-rogue1";
-import { PROLOGUE, EPILOGUE, getEvent, HERO_INTROS } from "./dialogue.js?v=20260504-juicyC";
+import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260505-hpbar";
+import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260505-hpbar";
+import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260505-hpbar";
+import { PROLOGUE, EPILOGUE, getEvent, HERO_INTROS, YIN_STORY } from "./dialogue.js?v=20260505-hpbar";
 
 /* ═══════════════════════════════════════════════════════════════
    UI References
@@ -81,6 +81,8 @@ const ui = {
   bossRevealName: document.getElementById("bossRevealName"),
   bossRevealAbility: document.getElementById("bossRevealAbility"),
   yinIntro: document.getElementById("yinIntro"),
+  yinIntroSpeaker: document.getElementById("yinIntroSpeaker"),
+  yinIntroText: document.getElementById("yinIntroText"),
   yinBadge: document.getElementById("yinBadge"),
   miniBossTag: document.getElementById("miniBossTag"),
   miniBossName: document.getElementById("miniBossName"),
@@ -800,24 +802,58 @@ if (ui.bossReveal) {
 }
 
 /* ─────────────── 殷师傅 unlock celebration ───────────────
- * Fired at stage 1 wave 10 the FIRST time. Pauses gameplay for the
- * splash, plays the levelUp jingle, then auto-dismisses after 3 s
- * (also tap-to-dismiss). Music holds silent for the duration so the
- * moment lands clean. */
-const _yinIntroState = { autoTimer: null, prevMode: null };
+ * Fired at stage 1 wave 10 the FIRST time. Fullscreen comic splash with
+ * 4-line story dialogue (same flow as playHeroIntro). Auto-advances through
+ * each line, tap advances to next line or dismisses after the last. */
+const _yinIntroState = { autoTimer: null, prevMode: null, lineIdx: 0, lines: YIN_STORY };
 
 function showYinUnlockOverlay() {
   if (!ui.yinIntro) return;
   _yinIntroState.prevMode = state.mode;
+  _yinIntroState.lineIdx = 0;
   state.mode = "yinIntro";
   holdMusicForVoice();
+  // Set comic image with fallback to action portrait
+  const yinImg = document.getElementById("yinIntroImg");
+  if (yinImg) {
+    yinImg.src = `assets/cast/yin-comic.png?v=${ASSET_VERSION}`;
+    yinImg.onerror = () => {
+      yinImg.onerror = null;
+      yinImg.src = `assets/cast/${MASTER_YIN.actionPortrait || MASTER_YIN.portrait}.png?v=${ASSET_VERSION}`;
+    };
+  }
   ui.yinIntro.hidden = false;
   ui.yinIntro.style.animation = "none";
   // eslint-disable-next-line no-unused-expressions
   ui.yinIntro.offsetHeight;
   ui.yinIntro.style.animation = "";
+  // Show first dialogue line
+  showYinIntroLine();
+}
+
+function showYinIntroLine() {
+  const st = _yinIntroState;
+  if (st.lineIdx >= st.lines.length) {
+    dismissYinIntro();
+    return;
+  }
+  const line = st.lines[st.lineIdx];
+  if (ui.yinIntroSpeaker) ui.yinIntroSpeaker.textContent = line.speaker;
+  if (ui.yinIntroText) ui.yinIntroText.textContent = line.text;
+  // Auto-advance after duration (or default 3.2s per line)
   if (_yinIntroState.autoTimer) clearTimeout(_yinIntroState.autoTimer);
-  _yinIntroState.autoTimer = setTimeout(dismissYinIntro, 3200);
+  _yinIntroState.autoTimer = setTimeout(() => {
+    st.lineIdx += 1;
+    showYinIntroLine();
+  }, line.durationMs || 3200);
+}
+
+function advanceYinIntro() {
+  if (!ui.yinIntro || ui.yinIntro.hidden) return;
+  const st = _yinIntroState;
+  if (_yinIntroState.autoTimer) clearTimeout(_yinIntroState.autoTimer);
+  st.lineIdx += 1;
+  showYinIntroLine();
 }
 
 function dismissYinIntro() {
@@ -836,7 +872,7 @@ function dismissYinIntro() {
 }
 
 if (ui.yinIntro) {
-  ui.yinIntro.addEventListener("pointerdown", dismissYinIntro);
+  ui.yinIntro.addEventListener("pointerdown", advanceYinIntro);
 }
 
 /* ─────────────── ULT cinematic ───────────────
@@ -1590,6 +1626,24 @@ function createEnemyVisual(kind, size) {
   scene.add(group);
   const visual = { group };
 
+  // HP bar — small plane above the enemy, hidden until damaged
+  const hpBarW = Math.max(size * 0.9, 40);
+  const hpBarH = 4;
+  const hpBarGeo = new THREE.PlaneGeometry(hpBarW, hpBarH);
+  const hpBarMat = new THREE.MeshBasicMaterial({ color: 0x44ff44, transparent: true, opacity: 0, depthTest: false });
+  const hpBar = new THREE.Mesh(hpBarGeo, hpBarMat);
+  hpBar.position.set(0, size * 0.7 + 8, 0.2);
+  // Background bar (dark)
+  const hpBgGeo = new THREE.PlaneGeometry(hpBarW, hpBarH);
+  const hpBgMat = new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0, depthTest: false });
+  const hpBg = new THREE.Mesh(hpBgGeo, hpBgMat);
+  hpBg.position.set(0, size * 0.7 + 8, 0.19);
+  group.add(hpBg);
+  group.add(hpBar);
+  visual.hpBar = hpBar;
+  visual.hpBg = hpBg;
+  visual.hpBarW = hpBarW;
+
   if (kind === "saucer") {
     visual.halo = makeEnergyRing(size * 0.82, size * 0.1, 0x7aff63, 0.22);
     visual.shell = makeEnergyRing(size * 0.56, size * 0.12, 0xffc34d, 0.52);
@@ -1732,6 +1786,27 @@ function updateEnemyVisual(enemy, dt) {
   }
   if (visual.flare?.material) visual.flare.material.opacity = 0.14 + Math.sin(state.time * 8 + enemy.wobble) * 0.08;
   if (visual.rim) visual.rim.rotation.z -= dt * 2.8;
+
+  // ── HP bar update ──
+  if (visual.hpBar && !enemy.isSwarm) {
+    const ratio = Math.max(0, enemy.hp / enemy.maxHp);
+    if (ratio < 1) {
+      // Show the bar once damaged
+      visual.hpBar.material.opacity = 0.92;
+      visual.hpBg.material.opacity = 0.6;
+      // Scale X to represent remaining HP
+      visual.hpBar.scale.x = ratio;
+      // Shift so bar shrinks from right edge
+      visual.hpBar.position.x = -visual.hpBarW * (1 - ratio) * 0.5;
+      // Color: green → yellow → red
+      const r = ratio < 0.5 ? 1 : 1 - (ratio - 0.5) * 2;
+      const g = ratio > 0.5 ? 1 : ratio * 2;
+      visual.hpBar.material.color.setRGB(r, g, 0);
+    } else {
+      visual.hpBar.material.opacity = 0;
+      visual.hpBg.material.opacity = 0;
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2670,6 +2745,7 @@ function reset() {
   if (ui.floaters) ui.floaters.replaceChildren();
   prefillSwarm();
   showStageThemeBurst(0.9);
+  renderHeroRoster();
   updateHud();
 }
 
@@ -2677,13 +2753,9 @@ function reset() {
    HUD Update (with DOM write cache)
    ═══════════════════════════════════════════════════════════════ */
 function setSoundButton() {
-  const label = state.soundOn ? "音效" : "开启";
-  const icon = state.soundOn ? "🔊" : "🔇";
+  const label = state.soundOn ? "🔊 音效" : "🔇 开启";
   if (ui.soundBtn) {
-    const labelEl = ui.soundBtn.querySelector(".ctrl-label");
-    const iconEl = ui.soundBtn.querySelector(".ctrl-icon");
-    if (labelEl) setHT(labelEl, "sndLabel", label);
-    if (iconEl) setHT(iconEl, "sndIcon", icon);
+    setHT(ui.soundBtn, "sndLabel", label);
   }
 }
 
@@ -2695,14 +2767,23 @@ function setShopButton() {
   }
 }
 
+function renderHeroRoster() {
+  const roster = document.getElementById("heroRoster");
+  if (!roster) return;
+  roster.replaceChildren();
+  for (const hero of activeHeroes) {
+    const img = document.createElement("img");
+    img.src = `assets/cast/${hero.portrait}.png?v=${ASSET_VERSION}`;
+    img.className = "hero-roster-avatar";
+    img.alt = hero.name;
+    roster.appendChild(img);
+  }
+}
+
 function setPauseButton() {
-  const label = state.mode === "paused" ? "继续" : "暂停";
-  const icon = state.mode === "paused" ? "▶" : "⏸";
+  const label = state.mode === "paused" ? "▶ 继续" : "⏸ 暂停";
   if (ui.pauseBtn) {
-    const labelEl = ui.pauseBtn.querySelector(".ctrl-label");
-    const iconEl = ui.pauseBtn.querySelector(".ctrl-icon");
-    if (labelEl) setHT(labelEl, "pauseLabel", label);
-    if (iconEl) setHT(iconEl, "pauseIcon", icon);
+    setHT(ui.pauseBtn, "pauseLabel", label);
   }
 }
 
@@ -4101,10 +4182,19 @@ function updateWave(dt) {
 
 function triggerYinUnlock() {
   state.yinActive = true;
-  // Don't persist yinUnlocked — he's a stage-1 guest, not a campaign
-  // unlock. Each new game starts fresh and earns him at stage 1 wave 10
-  // again. Persisting would leak the slow buff to runs that already
-  // moved past stage 1.
+  // Play Yin's 4-line story dialogue BEFORE the unlock overlay.
+  // dialoguePlay pauses gameplay automatically; after it finishes, show
+  // the portrait/skill card.
+  if (YIN_STORY && YIN_STORY.length) {
+    dialoguePlay(YIN_STORY, "yin-unlock", "yin-story", () => {
+      _showYinUnlockAfterStory();
+    });
+  } else {
+    _showYinUnlockAfterStory();
+  }
+}
+
+function _showYinUnlockAfterStory() {
   showYinUnlockOverlay();
   if (ui.yinBadge) {
     ui.yinBadge.hidden = false;
@@ -4396,7 +4486,7 @@ const _bestiaryToLegacyKind = {
 function spawnEnemies(dt) {
   if (state.waveIndex >= wavesPerStage || state.boss) return;
   const pressure = stagePressure();
-  const rate = 1.8 + pressure.stage * 4.2 + pressure.wave * 5.4 + state.levelCount * 0.22;
+  const rate = 2.8 + pressure.stage * 5.5 + pressure.wave * 7.0 + state.levelCount * 0.32;
   state.enemyCarry += rate * dt;
   // Pre-roll the wave plan so we draw the same population the bestiary
   // promises (per-stage bag from STAGE_BAGS). Cache per stage+wave.
@@ -4422,7 +4512,7 @@ function spawnEnemies(dt) {
     // Restore the punchy original sizes/speeds — the earlier 0.85× and 0.5×
     // multipliers had drained the streaking-meteor energy users remembered.
     const size = (def?.size ?? rand(28, 48)) + pressure.stage * 6;
-    const speed = ((def?.speed ?? rand(30, 56)) * 0.85 + pressure.combined * 34 + state.waveIndex * 0.8) * (bal?.enemySpeed || 1);
+    const speed = ((def?.speed ?? rand(30, 56)) * 1.0 + pressure.combined * 42 + state.waveIndex * 1.2) * (bal?.enemySpeed || 1);
     const hp = ((def?.hp ?? 1) + Math.floor(pressure.stage * 3.2 + pressure.wave * 2.2)) * (bal?.enemyHp || 1);
     const enemy = createRegularEnemy({
       x: pos.x,
@@ -5359,6 +5449,7 @@ function completeBoss(enemy) {
   const oldHeroIds = activeHeroes.map((h) => h.id);
   activeHeroes = activeHeroesForStage(state.stageLevel);
   heroGauges = new HeroGauges(activeHeroes);
+  renderHeroRoster();
   // Find the new hero that joined this stage (if any) — show their
   // introduction cinematic before the upgrade-card panel.
   const newHero = activeHeroes.find((h) => !oldHeroIds.includes(h.id));
@@ -5549,6 +5640,21 @@ ui.soundBtn.addEventListener("click", async () => {
   audio.setEnabled(state.soundOn);
   updateHud();
 });
+
+// Settings menu toggle
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsMenu = document.getElementById("settingsMenu");
+if (settingsBtn && settingsMenu) {
+  settingsBtn.addEventListener("click", () => {
+    settingsMenu.hidden = !settingsMenu.hidden;
+  });
+  // Close menu when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!settingsBtn.contains(e.target) && !settingsMenu.contains(e.target)) {
+      settingsMenu.hidden = true;
+    }
+  });
+}
 
 if (ui.resumeBtn) {
   ui.resumeBtn.addEventListener("click", () => {
