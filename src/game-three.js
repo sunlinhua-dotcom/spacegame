@@ -1282,10 +1282,10 @@ const state = {
   last: 0,
   time: 0,
   gameTime: 0,
-  health: 160,
-  maxHealth: 160,
-  shield: 30,
-  money: 8,
+  health: 120,
+  maxHealth: 120,
+  shield: 20,
+  money: 5,
   kills: 0,
   stageLevel: 1,
   waveIndex: 1,
@@ -1330,9 +1330,9 @@ const state = {
 
 // First level-up at 14s gives players quick onboarding feedback; subsequent
 // triggers space out so the upgrade rhythm slows as the game gets crowded.
-const levelTriggers = Array.from({ length: 80 }, (_, i) => 14 + i * 10 + Math.floor(i / 10) * 4);
+const levelTriggers = Array.from({ length: 80 }, (_, i) => 18 + i * 13 + Math.floor(i / 8) * 5);
 const wavesPerStage = 20;
-const waveDuration = 4.2;
+const waveDuration = 5.5;
 const shopRefreshCost = 3;
 // Decorative barrage layer is intentionally disabled; the dense golden-flame
 // streaks are now real `isSwarm` enemies the player intercepts. Constants are
@@ -1349,8 +1349,8 @@ const swarmEntryRadius = 760;
 // Stage-1 baseline tuned so 6 starter defenders can intercept enough of the
 // stream to keep Earth alive while the player ramps up. Density grows with
 // stageLevel + waveIndex below.
-const swarmBaseDensity = 70;
-const swarmMaxDensity = 230;
+const swarmBaseDensity = 40;
+const swarmMaxDensity = 180;
 const swarmTrailColor = 0xffb14a;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2655,10 +2655,10 @@ function reset() {
     last: performance.now(),
     time: 0,
     gameTime: 0,
-    health: 160,
-    maxHealth: 160,
-    shield: 30,
-    money: 8,
+    health: 120,
+    maxHealth: 120,
+    shield: 20,
+    money: 5,
     kills: 0,
     stageLevel: 1,
     waveIndex: 1,
@@ -3562,7 +3562,7 @@ const upgradeShowcasesByName = {
     audio.upgrade();
   },
   "应急修复": (u) => {
-    state.health = Math.min(state.maxHealth, state.health + 30);
+    state.health = Math.min(state.maxHealth, state.health + 20);
     showcaseAuraPulse(u.category);
     audio.upgrade();
   },
@@ -3802,7 +3802,7 @@ const upgradeShowcasesByName = {
     audio.upgrade();
   },
   "轨道维修站": (u) => {
-    state.health = Math.min(state.maxHealth, state.health + 50);
+    state.health = Math.min(state.maxHealth, state.health + 30);
     showcaseAuraPulse(u.category, 1.2);
     audio.upgrade();
   },
@@ -3897,7 +3897,7 @@ const upgradeShowcasesByName = {
     setTimeout(() => audio.beam(), 140);
   },
   "时间回卷": (u) => {
-    state.health = Math.min(state.maxHealth, state.health + 60);
+    state.health = Math.min(state.maxHealth, state.health + 35);
     triggerScreenShake(0.6, 12);
     spawnBeamFan(-Math.PI / 2, 36, Math.PI * 2, { life: 2, color: 0xff7fcf, opacity: 0.55 });
     showcaseAuraPulse(u.category, 2);
@@ -4166,7 +4166,7 @@ function updateWave(dt) {
   if (state.waveTimer < waveDuration) return;
   state.waveTimer = 0;
   state.waveIndex += 1;
-  state.enemyCarry += state.waveIndex % 5 === 0 ? 4.2 : 1.3;
+  state.enemyCarry += state.waveIndex % 5 === 0 ? 3.0 : 1.0;
   // Stage 1, wave 10 → unlock 殷师傅 (Master Yin) as a guest support.
   // First-time only; localStorage persists the flag across sessions.
   if (state.stageLevel === MASTER_YIN.unlock.stage
@@ -4306,8 +4306,9 @@ function spawnMiniBoss() {
   const radius = rand(640, 760);
   const pos = pointOnCircle(baseAngle, radius);
   const targetAngle = baseAngle + Math.PI + rand(-0.04, 0.04);
-  const size = 84 + pressure.stage * 18 + state.stageLevel * 4;
-  const hp = 24 + Math.round(pressure.stage * 26 + state.levelCount * 1.6 + state.stageLevel * 4);
+  const bal = getStageBalance(state.stageLevel);
+  const size = 84 + pressure.stage * 14 + state.stageLevel * 3;
+  const hp = Math.round((30 + pressure.stage * 20 + state.levelCount * 1.2 + state.stageLevel * 5) * (bal?.enemyHp || 1));
   const enemy = createRegularEnemy({
     x: pos.x,
     y: pos.y,
@@ -4391,7 +4392,7 @@ function spawnSwarmEnemy() {
   const startX = C.x + Math.cos(angle) * swarmEntryRadius;
   const startY = C.y + Math.sin(angle) * swarmEntryRadius;
   const heading = angle + Math.PI;
-  const speed = 42 + rand(-8, 12) + state.stageLevel * 3;
+  const speed = 50 + rand(-8, 14) + state.stageLevel * 4;
   // Pin shape: chunky head leading, short flame tail. The barrage texture has
   // its bright bulb at one end; flipping with `+ π` makes that bulb LEAD the
   // motion (was trailing before, looking head-tail-reversed).
@@ -4431,7 +4432,7 @@ function updateSwarms(dt) {
   // Stage-10 wave-20: 70 + 162 + 60 = 230 (cap)
   const baseTarget = state.boss
     ? Math.min(80, swarmBaseDensity * 0.6)
-    : Math.min(swarmMaxDensity, swarmBaseDensity + (state.stageLevel - 1) * 18 + state.waveIndex * 3);
+    : Math.min(swarmMaxDensity, swarmBaseDensity + (state.stageLevel - 1) * 12 + state.waveIndex * 2);
   // Slower fill so a long pause / heavy AoE doesn't dump 14 enemies in one frame.
   const toSpawn = Math.min(8, Math.max(0, Math.ceil(baseTarget - count)));
   for (let i = 0; i < toSpawn; i++) spawnSwarmEnemy();
@@ -4441,11 +4442,11 @@ function updateSwarms(dt) {
 // Pre-fill the field on game start / restart so the very first frame already
 // shows the dense golden ring, instead of the player watching it ramp up.
 function prefillSwarm() {
-  // 28 prefilled, scattered along the outer 70% of the flight path so the
+  // 16 prefilled, scattered along the outer 70% of the flight path so the
   // first frame already shows incoming density without crashing into Earth.
   const safeMin = 0;
   const safeMax = swarmEntryRadius - earthRadius - 320;
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 16; i++) {
     spawnSwarmEnemy();
     const e = state.enemies[state.enemies.length - 1];
     const advance = rand(safeMin, Math.max(safeMin + 20, safeMax));
@@ -4479,7 +4480,7 @@ const _bestiaryToLegacyKind = {
 function spawnEnemies(dt) {
   if (state.waveIndex >= wavesPerStage || state.boss) return;
   const pressure = stagePressure();
-  const rate = 2.8 + pressure.stage * 5.5 + pressure.wave * 7.0 + state.levelCount * 0.32;
+  const rate = 2.2 + pressure.stage * 4.0 + pressure.wave * 5.0 + state.levelCount * 0.18;
   state.enemyCarry += rate * dt;
   // Pre-roll the wave plan so we draw the same population the bestiary
   // promises (per-stage bag from STAGE_BAGS). Cache per stage+wave.
@@ -4505,8 +4506,8 @@ function spawnEnemies(dt) {
     // Restore the punchy original sizes/speeds — the earlier 0.85× and 0.5×
     // multipliers had drained the streaking-meteor energy users remembered.
     const size = (def?.size ?? rand(28, 48)) + pressure.stage * 6;
-    const speed = ((def?.speed ?? rand(30, 56)) * 1.0 + pressure.combined * 42 + state.waveIndex * 1.2) * (bal?.enemySpeed || 1);
-    const hp = ((def?.hp ?? 1) + Math.floor(pressure.stage * 3.2 + pressure.wave * 2.2)) * (bal?.enemyHp || 1);
+    const speed = ((def?.speed ?? rand(30, 56)) * 1.0 + pressure.combined * 30 + state.waveIndex * 0.8) * (bal?.enemySpeed || 1);
+    const hp = Math.ceil(((def?.hp ?? 1) + Math.floor(pressure.stage * 2.5 + pressure.wave * 1.5)) * (bal?.enemyHp || 1));
     const enemy = createRegularEnemy({
       x: pos.x,
       y: pos.y,
@@ -5016,13 +5017,13 @@ function updateCombat(dt) {
     }
     if (defender.cooldown <= 0) {
       shoot(defender, target, 0.03);
-      defender.cooldown = Math.max(0.15, 0.58 - state.levelCount * 0.02);
+      defender.cooldown = Math.max(0.22, 0.68 - state.levelCount * 0.015);
     }
   }
   state.coreTimer -= dt * state.fireRateMul;
   if (state.coreTimer <= 0) {
     shoot(C, nearestEnemy(C, 560), 0.04);
-    state.coreTimer = 0.86;
+    state.coreTimer = 1.1;
   }
   updateLaserAndBeam(dt);
   buildGrid();
@@ -5343,7 +5344,7 @@ function updateEnemies(realDt) {
     updateLineXY(e.trail, oldX, oldY, e.x, e.y, 2.5);
     e.trail.material.opacity = e.kind === "saucer" ? 0.22 : 0.44;
     if (e.radius < earthRadius + e.size * 0.45) {
-      takeHit(3.5);
+      takeHit(5);
       addExplosion(e.x, e.y, 0.9);
       disposeObject(e.mesh);
       disposeObject(e.trail);
