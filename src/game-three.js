@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy8";
+const ASSET_VERSION = "20260504-juicy9";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -1138,6 +1138,32 @@ const bossConfigs = [
 
 loadTexture("background", "assets/generated/images/earth-defense-background.png");
 loadTexture("earth", `${individualAssetBase}/earth-core.png`);
+
+// 嘲讽 — fly-out sushi sprites. Renders eight food emoji into 128×128
+// canvases on startup; each becomes a Three.js texture we can reuse
+// freely. Cheap (single draw at load time) and avoids needing actual
+// PNG asset generation just for an effect.
+const SUSHI_EMOJI = ["🍣", "🍤", "🍙", "🍘", "🍱", "🥢", "🍶", "🍵"];
+function makeEmojiTexture(char, size = 128) {
+  const cv = document.createElement("canvas");
+  cv.width = size; cv.height = size;
+  const ctx = cv.getContext("2d");
+  ctx.font = `${Math.floor(size * 0.78)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  // Soft glow under the glyph so it pops on the dark backdrop.
+  ctx.shadowColor = "rgba(255, 178, 74, 0.85)";
+  ctx.shadowBlur = 18;
+  ctx.fillText(char, size / 2, size / 2 + size * 0.05);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.minFilter = THREE.LinearFilter;
+  t.needsUpdate = true;
+  return t;
+}
+for (let i = 0; i < SUSHI_EMOJI.length; i++) {
+  tex[`sushi-${i}`] = makeEmojiTexture(SUSHI_EMOJI[i]);
+}
 
 // Phase-7: hero mecha (top-down) + ULT-active variants + per-hero weapon
 // projectiles. Loaded for all 8 even though stage N only uses N — preload
@@ -2575,6 +2601,7 @@ function reset() {
     ui.yinBadge.hidden = true;
     ui.yinBadge.classList.remove("is-locked", "is-active");
   }
+  clearYinSushi();
   rebuildDefenders();
   hideLevelPanel();
   hideShopPanel();
@@ -4029,14 +4056,15 @@ function triggerYinUnlock() {
     ui.yinBadge.classList.remove("is-locked");
   }
   audio.levelUp();
-  // 嘲讽 grand-entrance VFX: a big amber shockwave from Earth + a calm
-  // ripple ring that lingers for ~1 s. Sets the tone before the recurring
-  // pulse begins each frame in updateYinTauntVfx.
+  // 嘲讽 grand-entrance VFX: 36 sushi pieces explode out of Earth in a
+  // radial burst, plus an amber shockwave ring + screen shake to mark
+  // the moment 殷师傅 enters the field. After this initial blast, the
+  // ongoing spawn rate in updateYinTauntVfx (16/s) keeps sushi flying.
+  for (let i = 0; i < 36; i++) {
+    spawnYinSushiPiece();
+  }
   addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 5, {
     life: 1.4, grow: 1.6, spin: -0.8, opacity: 0.92, z: 8.6, color: 0xffb24a,
-  });
-  addPolishEffect("polishBossRageAura", C.x, C.y, earthRadius * 4.2, {
-    life: 1.1, grow: 1.2, spin: 1.0, opacity: 0.78, z: 8.4, color: 0xffd166,
   });
   for (let i = 0; i < 12; i++) {
     const a = (Math.PI * 2 * i) / 12;
@@ -4045,40 +4073,81 @@ function triggerYinUnlock() {
   triggerScreenShake(0.4, 8);
 }
 
-// 嘲讽 ongoing visual: a soft amber ring pulses around Earth roughly
-// every 1.6 s while Yin is active, and a faint aura sprite is parked at
-// Earth's position breathing in/out so the slow effect has a constant
-// on-screen presence (not just an invisible stat).
-const _yinTauntVfx = { pulseTimer: 0, aura: null };
+// 嘲讽 visual: 殷师傅 throws sushi everywhere. While he's active, sushi
+// pieces fly out of Earth in random directions, spinning + tumbling +
+// fading. Replaces the earlier amber-shockwave aura — the chef vibe is
+// the whole point of the gag, and "lots of various sushi" matches the
+// brief literally.
+const _yinSushi = { spawnTimer: 0, pieces: [] };
+
+function spawnYinSushiPiece() {
+  const idx = Math.floor(Math.random() * SUSHI_EMOJI.length);
+  const angle = rand(0, Math.PI * 2);
+  const speed = rand(140, 280);
+  const size = rand(34, 56);
+  // Start a touch outside Earth's surface so it visually launches OUT
+  // rather than appearing in space.
+  const launchR = earthRadius + rand(8, 18);
+  const sprite = makeSprite(tex[`sushi-${idx}`], size, size, { opacity: 1.0 });
+  const piece = {
+    x: C.x + Math.cos(angle) * launchR,
+    y: C.y + Math.sin(angle) * launchR,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    life: rand(1.6, 2.4),
+    maxLife: 0,
+    spin: rand(-7, 7),
+    rotation: rand(0, Math.PI * 2),
+    mesh: sprite,
+  };
+  piece.maxLife = piece.life;
+  setXY(sprite, piece.x, piece.y, 5.2);
+  sprite.material.rotation = piece.rotation;
+  _yinSushi.pieces.push(piece);
+}
+
+function clearYinSushi() {
+  for (const p of _yinSushi.pieces) disposeObject(p.mesh);
+  _yinSushi.pieces.length = 0;
+  _yinSushi.spawnTimer = 0;
+}
+
 function updateYinTauntVfx(dt) {
-  if (!state.yinActive || state.mode !== "playing") {
-    if (_yinTauntVfx.aura) {
-      _yinTauntVfx.aura.material.opacity = 0;
+  // Even when Yin is inactive we still need to age out any in-flight
+  // pieces from the entry burst so they don't freeze on screen.
+  for (let i = _yinSushi.pieces.length - 1; i >= 0; i--) {
+    const p = _yinSushi.pieces[i];
+    p.life -= dt;
+    if (p.life <= 0) {
+      disposeObject(p.mesh);
+      _yinSushi.pieces.splice(i, 1);
+      continue;
     }
-    _yinTauntVfx.pulseTimer = 0;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    // Slight drag so the pieces don't ALL exit at the same moment —
+    // some hang in the air a beat longer for a snowfall feel.
+    p.vx *= 0.992;
+    p.vy *= 0.992;
+    p.rotation += p.spin * dt;
+    setXY(p.mesh, p.x, p.y, 5.2);
+    p.mesh.material.rotation = p.rotation;
+    // Fade in the last 0.6 s of life.
+    const fade = Math.min(1, p.life / 0.6);
+    p.mesh.material.opacity = fade;
+  }
+  if (!state.yinActive || state.mode !== "playing") {
+    _yinSushi.spawnTimer = 0;
     return;
   }
-  // Lazy-create the breathing aura the first time we render with Yin
-  // active. Parked at Earth's center, additive blending so it tints the
-  // backdrop amber without occluding gameplay.
-  if (!_yinTauntVfx.aura) {
-    const aura = createSprite(tex.explosionCore, earthRadius * 5.2, earthRadius * 5.2, {
-      additive: true, opacity: 0.18, color: 0xffb24a,
-    });
-    aura.position.set(C.x, C.y, -0.05);
-    _yinTauntVfx.aura = aura;
-  } else {
-    setXY(_yinTauntVfx.aura, C.x, C.y, -0.05);
-  }
-  _yinTauntVfx.aura.material.opacity = 0.14 + Math.sin(state.time * 1.6) * 0.08;
-  // Periodic shockwave — a single ring expanding outward every ~1.6 s.
-  // Reads as 殷师傅's voice "calling out" to the enemies, slowing them.
-  _yinTauntVfx.pulseTimer -= dt;
-  if (_yinTauntVfx.pulseTimer <= 0) {
-    _yinTauntVfx.pulseTimer = 1.6;
-    addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 3.6, {
-      life: 1.2, grow: 1.8, spin: -0.6, opacity: 0.55, z: 1.8, color: 0xffd166,
-    });
+  // Spawn rate: ~every 0.12 s, two pieces per tick → ~16 pieces/s flying
+  // outward in all directions. Looks like the chef is hurling sushi out
+  // the door at the alien horde.
+  _yinSushi.spawnTimer -= dt;
+  if (_yinSushi.spawnTimer <= 0) {
+    _yinSushi.spawnTimer = 0.12;
+    spawnYinSushiPiece();
+    spawnYinSushiPiece();
   }
 }
 
@@ -5186,11 +5255,11 @@ function completeBoss(enemy) {
   state.stageLevel += 1;
   state.waveIndex = 1;
   // 殷师傅 leaves at stage 2 — he's a stage-1 guest, not a permanent ally.
-  // Hide the badge, drop the slow buff, fade out the ambient aura.
+  // Hide the badge, drop the slow buff, clear any in-flight sushi.
   if (state.yinActive) {
     state.yinActive = false;
     if (ui.yinBadge) ui.yinBadge.hidden = true;
-    if (_yinTauntVfx.aura) _yinTauntVfx.aura.material.opacity = 0;
+    clearYinSushi();
   }
   // Refresh active heroes + ult gauges for the new stage.
   const oldHeroIds = activeHeroes.map((h) => h.id);
