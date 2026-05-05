@@ -61,10 +61,9 @@ const ui = {
   dialoguePortrait: document.getElementById("dialoguePortraitImg"),
   dialogueSpeaker: document.getElementById("dialogueSpeaker"),
   dialogueText: document.getElementById("dialogueText"),
-  ultGauges: document.getElementById("ultGauges"),
+  // ULT gauges are now integrated into hero-roster SVG rings at bottom
   prologueOverlay: document.getElementById("prologueOverlay"),
-  prologueText: document.getElementById("prologueText"),
-  prologueProgressFill: document.getElementById("prologueProgressFill"),
+  prologueComicImg: document.getElementById("prologueComicImg"),
   ultCinematic: document.getElementById("ultCinematic"),
   ultCinematicPortrait: document.getElementById("ultCinematicPortrait"),
   ultCinematicName: document.getElementById("ultCinematicName"),
@@ -478,7 +477,7 @@ function dialogueShowLine(line) {
   } else if (isYin) {
     portraitSrc = `assets/cast/${MASTER_YIN.portrait}.png?v=${ASSET_VERSION}`;
   } else if (line.speaker === "boss") {
-    const bossConfig = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
+    const bossConfig = getBossConfig(state.stageLevel);
     if (bossConfig) {
       // Boss frame files: boss-{NN}-{slug}-frame-00.png — pull from texture
       // map by guessing the loaded key. game-three loads them as
@@ -578,28 +577,26 @@ if (ui.dialogueBox) {
   });
 }
 
-/* ─────────────── Prologue ─────────────── */
-const _prologueState = { lines: [], idx: 0, timer: 0, lineDuration: 0, onDone: null, done: false };
+/* ─────────────── Prologue (comic pages) ─────────────── */
+const PROLOGUE_PAGES = [
+  "assets/story/prologue-1.png",
+  "assets/story/prologue-2.png",
+];
+const _prologueState = { pages: [], idx: 0, onDone: null, done: false };
 
-function showPrologueLine(line) {
-  if (!ui.prologueText) return;
-  ui.prologueText.textContent = line.text;
-  ui.prologueText.style.animation = "none";
-  // eslint-disable-next-line no-unused-expressions
-  ui.prologueText.offsetHeight;
-  ui.prologueText.style.animation = "";
-  if (ui.prologueProgressFill) {
-    const pct = ((_prologueState.idx + 1) / _prologueState.lines.length) * 100;
-    ui.prologueProgressFill.style.width = `${pct}%`;
+function showProloguePage(idx) {
+  const img = document.getElementById("prologueComicImg");
+  if (img) img.src = `${_prologueState.pages[idx]}?v=${ASSET_VERSION}`;
+  // Update dots
+  const dots = document.getElementById("prologuePageDots");
+  if (dots) {
+    dots.innerHTML = "";
+    for (let i = 0; i < _prologueState.pages.length; i++) {
+      const d = document.createElement("span");
+      d.className = "prologue-dot" + (i === idx ? " active" : "");
+      dots.appendChild(d);
+    }
   }
-  // Voice playback at 1.35x — auto-advance to next line when audio finishes.
-  playLineVoice("prologue", _prologueState.idx, line.speaker, null, {
-    rate: 1.35,
-    onEnded: () => {
-      // Only advance if we're still on the same line (player didn't tap-skip).
-      if (_prologueState.lines.length) prologueAdvance();
-    },
-  });
 }
 
 function playPrologue(lines, onDone) {
@@ -607,44 +604,32 @@ function playPrologue(lines, onDone) {
     if (onDone) onDone();
     return;
   }
-  _prologueState.lines = lines.slice();
+  _prologueState.pages = PROLOGUE_PAGES;
   _prologueState.idx = 0;
-  _prologueState.timer = 0;
-  _prologueState.lineDuration = (lines[0]?.durationMs || 2400) / 1000;
   _prologueState.onDone = onDone || null;
-  // Hold music silent for the entire prologue so each TTS line lands clean
-  // — without this the music swelled in between lines while the overlay
-  // stayed up.
-  holdMusicForVoice();
   ui.prologueOverlay.hidden = false;
-  showPrologueLine(lines[0]);
+  showProloguePage(0);
 }
 
 function prologueAdvance() {
   _prologueState.idx += 1;
-  if (_prologueState.idx >= _prologueState.lines.length) {
+  if (_prologueState.idx >= _prologueState.pages.length) {
     if (ui.prologueOverlay) ui.prologueOverlay.hidden = true;
     _prologueState.done = true;
-    _prologueState.lines = [];
-    releaseMusicHold();
+    _prologueState.pages = [];
     if (_prologueState.onDone) _prologueState.onDone();
     return;
   }
-  const line = _prologueState.lines[_prologueState.idx];
-  _prologueState.timer = 0;
-  _prologueState.lineDuration = (line.durationMs || 2400) / 1000;
-  showPrologueLine(line);
+  showProloguePage(_prologueState.idx);
 }
 
 function updatePrologue(dt) {
-  // Player taps prologueOverlay to advance — no auto-timer. The voice clip
-  // plays out at its own pace; player skips by tapping again.
-  if (!_prologueState.lines.length) return;
+  // Tap-to-advance only — no auto-timer for comic pages.
 }
 
 if (ui.prologueOverlay) {
   ui.prologueOverlay.addEventListener("pointerdown", () => {
-    if (_prologueState.lines.length) prologueAdvance();
+    if (_prologueState.pages.length) prologueAdvance();
   });
 }
 
@@ -1046,47 +1031,32 @@ function isModalActive() {
   return false;
 }
 
-// Render the ULT-gauges strip — one slot per active hero.
+// Update ULT ring gauges on the hero roster portraits (bottom bar).
 function renderUltGauges() {
-  if (!ui.ultGauges) return;
-  // Hide during modal panels so they don't sit on top of the upgrade cards.
-  if (isModalActive()) { ui.ultGauges.hidden = true; return; }
-  const active = activeHeroes;
-  if (!active.length) { ui.ultGauges.hidden = true; return; }
-  ui.ultGauges.hidden = false;
-  // Rebuild on roster change.
-  if (ui.ultGauges.dataset.roster !== active.map((h) => h.id).join(",")) {
-    ui.ultGauges.dataset.roster = active.map((h) => h.id).join(",");
-    ui.ultGauges.innerHTML = "";
-    for (const h of active) {
-      const slot = document.createElement("div");
-      slot.className = "ult-slot";
-      slot.dataset.heroId = h.id;
-      const img = document.createElement("img");
-      img.src = `assets/cast/${h.portrait}.png?v=${ASSET_VERSION}`;
-      img.alt = h.name;
-      const fill = document.createElement("div");
-      fill.className = "ult-slot-fill";
-      // Permanent "ULT" label so the gauge reads as a UI element, not a
-      // floating portrait. Sits over the bottom of the slot.
-      const label = document.createElement("div");
-      label.className = "ult-slot-label";
-      label.textContent = "ULT";
-      slot.appendChild(img);
-      slot.appendChild(fill);
-      slot.appendChild(label);
-      ui.ultGauges.appendChild(slot);
-    }
-  }
-  // Per-frame: update fill height + ready flash + active state.
-  for (const slot of ui.ultGauges.children) {
+  const roster = document.getElementById("heroRoster");
+  if (!roster) return;
+  const r = 17;
+  const circ = 2 * Math.PI * r;
+  for (const slot of roster.children) {
     const id = slot.dataset.heroId;
+    if (!id) continue;
     const ratio = heroGauges.ratioFor(id);
-    const active = heroGauges.isUltActive(id);
-    const fill = slot.querySelector(".ult-slot-fill");
-    if (fill) fill.style.height = `${Math.round(ratio * 100)}%`;
-    slot.classList.toggle("is-ready", ratio >= 1 && !active);
-    slot.classList.toggle("is-active", active);
+    const isActive = heroGauges.isUltActive(id);
+    const fg = slot.querySelector(".ult-ring-fill");
+    if (fg) {
+      // clockwise fill: offset goes from circ (empty) to 0 (full)
+      fg.setAttribute("stroke-dashoffset", `${circ * (1 - ratio)}`);
+      // color changes when ready / active
+      if (isActive) {
+        fg.setAttribute("stroke", "rgba(199,125,255,0.95)");
+      } else if (ratio >= 1) {
+        fg.setAttribute("stroke", "rgba(255,209,102,0.95)");
+      } else {
+        fg.setAttribute("stroke", "rgba(124,232,255,0.9)");
+      }
+    }
+    slot.classList.toggle("is-ready", ratio >= 1 && !isActive);
+    slot.classList.toggle("is-active", isActive);
   }
 }
 
@@ -2772,11 +2742,44 @@ function renderHeroRoster() {
   if (!roster) return;
   roster.replaceChildren();
   for (const hero of activeHeroes) {
+    // Wrapper with SVG ring for ULT gauge
+    const wrap = document.createElement("div");
+    wrap.className = "hero-roster-slot";
+    wrap.dataset.heroId = hero.id;
     const img = document.createElement("img");
     img.src = `assets/cast/${hero.portrait}.png?v=${ASSET_VERSION}`;
     img.className = "hero-roster-avatar";
     img.alt = hero.name;
-    roster.appendChild(img);
+    // SVG ring — clockwise fill from top (stroke-dashoffset animation)
+    const sz = 40; // viewBox size
+    const r = 17;  // ring radius
+    const circ = 2 * Math.PI * r; // circumference
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", `0 0 ${sz} ${sz}`);
+    svg.setAttribute("class", "ult-ring-svg");
+    // Background ring (track)
+    const bg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    bg.setAttribute("cx", sz / 2); bg.setAttribute("cy", sz / 2);
+    bg.setAttribute("r", r); bg.setAttribute("fill", "none");
+    bg.setAttribute("stroke", "rgba(124,232,255,0.18)");
+    bg.setAttribute("stroke-width", "2.5");
+    // Foreground ring (fill)
+    const fg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    fg.setAttribute("cx", sz / 2); fg.setAttribute("cy", sz / 2);
+    fg.setAttribute("r", r); fg.setAttribute("fill", "none");
+    fg.setAttribute("stroke", "rgba(124,232,255,0.9)");
+    fg.setAttribute("stroke-width", "2.5");
+    fg.setAttribute("stroke-linecap", "round");
+    fg.setAttribute("stroke-dasharray", `${circ}`);
+    fg.setAttribute("stroke-dashoffset", `${circ}`); // start empty
+    fg.setAttribute("class", "ult-ring-fill");
+    // Rotate so fill starts from 12-o'clock, clockwise
+    fg.setAttribute("transform", `rotate(-90 ${sz / 2} ${sz / 2})`);
+    svg.appendChild(bg);
+    svg.appendChild(fg);
+    wrap.appendChild(img);
+    wrap.appendChild(svg);
+    roster.appendChild(wrap);
   }
 }
 
@@ -4124,9 +4127,10 @@ function rebuildDefenders() {
    Enemy Spawning
    ═══════════════════════════════════════════════════════════════ */
 function stagePressure() {
-  const stage = Math.max(0, state.stageLevel - 1) / Math.max(1, bossConfigs.length - 1);
+  // stage rises linearly — no longer capped at 10 for infinite play
+  const stage = Math.max(0, state.stageLevel - 1) / 9; // 1.0 at stage 10, keeps rising
   const wave = Math.max(0, state.waveIndex - 1) / Math.max(1, wavesPerStage - 1);
-  return { stage, wave, combined: Math.min(1.35, stage * 0.8 + wave * 0.55) };
+  return { stage, wave, combined: stage * 0.8 + wave * 0.55 };
 }
 
 function createRegularEnemy(options) {
@@ -4536,7 +4540,7 @@ function spawnEnemies(dt) {
 
 function spawnBoss() {
   if (state.boss) return;
-  const config = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
+  const config = getBossConfig(state.stageLevel);
   // Phase-7: cinematic reveal before the boss enters the playfield.
   // Pauses gameplay (state.mode = "bossReveal" → modal-active) so wave
   // spawn + enemy update freeze while the warning plays.
@@ -4555,9 +4559,27 @@ function spawnBoss() {
 
 const _bossRevealShownForStage = {};
 
+// Get boss config for any stage — cycles through the 10 defined bosses
+// with progressive scaling for stages beyond 10 (cycle 2+).
+function getBossConfig(stageLevel) {
+  const idx = ((stageLevel - 1) % bossConfigs.length);
+  const cycle = Math.floor((stageLevel - 1) / bossConfigs.length); // 0 for stages 1-10
+  const base = bossConfigs[idx];
+  if (cycle === 0) return base;
+  // Scale for New-Game+ cycles: each cycle adds +80% HP, +20% reward
+  const hpScale = 1 + cycle * 0.8;
+  const rewardScale = 1 + cycle * 0.2;
+  return {
+    ...base,
+    name: `${base.name}+${cycle}`,
+    maxHp: Math.round(base.maxHp * hpScale),
+    reward: Math.round(base.reward * rewardScale),
+  };
+}
+
 function _spawnBossActual() {
   if (state.boss) return;
-  const config = bossConfigs[Math.min(state.stageLevel - 1, bossConfigs.length - 1)];
+  const config = getBossConfig(state.stageLevel);
   const bal = getStageBalance(state.stageLevel);
   const bossHpMul = bal?.bossHp || 1;
   const maxHp = Math.round(config.maxHp * (1 + state.levelCount * 0.035) * bossHpMul);
@@ -5418,13 +5440,8 @@ function completeBoss(enemy) {
   if (defeatLines.length) dialoguePlay(defeatLines, `stage-${state.stageLevel}`, "boss-defeat");
   progress = unlockHeroForStage(progress, state.stageLevel);
   saveProgress(progress);
-  if (state.stageLevel >= bossConfigs.length) {
-    state.mode = "victory";
-    state.message = "十关 Boss 已清除，地球防线胜利";
-    hideLevelPanel();
-    hideShopPanel();
-    return;
-  }
+  // Roguelite infinite loop: after stage 10 the boss roster cycles with
+  // scaling HP/reward so the game never ends — difficulty keeps rising.
   state.stageLevel += 1;
   state.waveIndex = 1;
   // 殷师傅 leaves at stage 2 — he's a stage-1 guest, not a permanent ally.
@@ -5442,7 +5459,7 @@ function completeBoss(enemy) {
   // Find the new hero that joined this stage (if any) — show their
   // introduction cinematic before the upgrade-card panel.
   const newHero = activeHeroes.find((h) => !oldHeroIds.includes(h.id));
-  state.message = `第 ${state.stageLevel} 关开始：${bossConfigs[state.stageLevel - 1].name} 正在逼近`;
+  state.message = `第 ${state.stageLevel} 关开始：${getBossConfig(state.stageLevel).name} 正在逼近`;
   showStageThemeBurst(1.05);
   if (newHero) {
     // Pause gameplay, show intro, then open the upgrade-card panel.
@@ -5766,7 +5783,7 @@ if (ui.startBtn) {
 function applyQaMode() {
   const mode = qaParams.get("qa");
   if (mode !== "boss" && mode !== "shop") return;
-  state.stageLevel = Math.max(1, Math.min(bossConfigs.length, Number(qaParams.get("stage") || state.stageLevel)));
+  state.stageLevel = Math.max(1, Number(qaParams.get("stage") || state.stageLevel));
   state.levelCount = Math.max(state.levelCount, 8);
   state.money = Math.max(state.money, 120);
   state.gunLevel = Math.max(state.gunLevel, 5);

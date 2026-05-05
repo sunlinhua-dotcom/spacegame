@@ -751,77 +751,60 @@ canvas {
   position: absolute;
   inset: 0;
   z-index: 11;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at 50% 30%, rgba(40, 14, 64, 0.82) 0%, rgba(2, 6, 14, 0.96) 70%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.98));
-  backdrop-filter: blur(6px) saturate(110%);
-  -webkit-backdrop-filter: blur(6px) saturate(110%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
   cursor: pointer;
   animation: prologueIn 480ms cubic-bezier(0.22, 0.85, 0.32, 1);
 }
 .prologue-overlay[hidden] { display: none; }
 @keyframes prologueIn { from { opacity: 0; } }
 
-.prologue-content {
-  display: grid;
-  gap: 28px;
-  width: min(86%, 480px);
-  text-align: center;
-}
-
-.prologue-eyebrow {
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.46em;
-  text-indent: 0.46em;
-  text-transform: uppercase;
-  color: rgba(199, 125, 255, 0.78);
-}
-
-.prologue-text {
-  font-size: clamp(20px, 5.5vw, 30px);
-  font-weight: 800;
-  line-height: 1.5;
-  color: rgba(241, 250, 255, 0.95);
-  text-shadow: 0 0 28px rgba(124, 232, 255, 0.28);
-  min-height: 5em;
-  animation: prologueLineIn 360ms cubic-bezier(0.22, 0.85, 0.32, 1);
-  word-break: normal;
-  overflow-wrap: anywhere;
-  hyphens: none;
-  max-width: 100%;
-}
-@keyframes prologueLineIn {
-  from { opacity: 0; transform: translateY(8px); }
-}
-
-.prologue-progress {
-  position: relative;
+.prologue-comic-img {
   width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  overflow: hidden;
+  height: 100%;
+  object-fit: contain;
+  animation: prologuePageIn 400ms ease;
+}
+@keyframes prologuePageIn {
+  from { opacity: 0; transform: scale(0.97); }
 }
 
-.prologue-progress span {
+.prologue-bottom-bar {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  background: linear-gradient(90deg, #c77dff 0%, #7ce8ff 100%);
-  box-shadow: 0 0 8px rgba(199, 125, 255, 0.6);
-  transition: width 200ms linear;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: 0; right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.prologue-page-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.prologue-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: background 200ms;
+}
+.prologue-dot.active {
+  background: rgba(124,232,255,0.9);
+  box-shadow: 0 0 6px rgba(124,232,255,0.6);
 }
 
 .prologue-skip {
   font-family: "SF Mono", monospace;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.36em;
-  color: rgba(241, 250, 255, 0.34);
+  letter-spacing: 0.2em;
+  color: rgba(241, 250, 255, 0.4);
 }
 
 /* ───────────── ULT cinematic ─────────────
@@ -924,7 +907,7 @@ canvas {
   .ult-cinematic-frame img { width: 28px; height: 28px; }
   .ult-cinematic-name { font-size: clamp(13px, 4.2vw, 17px); }
   .ult-cinematic-hero { font-size: 9px; letter-spacing: 0.26em; }
-  .prologue-text { font-size: clamp(18px, 5vw, 24px); }
+  /* prologue is now full-page comic — no text override needed */
 }
 
 /* ───────────── Dialogue box (boss arrival, character banter) ─────────────
@@ -1022,87 +1005,52 @@ canvas {
 }
 
 /* ───────────── ULT gauges row — one slot per active hero ─────────────
- * Pinned below the top HUD (under the wave-progress bar) so the gauges
- * have a permanent home that never collides with the bottom dialogue or
- * boss banner. Hidden via JS isModalActive() while modal panels are open. */
-.ult-gauges {
-  position: absolute;
-  z-index: 7;
-  left: max(12px, env(safe-area-inset-left));
-  right: max(12px, env(safe-area-inset-right));
-  top: calc(max(12px, env(safe-area-inset-top)) + 88px);
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  pointer-events: none;
-}
+ * ULT gauge is now a circular SVG ring on each hero-roster portrait at
+ * the bottom bar. The old top-pinned ult-gauges row is removed. */
 
-.ult-gauges[hidden] { display: none; }
-
-.ult-slot {
+/* Hero roster slot — wrapper around portrait + SVG ring */
+.hero-roster-slot {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.85);
-  border: 2px solid rgba(124, 232, 255, 0.55);
-  overflow: hidden;
-  transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
-  box-shadow: 0 0 12px rgba(124, 232, 255, 0.32);
+  transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
-.ult-slot img {
+.hero-roster-slot .hero-roster-avatar {
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  border-radius: 50%;
+  object-fit: cover;
+  border: none;
+  box-shadow: none;
+}
+
+.ult-ring-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  opacity: 0.9;
-}
-
-.ult-slot-fill {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 0%;
-  background: linear-gradient(180deg, rgba(124, 232, 255, 0.18) 0%, rgba(124, 232, 255, 0.55) 100%);
   pointer-events: none;
-  transition: height 220ms ease;
 }
 
-.ult-slot.is-ready {
-  border-color: rgba(255, 209, 102, 0.95);
-  box-shadow: 0 0 14px rgba(255, 209, 102, 0.7);
+.ult-ring-fill {
+  transition: stroke-dashoffset 200ms ease, stroke 200ms ease;
+}
+
+.hero-roster-slot.is-ready {
   animation: ultReady 0.9s ease-in-out infinite alternate;
 }
 
-.ult-slot.is-active {
-  border-color: rgba(199, 125, 255, 0.95);
-  transform: scale(1.18);
-  box-shadow: 0 0 22px rgba(199, 125, 255, 0.9), inset 0 0 18px rgba(199, 125, 255, 0.5);
-}
-
-/* Permanent "ULT" badge over the gauge so it reads as a UI element. */
-.ult-slot-label {
-  position: absolute;
-  left: 50%;
-  bottom: -2px;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.85);
-  color: rgba(124, 232, 255, 0.95);
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  padding: 1.5px 5px 1px;
-  border-radius: 4px;
-  border: 1px solid rgba(124, 232, 255, 0.55);
-  pointer-events: none;
+.hero-roster-slot.is-active {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 8px rgba(199, 125, 255, 0.9));
 }
 
 @keyframes ultReady {
-  to { box-shadow: 0 0 22px rgba(255, 209, 102, 0.95); transform: scale(1.05); }
+  to { filter: drop-shadow(0 0 10px rgba(255, 209, 102, 0.95)); transform: scale(1.05); }
 }
 
 .boss-panel[hidden] {
@@ -2347,12 +2295,11 @@ canvas {
   min-height: 34px;
 }
 
+/* Standalone fallback — overridden by .hero-roster-slot .hero-roster-avatar */
 .hero-roster-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1.5px solid var(--cyan);
-  box-shadow: 0 0 8px rgba(124, 232, 255, 0.35);
   object-fit: cover;
 }
 
@@ -2675,9 +2622,9 @@ canvas {
     padding: 6px 3px;
   }
 
-  .hero-roster-avatar {
-    width: 28px;
-    height: 28px;
+  .hero-roster-slot {
+    width: 34px;
+    height: 34px;
   }
 }
 

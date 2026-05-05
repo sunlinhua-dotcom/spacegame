@@ -89,16 +89,13 @@
           <div class="mini-boss-hp"><span id="miniBossHpFill"></span></div>
         </div>
 
-        <!-- Prologue: full-screen narrator intro shown once after ENGAGE,
-             before gameplay starts. Auto-advances 7 lines, tap-to-skip. -->
+        <!-- Prologue: full-screen comic pages shown once after ENGAGE,
+             before gameplay starts. Tap to advance pages. -->
         <div id="prologueOverlay" class="prologue-overlay" hidden aria-live="polite">
-          <div class="prologue-content">
-            <div class="prologue-eyebrow">PROLOGUE · 应援协议</div>
-            <div class="prologue-text" id="prologueText">…</div>
-            <div class="prologue-progress">
-              <span id="prologueProgressFill"></span>
-            </div>
-            <div class="prologue-skip">tap to advance · 长按跳过</div>
+          <img id="prologueComicImg" class="prologue-comic-img" src="" alt="" />
+          <div class="prologue-bottom-bar">
+            <div class="prologue-page-dots" id="prologuePageDots"></div>
+            <div class="prologue-skip">点击继续</div>
           </div>
         </div>
 
@@ -200,9 +197,7 @@
           <div class="dialogue-skip">tap to skip</div>
         </div>
 
-        <!-- ULT gauges row — one slot per active hero. Hidden until Lia
-             enters the squad in stage 1; grows up to 8 slots by stage 8. -->
-        <div id="ultGauges" class="ult-gauges" hidden></div>
+        <!-- ULT gauges removed from top — now integrated into hero roster ring at bottom -->
 
         <div id="floaters" class="floaters" aria-hidden="true"></div>
 
