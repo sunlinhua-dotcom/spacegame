@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicyA";
+const ASSET_VERSION = "20260504-juicyB";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -4764,14 +4764,20 @@ function shoot(from, target, spread = 0) {
   const dxT = target.x - from.x;
   const dyT = target.y - from.y;
   const dist = Math.sqrt(dxT * dxT + dyT * dyT);
-  const tof = Math.min(0.6, dist / bulletSpeed); // clamp so far-away spirals don't overshoot
+  const tof = Math.min(0.4, dist / bulletSpeed); // shorter lead-time clamp
   const moveAngle = target.facing != null ? target.facing : (target.angle || 0);
   const moveSpeed = target.speed || 0;
   // Bosses & mini-bosses move along scripted patrol patterns where lead
   // aim adds little; aim straight at them so charge attacks land.
+  // For everyone else, lead at HALF the predicted offset — bestiary
+  // enemies wobble/spiral/accelerate around their nominal speed, so
+  // a full-speed lead consistently overshoots into empty space ahead
+  // of the actual position. Half-lead lands on the target's body
+  // even when its motion is irregular.
   const useLead = !target.isBoss && !target.isMiniBoss;
-  const aimX = useLead ? target.x + Math.cos(moveAngle) * moveSpeed * tof : target.x;
-  const aimY = useLead ? target.y + Math.sin(moveAngle) * moveSpeed * tof : target.y;
+  const leadFactor = useLead ? 0.5 : 0;
+  const aimX = target.x + Math.cos(moveAngle) * moveSpeed * tof * leadFactor;
+  const aimY = target.y + Math.sin(moveAngle) * moveSpeed * tof * leadFactor;
   const base = Math.atan2(aimY - from.y, aimX - from.x);
   const shots = 1 + Math.min(2, state.splitShot);
   const widthMul = 1 + (state.bulletDamage - 1) * 0.18 + state.bulletPierce * 0.06;
@@ -4968,12 +4974,20 @@ function updateBullets(dt) {
         if (enemy.hp <= 0) continue;
         const dx = b.x - enemy.x;
         const dy = b.y - enemy.y;
-        // Hit radius needs to match what the player SEES, not enemy.size
-        // (an internal stat). Swarm "gold streaks" use a 26×84 sprite but
-        // enemy.size is only 16 → players aim at the long flame and miss
-        // the tiny center hitbox. For swarm, hit on the streak's full
-        // length; for everyone else use the generous bestiary radius.
-        const r = enemy.isSwarm ? 36 : (enemy.size * 0.85 + 16);
+        // Hit radius matches the visible silhouette, not internal size.
+        //   • Swarm: 26×84 gold streak sprite → 56 px radius covers the
+        //     fat front bulb + about half the trailing flame, so bullets
+        //     anywhere along the visible "射线" register.
+        //   • Bestiary "meteor" archetype gets the same gold flame tail
+        //     drawn behind its core (size × 3.4 long), so its visible
+        //     length is much bigger than its size stat. Use a wider
+        //     radius (1.1× + 22) so wave-2+ enemies aren't a pixel-
+        //     perfect target.
+        //   • Everyone else uses the bestiary baseline.
+        let r;
+        if (enemy.isSwarm) r = 56;
+        else if (enemy.kind === "meteor") r = enemy.size * 1.1 + 22;
+        else r = enemy.size * 0.9 + 18;
         if (dx * dx + dy * dy < r * r) {
           applyHitDamage(enemy, b.damage, b.x, b.y);
           addExplosion(b.x, b.y, 0.42);
