@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { AudioEngine } from "./audio.js?v=20260504-techrave2";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
-import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260505-hpbar";
-import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260505-hpbar";
-import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260505-hpbar";
-import { PROLOGUE, EPILOGUE, getEvent, HERO_INTROS, YIN_STORY } from "./dialogue.js?v=20260505-hpbar";
+import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260505-photo";
+import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260505-photo";
+import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260505-photo";
+import { PROLOGUE, EPILOGUE, getEvent, HERO_INTROS, YIN_STORY } from "./dialogue.js?v=20260505-photo";
 
 /* ═══════════════════════════════════════════════════════════════
    UI References
@@ -205,7 +205,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260505-fix-ult-zombies";
+const ASSET_VERSION = "20260505-photo";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────

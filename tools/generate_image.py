@@ -390,142 +390,214 @@ fabric detail photorealistic. Lens flare from the sun behind. 8K quality.
 The overall mood is "hero's call to action" — confident, powerful, warm.
 NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-    "devi_comic": """A 1024x1024 manga-style 2x2 four-panel comic page
-for DEVI (Indian mecha pilot). Thick black panel borders, gutters,
-read top-left to bottom-right.
+    "devi_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of DEVI, a young Indian female mecha pilot, for a sci-fi mobile game
+hero introduction screen.
 
-Panel 1: Young Indian woman with deep brown braided hair in a Mumbai
-herbal medicine shop, pouring violet liquid into a bottle. Speech
-bubble: "毒, 也是药."
+Scene: Devi stands in a mystical hero pose inside a high-tech bio-lab
+that blends ancient Ayurvedic aesthetics with futuristic technology.
+She's wearing a sleek violet bio-tech combat suit with organic-curve
+armor plates etched with herbal patterns on shoulders and forearms.
+Deep brown hair in elaborate braids adorned with small violet crystals.
+Her expression is serene yet powerful, one hand raised with swirling
+violet bio-energy forming a protective shield.
 
-Panel 2: A military officer at the shop door hands her a recruitment
-letter glowing with violet energy. Caption box: "应援协议".
+Behind her: towering glass columns filled with glowing violet bioluminescent
+liquid, holographic botanical diagrams floating in the air. Through a
+massive window, the Mumbai skyline at twilight with violet aurora streaks
+in the sky above.
 
-Panel 3: Devi in violet bio-mecha, releasing a swirling cloud of toxic
-violet mist. Speech bubble: "净化这片黑暗".
+Photography style: cinematic movie poster composition, dramatic rim lighting
+from violet bio-glow behind, shallow depth of field on the background lab,
+sharp focus on face. Shot from slightly below (heroic low angle). Color
+grading: deep violet-teal contrast with warm skin tones. Skin texture and
+fabric detail photorealistic. Volumetric violet light rays. 8K quality.
 
-Panel 4: Devi on the battlefield, violet bio-shield in front of her
-protecting allies. Banner: "Devi 报到!".
+The overall mood is "ancient wisdom meets future tech" — calm, powerful, mystical.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-CRITICAL: classic manga yonkoma 2x2, thick black borders + gutters,
-manga halftone shading, speech bubbles WITH the Chinese text rendered
-clearly inside. Same character across panels. 1024x1024 square.""",
+    "rin_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of RIN, a young Korean female mecha sniper pilot, for a sci-fi mobile game
+hero introduction screen.
 
-    "rin_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
-RIN (Korean mecha sniper). Thick black panel borders + gutters.
+Scene: Rin crouches in a calculated sniper stance on the edge of a futuristic
+Seoul rooftop at night. She's wearing a sleek cobalt-blue tactical sniper
+suit with slim mecha armor plates, a long-barrel rail gun resting across
+her shoulder. White short bob haircut, sharp focused eyes looking through
+a holographic targeting monocle. Her expression is ice-cold and precise.
 
-Panel 1: Korean woman with white short bob at a shooting range,
-focused on rifle scope. Trophy beside her. Speech bubble: "精度永远是答案."
+Behind her: the neon-lit Seoul cityscape at night with holographic
+advertisements, a massive orbital defense satellite visible in the starry
+sky above. Blue energy traces from her rail gun's last shot still lingering
+in the air like frozen lightning.
 
-Panel 2: She reads an enlistment letter from the orbital defense
-corps; cobalt-blue insignia. Caption box: "应援协议".
+Photography style: cinematic movie poster composition, cold blue-white rim
+lighting from the city neon below, shallow depth of field on the cityscape,
+razor-sharp focus on face and weapon. Shot from slightly below (heroic low
+angle). Color grading: cold cobalt-blue with stark white highlights. Skin
+texture and fabric detail photorealistic. Breath visible in cold air. 8K quality.
 
-Panel 3: Rin in cobalt-blue sniper mecha, prone on high vantage
-point, rail-gun extended. Speech bubble: "一发, 一命中".
+The overall mood is "silent precision" — cold, calculated, lethal elegance.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-Panel 4: A thin blue laser pierces three targets simultaneously.
-Triumphant expression. Banner: "Rin 就位!"
+    "yue_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of YUE, a young Chinese female mecha pilot, for a sci-fi mobile game
+hero introduction screen.
 
-CRITICAL: manga 2x2 yonkoma, thick borders, halftone shading, speech
-bubbles WITH readable Chinese text. Same character across panels.
-1024x1024.""",
+Scene: Yue stands in a flowing martial arts pose in a moonlit Suzhou classical
+garden transformed into a futuristic command center. She's wearing a sleek
+crimson combat suit with classical crescent-moon ornamental armor plates.
+Long jet-black hair flowing in the wind like silk. She holds twin luminous
+moon-blades crossed before her, crimson energy pulsing along the edges.
+Her expression is calm and watchful, eyes reflecting moonlight.
 
-    "yue_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
-YUE (Chinese mecha pilot). Thick black panel borders + gutters.
+Behind her: ancient stone bridges and willow trees interwoven with holographic
+tactical displays, a massive crescent moon hanging low in the sky casting
+silver-crimson light. Cherry petals and energy particles drifting in the air.
 
-Panel 1: Young Chinese woman with long black hair in a Suzhou garden
-practicing sword form under crescent moon. Speech bubble: "剑光如月光."
+Photography style: cinematic movie poster composition, dramatic moonlight rim
+from above and behind, shallow depth of field on the garden background, sharp
+focus on face and blades. Shot from slightly below (heroic low angle). Color
+grading: crimson-silver moonlit contrast with porcelain skin tones. Skin
+texture and fabric detail photorealistic. Volumetric moonbeam rays. 8K quality.
 
-Panel 2: She accepts a glowing crimson orb floating before her. Stone
-bridge, willow trees. Caption box: "应援协议".
+The overall mood is "ancient warrior grace" — serene, deadly, ethereal beauty.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-Panel 3: Yue in crimson mecha with crescent ornaments, twin moon-blades
-crossed in front of her chest. Speech bubble: "静观敌之破绽".
+    "ade_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of ADE, a young Nigerian female mecha pilot, for a sci-fi mobile game
+hero introduction screen.
 
-Panel 4: Yue mid-attack, twin moon-blades arcing as she slices enemies.
-Banner: "月华降临!".
+Scene: Ade stands in a powerful defensive stance on a futuristic Lagos
+coastal fortress at sunrise. She's wearing heavy gold-trimmed mecha armor
+over a tactical black suit, a massive golden shield raised in her left hand
+reflecting incoming energy blasts. Glossy short black hair, fierce determined
+expression, muscles taut. Golden energy radiates from her shield like a
+solar flare.
 
-CRITICAL: manga yonkoma 2x2, thick borders, halftone shading, speech
-bubbles WITH readable Chinese text. Same character across panels.
-1024x1024 square.""",
+Behind her: the futuristic Lagos skyline with towering gold-accented
+skyscrapers, traditional Yoruba geometric patterns projected as holograms
+on building facades. The sunrise casts everything in dramatic gold and amber
+light. Explosions from deflected enemy attacks burst harmlessly against her
+shield barrier.
 
-    "ade_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
-ADE (Nigerian mecha pilot). Thick black panel borders + gutters.
+Photography style: cinematic movie poster composition, dramatic golden rim
+lighting from the sunrise behind, shallow depth of field on the cityscape,
+sharp focus on face and shield. Shot from slightly below (heroic low angle).
+Color grading: rich gold-amber warmth with deep shadow contrast. Skin texture
+and armor detail photorealistic. Golden particle effects. 8K quality.
 
-Panel 1: Nigerian woman with short black hair in a vibrant Lagos
-market pounding a traditional drum, crowd dancing. Speech bubble:
-"鼓声召唤大地的力量."
+The overall mood is "immovable guardian" — powerful, proud, unbreakable.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-Panel 2: A drumbeat ripples as golden energy. A heavy gold mecha
-descends from the sky behind her. Caption box: "应援协议".
+    "sakura_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of SAKURA, a young Japanese female mecha pilot, for a sci-fi mobile game
+hero introduction screen.
 
-Panel 3: Ade in gold-armored heavy mecha raising a massive golden
-shield as enemy projectiles slam into it. Speech bubble: "节拍带我们冲锋!"
+Scene: Sakura leaps mid-air in a dynamic action pose above a futuristic Kyoto
+streetscape. She's wearing a lightweight sakura-pink scout mecha suit with
+sleek aerodynamic armor plates. Twin pink ponytails streaming behind her as
+she dual-wields twin needle guns crackling with electric pink energy. Her
+expression is joyful yet fierce — a warrior in her element.
 
-Panel 4: Ade leading a charge, drumbeat-glow rallying allies behind
-her. Banner: "Ade 列阵!"
+Behind her: traditional Kyoto temple rooftops blended with neon-tech
+infrastructure, cherry blossom petals frozen mid-fall illuminated by pink
+lightning bolts. The night sky above filled with stars and faint pink aurora.
+Electric pink energy trails from her guns paint streaks across the scene.
 
-CRITICAL: manga yonkoma 2x2, thick borders, halftone, speech bubbles
-WITH readable Chinese text. Same character across panels. 1024x1024.""",
+Photography style: cinematic movie poster composition, dramatic pink-white
+electric rim lighting, frozen action mid-frame, shallow depth of field on
+the Kyoto background, razor-sharp focus on face and weapons. Shot from below
+(dynamic low angle). Color grading: electric pink-magenta with cool night
+blue contrast. Skin texture and mecha detail photorealistic. Cherry blossom
+bokeh particles. 8K quality.
 
-    "sakura_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
-SAKURA (Japanese mecha pilot). Thick black panel borders + gutters.
+The overall mood is "lightning dancer" — fast, electric, graceful destruction.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-Panel 1: Japanese woman with twin pink ponytails on a Kyoto street
-under cherry blossoms, soft pink magic light. Speech bubble: "樱花虽柔, 落地有声."
+    "aria_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of ARIA, a young French female mecha pilot, for a sci-fi mobile game
+hero introduction screen.
 
-Panel 2: A pink lightning bolt strikes nearby. Her pink mecha
-materializes from the glow, twin needle barrels forming. Caption box:
-"应援协议".
+Scene: Aria stands commanding on the stage of a futuristic Paris Opera house,
+conductor-baton weapon raised high as magenta sonic energy spirals around her.
+She's wearing an elegant magenta mecha suit with flowing armor plates that
+resemble a concert gown's silhouette. Long silver wavy hair billowing
+dramatically as sonic shockwaves pulse outward from her baton. Her expression
+is passionate and commanding — an artist directing destruction.
 
-Panel 3: Sakura in pink mecha, dual-wielding twin needle guns, electric
-pink corona crackling. Speech bubble: "樱雷起舞!"
+Behind her: the grand interior of a sci-fi reimagined Opera Garnier with
+holographic musical notation floating in the air, massive stained-glass
+windows shattered outward by sonic force. The Parisian night sky visible
+through the broken architecture, Eiffel Tower glowing magenta in the distance.
 
-Panel 4: Sakura mid-jump, both guns blazing pink shots in night sky,
-cherry blossoms floating around her. Banner: "Sakura 闪现!"
+Photography style: cinematic movie poster composition, dramatic magenta-white
+rim lighting from the sonic energy, shallow depth of field on the opera
+background, sharp focus on face and baton weapon. Shot from slightly below
+(dramatic low angle). Color grading: rich magenta-purple with gold theatre
+warmth. Skin texture and flowing hair detail photorealistic. Visible sonic
+wave distortion in the air. 8K quality.
 
-CRITICAL: manga yonkoma 2x2, thick borders, halftone, speech bubbles
-WITH readable Chinese text. Same character across panels. 1024x1024.""",
+The overall mood is "destructive symphony" — elegant, commanding, devastating.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-    "aria_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
-ARIA (French mecha pilot). Thick black panel borders + gutters.
+    "bright_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of BRIGHT, a male commander in his early 30s, for a sci-fi mobile game
+hero introduction screen.
 
-Panel 1: French woman with silver wavy hair on the stage of Paris
-Opera, conducting an orchestra. Magenta velvet curtains. Speech bubble:
-"战斗也需要节奏."
+Scene: BRIGHT descends from an orbital space station in his indigo command
+mecha, arms spread in a commanding pose. He's wearing a deep indigo tactical
+command suit with heavy mecha armor plates, a white-violet energy halo
+flooding from his chest core. Dark short hair, chiseled jaw set with
+determination, eyes glowing faint indigo. A pure white-indigo solar lance
+materializes in his right hand.
 
-Panel 2: As the orchestra crescendos, magenta magic spirals around her;
-conductor's baton transforms into a weapon. Caption box: "应援协议".
+Behind him: the interior of a massive orbital defense station with holographic
+tactical displays showing Earth below under siege. Through the station's open
+launch bay, Earth's curvature is visible with dozens of enemy ships approaching.
+Seven colored energy trails (one for each pilot) streak away from the station
+toward the battle below.
 
-Panel 3: Aria in elegant magenta mecha, conductor-baton weapon
-releasing magenta sonic blades. Speech bubble: "听好这段终曲".
+Photography style: cinematic movie poster composition, dramatic white-indigo
+rim lighting from his energy halo, the vacuum of space visible behind, sharp
+focus on face and lance weapon. Shot from slightly below (heroic descent angle).
+Color grading: deep indigo-violet with stark white energy highlights against
+the black of space. Skin texture and armor detail photorealistic. God-rays
+from the halo. 8K quality.
 
-Panel 4: Aria atop a platform, sonic ring expanding outward; enemies
-shattering. Long silver hair flowing. Banner: "Aria 登场!"
+The overall mood is "commander's descent" — authoritative, sacrificial, heroic.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
-CRITICAL: manga yonkoma 2x2, thick borders, halftone, speech bubbles
-WITH readable Chinese text. Same character across panels. 1024x1024.""",
+    "yin_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of MASTER YIN (殷师傅), a Chinese male sushi chef side-character, for a sci-fi
+mobile game hero introduction screen.
 
-    "bright_comic": """A 1024x1024 manga-style 2x2 four-panel comic page
-for BRIGHT (male commander, early 30s, indigo mecha). Thick black
-panel borders + gutters.
+Scene: Master Yin stands calmly in the doorway of his futuristic izakaya
+restaurant as chaos erupts in the street behind him. He's a chubby friendly
+Chinese man in his mid-40s with a short black flat-top military haircut,
+wearing a traditional Japanese black sushi-chef sakumue (作務衣) with white
+ties at the waist. A small embroidered silver swallow bird patch on his left
+chest. He holds a long gleaming sushi knife loosely in his right hand, pointed
+down. His left hand is raised palm-up in a calm welcoming gesture.
 
-Panel 1: Determined man at a holographic command desk on a space
-station. Screens showing the seven female pilots. Deep indigo
-lighting, headset on. Speech bubble: "她们打到这里, 我也得亲自上了."
+His expression: warm knowing smile, eyes crinkled with gentle confidence.
+Despite alien creatures swarming in the background streets, he radiates
+absolute calm — like a man who has seen it all and is merely inviting the
+chaos to come closer.
 
-Panel 2: An alarm sounds — pilots' situations dire on screen, Lia's
-mecha damaged. He stands up, jaw set. Caption box: "全员就位".
+Behind him: a cozy izakaya interior visible through the doorway with warm
+orange paper lantern glow, contrasting with the sci-fi street outside where
+distant explosions and alien silhouettes rage. The juxtaposition of peaceful
+warmth and external chaos.
 
-Panel 3: BRIGHT in indigo command mecha descending from the station,
-white-violet halo flooding from his armor. Speech bubble: "BRIGHT, 协议总指挥".
+Photography style: cinematic movie poster composition, warm golden rim
+lighting from the izakaya lanterns behind, cool blue from the alien-lit
+street. Sharp focus on his calm face. Shot from slightly below. Color grading:
+warm amber interior vs cool blue-green exterior. Skin texture and fabric
+detail photorealistic. 8K quality.
 
-Panel 4: BRIGHT at the front of the eight-pilot V-formation, leading
-the charge with a pure white-indigo solar lance ahead. Banner: "出击!"
-
-CRITICAL: manga yonkoma 2x2, thick borders, halftone shading, speech
-bubbles WITH readable Chinese text. Same character (early-30s man,
-dark hair, indigo mecha) across panels. 1024x1024 square.""",
+The overall mood is "eye of the storm" — warm, unshakeable, mysteriously powerful.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
     "yin_sheet": """A 1792x1024 character sheet of 殷师傅 (Master Yin), an
 ORIGINAL side-character for a sci-fi space defense game. ONE
@@ -585,6 +657,7 @@ panels 1-3 (clearly visible). NO mecha armor, NO gun.""",
 # single-character portraits are square 1024x1024.
 SIZES = {
     "yin_master": "1024x1024",
+    "yin_comic": "1024x1792",
     "lia_comic": "1024x1792",
     "devi_comic": "1024x1792",
     "rin_comic": "1024x1792",
@@ -592,7 +665,7 @@ SIZES = {
     "ade_comic": "1024x1792",
     "sakura_comic": "1024x1792",
     "aria_comic": "1024x1792",
-    "bright_comic": "1024x1024",
+    "bright_comic": "1024x1792",
 }
 
 
