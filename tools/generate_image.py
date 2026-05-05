@@ -366,39 +366,29 @@ CRITICAL: full body visible head-to-feet, NO weapons aimed at the
 viewer, NO mecha armor, NO gun. He is a CHEF, not a pilot.
 Pure clean backdrop, no UI elements, no text, no panel borders.""",
 
-    "lia_comic": """A 1024x1024 traditional manga-style four-panel comic
-page (yonkoma layout) telling the origin of LIA, a Brazilian mecha
-pilot. STRICT 2x2 grid of panels with thick black gutters between
-panels. Each panel has a clean black border. Read top-left → top-right
-→ bottom-left → bottom-right. Halftone screentone shading mixed with
-full color, dynamic action lines, manga ink linework.
+    "lia_comic": """A cinematic photorealistic vertical portrait (9:16 aspect)
+of LIA, a young Brazilian female mecha pilot, for a sci-fi mobile game
+hero introduction screen.
 
-Panel 1 (top-left): A young Brazilian woman with dark wavy hair on a
-Rio de Janeiro beach at twilight, looking up in shock. Her younger
-sister beside her, pointing at meteors streaking through the orange
-sky. White speech bubble with the Chinese caption "妹妹被困轨道残骸里!"
-in clear hand-written manga font.
+Scene: Lia stands in a dramatic hero pose on a launch platform overlooking
+the Rio de Janeiro coast at golden hour. She's wearing a sleek flame-red
+and orange sci-fi combat suit with minimal mecha armor plates on shoulders
+and forearms. Dark wavy hair in a high ponytail whips in the wind. Her
+expression is fierce and determined, one fist clenched, fire-like energy
+swirling around her hand.
 
-Panel 2 (top-right): The same woman inside a military hangar standing
-in front of a glowing flame-red mecha. Mechanical arms swing armor
-plates onto her body. Sparks fly. White caption box at the top reads
-"DIGIREPUB 召唤" in clean manga sans-serif.
+Behind her: a massive flame-red mecha gunship parked on the launch pad,
+engines glowing orange. The sky has dramatic clouds lit by the setting sun,
+with faint meteor streaks visible high above.
 
-Panel 3 (bottom-left): Lia fully suited in flame-red mecha, mid-flight,
-fire trails behind her, punching through space debris. Determined
-expression, sparks of orange flame around her. Bold motion lines and
-explosion impact. White speech bubble: "Lia 上线!"
+Photography style: cinematic movie poster composition, dramatic rim lighting
+from behind (golden hour backlight), shallow depth of field on the
+background mecha, sharp focus on face. Shot from slightly below (heroic
+low angle). Color grading: warm orange-teal contrast. Skin texture and
+fabric detail photorealistic. Lens flare from the sun behind. 8K quality.
 
-Panel 4 (bottom-right): Lia mecha launching upward into Earth orbit,
-fire plume from engines, Earth horizon below. Heroic pose, arms spread,
-stars in background. Banner caption "出征!" at the corner of the panel.
-
-CRITICAL: classic manga 2x2 yonkoma layout, thick black panel borders
-+ gutters. Speech bubbles + caption boxes are PART of the comic art —
-do NOT omit them. The hand-written / manga-display Chinese text inside
-bubbles must be readable. Same character across all 4 panels (dark
-wavy hair, flame-red mecha). NO English text, NO captions outside the
-panels. Page is 1024x1024 square.""",
+The overall mood is "hero's call to action" — confident, powerful, warm.
+NO text, NO UI elements, NO manga-style elements. Photorealistic only.""",
 
     "devi_comic": """A 1024x1024 manga-style 2x2 four-panel comic page
 for DEVI (Indian mecha pilot). Thick black panel borders, gutters,
@@ -595,13 +585,13 @@ panels 1-3 (clearly visible). NO mecha armor, NO gun.""",
 # single-character portraits are square 1024x1024.
 SIZES = {
     "yin_master": "1024x1024",
-    "lia_comic": "1024x1024",
-    "devi_comic": "1024x1024",
-    "rin_comic": "1024x1024",
-    "yue_comic": "1024x1024",
-    "ade_comic": "1024x1024",
-    "sakura_comic": "1024x1024",
-    "aria_comic": "1024x1024",
+    "lia_comic": "1024x1792",
+    "devi_comic": "1024x1792",
+    "rin_comic": "1024x1792",
+    "yue_comic": "1024x1792",
+    "ade_comic": "1024x1792",
+    "sakura_comic": "1024x1792",
+    "aria_comic": "1024x1792",
     "bright_comic": "1024x1024",
 }
 

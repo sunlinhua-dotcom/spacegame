@@ -4182,19 +4182,8 @@ function updateWave(dt) {
 
 function triggerYinUnlock() {
   state.yinActive = true;
-  // Play Yin's 4-line story dialogue BEFORE the unlock overlay.
-  // dialoguePlay pauses gameplay automatically; after it finishes, show
-  // the portrait/skill card.
-  if (YIN_STORY && YIN_STORY.length) {
-    dialoguePlay(YIN_STORY, "yin-unlock", "yin-story", () => {
-      _showYinUnlockAfterStory();
-    });
-  } else {
-    _showYinUnlockAfterStory();
-  }
-}
-
-function _showYinUnlockAfterStory() {
+  // showYinUnlockOverlay has its own built-in 4-line story dialogue
+  // (YIN_STORY lines auto-advance inside the fullscreen portrait overlay).
   showYinUnlockOverlay();
   if (ui.yinBadge) {
     ui.yinBadge.hidden = false;
