@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy9";
+const ASSET_VERSION = "20260504-juicyA";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -1336,8 +1336,15 @@ const _nearbyScratch = [];
 const _defenderScratch = { x: 0, y: 0 };
 function queryNearbyEnemies(x, y) {
   _nearbyScratch.length = 0;
-  const col = (x / GRID_CELL) | 0;
-  const row = (y / GRID_CELL) | 0;
+  // Clamp the query position to grid bounds before computing the cell.
+  // gridKey() also clamps when STORING enemies (so an off-screen enemy at
+  // x=1120 gets bucketed into the rightmost valid column). Without the
+  // matching clamp here, an off-screen bullet at x=1100 computes col=13,
+  // looks at c=11..15 (all out of bounds), and finds zero enemies — even
+  // though the enemy it's chasing IS bucketed into col=9. Clamping makes
+  // the bullet's query land on the same boundary cells as its target.
+  const col = Math.max(0, Math.min(gridCols - 1, (x / GRID_CELL) | 0));
+  const row = Math.max(0, Math.min(gridRows - 1, (y / GRID_CELL) | 0));
   for (let dr = -2; dr <= 2; dr++) {
     for (let dc = -2; dc <= 2; dc++) {
       const c = col + dc;

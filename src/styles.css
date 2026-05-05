@@ -2071,10 +2071,13 @@ canvas {
 }
 
 .title-banner-name {
-  font-size: clamp(38px, 11.5vw, 60px);
+  /* On a 430px iPhone Pro Max viewport, the previous 11.5vw → 49.5px font
+     filled the banner edge-to-edge — "N" of SUN visibly clipping the right
+     border. Tightened to 9.2vw cap 50px so there's always breathing room. */
+  font-size: clamp(36px, 9.2vw, 50px);
   font-weight: 900;
-  letter-spacing: 0.08em;
-  padding-left: 0.08em;
+  letter-spacing: 0.06em;
+  padding-left: 0.06em;
   text-align: center;
   color: #ffffff;
   text-shadow:
@@ -2451,6 +2454,18 @@ canvas {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+}
+
+/* Bottom control bar (重开/商店/暂停/音效) sits at z-index 4 — below the
+   title overlay (z 10). With the overlay's backdrop-filter blur, the
+   four buttons leaked through as blurred squares behind "DIGIREPUB
+   STUDIO · 2026", which looked like loose icons cluttering the title.
+   Hide them while pre-gameplay overlays are up. */
+.stage:has(#titlePanel:not([hidden])) .controls,
+.stage:has(#prologueOverlay:not([hidden])) .controls,
+.stage:has(#heroIntro:not([hidden])) .controls,
+.stage:has(#bossReveal:not([hidden])) .controls {
+  display: none;
 }
 
 .controls::before {
