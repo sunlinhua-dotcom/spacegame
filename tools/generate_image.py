@@ -366,194 +366,176 @@ CRITICAL: full body visible head-to-feet, NO weapons aimed at the
 viewer, NO mecha armor, NO gun. He is a CHEF, not a pilot.
 Pure clean backdrop, no UI elements, no text, no panel borders.""",
 
-    "lia_comic": """A 1792x1024 four-panel comic strip telling the origin
-story of LIA, a Brazilian mecha pilot. Strict 4-column x 1-row grid
-(each panel 448x1024 px, thin dark gutters). Korean MMORPG splash
-style, anime semi-realistic, painterly linework, dramatic lighting.
+    "lia_comic": """A 1024x1024 traditional manga-style four-panel comic
+page (yonkoma layout) telling the origin of LIA, a Brazilian mecha
+pilot. STRICT 2x2 grid of panels with thick black gutters between
+panels. Each panel has a clean black border. Read top-left → top-right
+→ bottom-left → bottom-right. Halftone screentone shading mixed with
+full color, dynamic action lines, manga ink linework.
 
-Panel 1: A panicked young Brazilian woman in civilian clothes on
-a Rio de Janeiro beach at twilight. She's looking up at fiery meteors
-streaking down through the sky. Her younger sister stands beside her,
-hand reaching toward the falling debris. Warm orange-red sunset
-behind, alarmed expression.
+Panel 1 (top-left): A young Brazilian woman with dark wavy hair on a
+Rio de Janeiro beach at twilight, looking up in shock. Her younger
+sister beside her, pointing at meteors streaking through the orange
+sky. White speech bubble with the Chinese caption "妹妹被困轨道残骸里!"
+in clear hand-written manga font.
 
-Panel 2: Same woman, now inside a dim military hangar, a glowing
-flame-red mecha towering above her. Mechanical arms attaching armor
-plates to her body. Dark serious atmosphere, sparks flying. She's
-strapping into the cockpit harness.
+Panel 2 (top-right): The same woman inside a military hangar standing
+in front of a glowing flame-red mecha. Mechanical arms swing armor
+plates onto her body. Sparks fly. White caption box at the top reads
+"DIGIREPUB 召唤" in clean manga sans-serif.
 
-Panel 3: The fully-armored Lia in her flame-red mecha suit,
-mid-action, fire trails behind her as she punches through space
-debris. Bright orange ember rim. Confident determined expression.
-Cinematic action pose, mecha plates glowing with heat.
+Panel 3 (bottom-left): Lia fully suited in flame-red mecha, mid-flight,
+fire trails behind her, punching through space debris. Determined
+expression, sparks of orange flame around her. Bold motion lines and
+explosion impact. White speech bubble: "Lia 上线!"
 
-Panel 4: Lia's mecha launching upward into the dark blue Earth
-orbit, fire plume from her engines, Earth visible below. Hero shot,
-arms spread, ready for battle. Stars and nebula in background.
+Panel 4 (bottom-right): Lia mecha launching upward into Earth orbit,
+fire plume from engines, Earth horizon below. Heroic pose, arms spread,
+stars in background. Banner caption "出征!" at the corner of the panel.
 
-CRITICAL: same character across all 4 panels (recognizable face,
-dark wavy hair, fiery orange-red mecha). 4-column 1-row grid, no
-text, no captions, no panel numbers. Each panel independently
-sliceable.""",
+CRITICAL: classic manga 2x2 yonkoma layout, thick black panel borders
++ gutters. Speech bubbles + caption boxes are PART of the comic art —
+do NOT omit them. The hand-written / manga-display Chinese text inside
+bubbles must be readable. Same character across all 4 panels (dark
+wavy hair, flame-red mecha). NO English text, NO captions outside the
+panels. Page is 1024x1024 square.""",
 
-    "devi_comic": """A 1792x1024 four-panel comic strip telling the origin
-story of DEVI, an Indian mecha pilot. Strict 4-column x 1-row grid.
-Korean MMORPG splash style, anime semi-realistic, painterly linework.
+    "devi_comic": """A 1024x1024 manga-style 2x2 four-panel comic page
+for DEVI (Indian mecha pilot). Thick black panel borders, gutters,
+read top-left to bottom-right.
 
-Panel 1: A young Indian woman with deep brown hair in elaborate
-braids, wearing traditional kurta, working in her family's herbal
-medicine shop in Mumbai. Bottles of herbs around her. Warm golden
-afternoon light through dusty windows.
+Panel 1: Young Indian woman with deep brown braided hair in a Mumbai
+herbal medicine shop, pouring violet liquid into a bottle. Speech
+bubble: "毒, 也是药."
 
-Panel 2: She's mixing glowing violet-purple herbal extracts in
-glass beakers. A military officer stands at the doorway watching,
-holding a recruitment letter. Sparks of purple energy in the air.
+Panel 2: A military officer at the shop door hands her a recruitment
+letter glowing with violet energy. Caption box: "应援协议".
 
-Panel 3: Devi in her violet bio-mecha suit, herbal-tech etchings
-glowing on the armor plates, releasing a swirling cloud of toxic
-violet mist toward unseen enemies. Calm determined expression.
+Panel 3: Devi in violet bio-mecha, releasing a swirling cloud of toxic
+violet mist. Speech bubble: "净化这片黑暗".
 
-Panel 4: Devi standing on a battlefield, violet bio-shield hovering
-in front of her, protecting allies. Distant alien shapes shattering
-against her shield. Heroic full-body shot.
+Panel 4: Devi on the battlefield, violet bio-shield in front of her
+protecting allies. Banner: "Devi 报到!".
 
-CRITICAL: same character (deep brown braided hair, violet mecha)
-across all 4 panels. 4-column 1-row grid, no text, no captions.""",
+CRITICAL: classic manga yonkoma 2x2, thick black borders + gutters,
+manga halftone shading, speech bubbles WITH the Chinese text rendered
+clearly inside. Same character across panels. 1024x1024 square.""",
 
-    "rin_comic": """A 1792x1024 four-panel comic strip telling the origin
-story of RIN, a Korean mecha sniper. Strict 4-column x 1-row grid.
-Korean MMORPG splash style.
+    "rin_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
+RIN (Korean mecha sniper). Thick black panel borders + gutters.
 
-Panel 1: A young Korean woman with white-platinum short bob hair,
-at a competition shooting range. She's holding a rifle, lining up
-a shot. Trophy and gold medal visible on a stand. Cobalt blue tone.
+Panel 1: Korean woman with white short bob at a shooting range,
+focused on rifle scope. Trophy beside her. Speech bubble: "精度永远是答案."
 
-Panel 2: She's reading an enlistment letter from the orbital
-defense corps. Gold signature, cobalt-blue accent. Determined
-expression, packing her gear into a duffle bag.
+Panel 2: She reads an enlistment letter from the orbital defense
+corps; cobalt-blue insignia. Caption box: "应援协议".
 
-Panel 3: Rin in her sleek cobalt-blue sniper-spec mecha, prone
-position on a high vantage point in space, energy rail-gun extended,
-crosshairs glowing. Calm precise focus.
+Panel 3: Rin in cobalt-blue sniper mecha, prone on high vantage
+point, rail-gun extended. Speech bubble: "一发, 一命中".
 
-Panel 4: Rin's perfect shot — a thin blue laser line pierces
-through three enemy targets simultaneously. Backed against the
-rising Earth horizon. Triumphant cool expression.
+Panel 4: A thin blue laser pierces three targets simultaneously.
+Triumphant expression. Banner: "Rin 就位!"
 
-CRITICAL: same character (white short bob, cobalt mecha) across
-all 4 panels. 4-column 1-row grid, no text.""",
+CRITICAL: manga 2x2 yonkoma, thick borders, halftone shading, speech
+bubbles WITH readable Chinese text. Same character across panels.
+1024x1024.""",
 
-    "yue_comic": """A 1792x1024 four-panel comic strip for YUE, a Chinese
-mecha pilot. Strict 4-column x 1-row grid. Korean MMORPG style.
+    "yue_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
+YUE (Chinese mecha pilot). Thick black panel borders + gutters.
 
-Panel 1: A young Chinese woman with long jet-black hair in a
-classical Suzhou garden, practicing a traditional sword form under
-moonlight. Crescent moon overhead. Serene blue-silver palette.
+Panel 1: Young Chinese woman with long black hair in a Suzhou garden
+practicing sword form under crescent moon. Speech bubble: "剑光如月光."
 
-Panel 2: She receives a glowing crimson orb that transforms into
-a mecha suit, drawn to her sword stance. Stone bridge over a koi
-pond, willow trees, moonlight reflecting on water.
+Panel 2: She accepts a glowing crimson orb floating before her. Stone
+bridge, willow trees. Caption box: "应援协议".
 
-Panel 3: Yue in her crimson mecha with crescent ornaments,
-twin moon-blade weapons crossed in front of her chest. Cherry-red
-flame petal aura. Stillness before strike.
+Panel 3: Yue in crimson mecha with crescent ornaments, twin moon-blades
+crossed in front of her chest. Speech bubble: "静观敌之破绽".
 
-Panel 4: Yue mid-attack, twin moon-blades arcing as she slices
-through enemy drones. Crimson energy trails. Long hair flowing.
+Panel 4: Yue mid-attack, twin moon-blades arcing as she slices enemies.
+Banner: "月华降临!".
 
-CRITICAL: same character (long black hair, crimson mecha with
-crescent motifs) across all 4 panels. 4-column 1-row grid, no text.""",
+CRITICAL: manga yonkoma 2x2, thick borders, halftone shading, speech
+bubbles WITH readable Chinese text. Same character across panels.
+1024x1024 square.""",
 
-    "ade_comic": """A 1792x1024 four-panel comic strip for ADE, a Nigerian
-mecha pilot. Strict 4-column x 1-row grid. Korean MMORPG style.
+    "ade_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
+ADE (Nigerian mecha pilot). Thick black panel borders + gutters.
 
-Panel 1: A young Nigerian woman with glossy black short hair in
-a vibrant Lagos market, pounding a traditional drum. Crowd around
-her dancing, gold and red textiles, warm sunset light.
+Panel 1: Nigerian woman with short black hair in a vibrant Lagos
+market pounding a traditional drum, crowd dancing. Speech bubble:
+"鼓声召唤大地的力量."
 
-Panel 2: A drumbeat ripples as a wave of golden energy. Behind
-her, a heavy gold-trim mecha unit descends from the sky, drawn by
-her rhythm. Awe in her eyes.
+Panel 2: A drumbeat ripples as golden energy. A heavy gold mecha
+descends from the sky behind her. Caption box: "应援协议".
 
-Panel 3: Ade in her gold-armored heavy mecha, raising a massive
-golden shield as enemy projectiles slam into it. Solid stance,
-rhythmic energy patterns on the shield surface.
+Panel 3: Ade in gold-armored heavy mecha raising a massive golden
+shield as enemy projectiles slam into it. Speech bubble: "节拍带我们冲锋!"
 
-Panel 4: Ade leading a charge, her drumbeat-glow rallying allies
-behind her. Gold solar flare exploding around her dome turret.
-Triumphant heroic pose.
+Panel 4: Ade leading a charge, drumbeat-glow rallying allies behind
+her. Banner: "Ade 列阵!"
 
-CRITICAL: same character (short black hair, gold mecha) across
-all 4 panels. 4-column 1-row grid, no text.""",
+CRITICAL: manga yonkoma 2x2, thick borders, halftone, speech bubbles
+WITH readable Chinese text. Same character across panels. 1024x1024.""",
 
-    "sakura_comic": """A 1792x1024 four-panel comic strip for SAKURA, a
-Japanese mecha pilot. Strict 4-column x 1-row grid. Korean MMO style.
+    "sakura_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
+SAKURA (Japanese mecha pilot). Thick black panel borders + gutters.
 
-Panel 1: A young Japanese woman with twin pink ponytails, walking
-through a Kyoto cherry-blossom-lined street, surrounded by falling
-sakura petals. Soft pink magic-hour light, traditional kimono.
+Panel 1: Japanese woman with twin pink ponytails on a Kyoto street
+under cherry blossoms, soft pink magic light. Speech bubble: "樱花虽柔, 落地有声."
 
-Panel 2: A pink lightning bolt strikes a nearby tree. From the
-glow, her lightweight pink mecha materializes, twin needle-barrel
-weapons forming. She gasps in surprise then smiles.
+Panel 2: A pink lightning bolt strikes nearby. Her pink mecha
+materializes from the glow, twin needle barrels forming. Caption box:
+"应援协议".
 
-Panel 3: Sakura in her pink mecha, dual-wielding twin needle
-guns, electric pink corona crackling around her. Petal motifs etched
-on the armor. Bouncy energetic action pose.
+Panel 3: Sakura in pink mecha, dual-wielding twin needle guns, electric
+pink corona crackling. Speech bubble: "樱雷起舞!"
 
-Panel 4: Sakura mid-jump, both needle guns blazing pink electric
-shots in the night sky. Cherry blossoms floating around her like
-a halo. Delighted expression.
+Panel 4: Sakura mid-jump, both guns blazing pink shots in night sky,
+cherry blossoms floating around her. Banner: "Sakura 闪现!"
 
-CRITICAL: same character (twin pink ponytails, pink mecha with
-sakura motifs) across all 4 panels. 4-column 1-row grid, no text.""",
+CRITICAL: manga yonkoma 2x2, thick borders, halftone, speech bubbles
+WITH readable Chinese text. Same character across panels. 1024x1024.""",
 
-    "aria_comic": """A 1792x1024 four-panel comic strip for ARIA, a French
-mecha pilot. Strict 4-column x 1-row grid. Korean MMO style.
+    "aria_comic": """A 1024x1024 manga-style 2x2 four-panel comic page for
+ARIA (French mecha pilot). Thick black panel borders + gutters.
 
-Panel 1: A young French woman with silver wavy hair, on the stage
-of the Paris Opera House conducting an orchestra. Magenta velvet
-curtains, a single conductor's baton glinting under spotlights.
+Panel 1: French woman with silver wavy hair on the stage of Paris
+Opera, conducting an orchestra. Magenta velvet curtains. Speech bubble:
+"战斗也需要节奏."
 
-Panel 2: As the orchestra reaches a crescendo, magenta-pink magic
-energy spirals around her. The conductor's baton transforms into a
-weapon. The audience watches in awe.
+Panel 2: As the orchestra crescendos, magenta magic spirals around her;
+conductor's baton transforms into a weapon. Caption box: "应援协议".
 
-Panel 3: Aria in her elegant magenta mecha suit, conductor-baton
-weapon in hand, releasing arcs of magenta sonic blades that cut
-through space. Floating gracefully like a dance.
+Panel 3: Aria in elegant magenta mecha, conductor-baton weapon
+releasing magenta sonic blades. Speech bubble: "听好这段终曲".
 
-Panel 4: Aria atop a high platform, her sonic ring expanding in
-all directions, enemies caught in the resonance shattering. Long
-silver hair flowing in zero-gravity. Composed elegance.
+Panel 4: Aria atop a platform, sonic ring expanding outward; enemies
+shattering. Long silver hair flowing. Banner: "Aria 登场!"
 
-CRITICAL: same character (silver wavy hair, magenta mecha) across
-all 4 panels. 4-column 1-row grid, no text.""",
+CRITICAL: manga yonkoma 2x2, thick borders, halftone, speech bubbles
+WITH readable Chinese text. Same character across panels. 1024x1024.""",
 
-    "bright_comic": """A 1792x1024 four-panel comic strip for BRIGHT, the
-male commander of the DIGIREPUB squad. Strict 4-column x 1-row grid.
-Korean MMO style, semi-realistic anime.
+    "bright_comic": """A 1024x1024 manga-style 2x2 four-panel comic page
+for BRIGHT (male commander, early 30s, indigo mecha). Thick black
+panel borders + gutters.
 
-Panel 1: A determined man in his early 30s, sitting at a glowing
-holographic command desk on a space station bridge. Multiple screens
-showing the seven female pilots. Deep indigo lighting. Headset on,
-giving orders.
+Panel 1: Determined man at a holographic command desk on a space
+station. Screens showing the seven female pilots. Deep indigo
+lighting, headset on. Speech bubble: "她们打到这里, 我也得亲自上了."
 
-Panel 2: An alarm sounds. The pilots' situations are dire on screen
-— Lia's mecha damaged, Yue surrounded. He stands up, jaw set.
-Indigo command coat, steely eyes.
+Panel 2: An alarm sounds — pilots' situations dire on screen, Lia's
+mecha damaged. He stands up, jaw set. Caption box: "全员就位".
 
-Panel 3: Bright in his deep indigo command mecha, descending from
-the station into atmosphere. White-violet halo flooding from the
-indigo armor. Cape-like energy trail.
+Panel 3: BRIGHT in indigo command mecha descending from the station,
+white-violet halo flooding from his armor. Speech bubble: "BRIGHT, 协议总指挥".
 
-Panel 4: Bright at the front of the seven-pilot formation, all
-eight heroes arrayed in V-formation flying toward a giant alien
-threat. His mecha leads the charge with a pure white-indigo solar
-lance ahead. Heroic finale shot.
+Panel 4: BRIGHT at the front of the eight-pilot V-formation, leading
+the charge with a pure white-indigo solar lance ahead. Banner: "出击!"
 
-CRITICAL: same character (early-30s man, dark short hair, indigo
-mecha) across all 4 panels. 4-column 1-row grid, no text.""",
+CRITICAL: manga yonkoma 2x2, thick borders, halftone shading, speech
+bubbles WITH readable Chinese text. Same character (early-30s man,
+dark hair, indigo mecha) across panels. 1024x1024 square.""",
 
     "yin_sheet": """A 1792x1024 character sheet of 殷师傅 (Master Yin), an
 ORIGINAL side-character for a sci-fi space defense game. ONE
@@ -613,6 +595,14 @@ panels 1-3 (clearly visible). NO mecha armor, NO gun.""",
 # single-character portraits are square 1024x1024.
 SIZES = {
     "yin_master": "1024x1024",
+    "lia_comic": "1024x1024",
+    "devi_comic": "1024x1024",
+    "rin_comic": "1024x1024",
+    "yue_comic": "1024x1024",
+    "ade_comic": "1024x1024",
+    "sakura_comic": "1024x1024",
+    "aria_comic": "1024x1024",
+    "bright_comic": "1024x1024",
 }
 
 

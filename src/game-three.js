@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicyC";
+const ASSET_VERSION = "20260504-manga1";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -685,11 +685,9 @@ function playHeroIntro(heroId, onDone = null) {
   showHeroIntroLine();
 }
 
-// Step the hero-intro 4-line story. Each line:
-//  • Updates the comic panel (assets/cast/{id}-comic-{idx}.png) if available
-//  • Updates the dialogue text shown under the panel
-//  • Plays the line's voice (assets/voice/hero-intro/{id}-{idx}-{speaker}.mp3)
-//    and auto-advances when the audio ends.
+// Step the hero-intro 4-line story. Comic image is the single
+// {id}-comic.png manga page (loaded once when the intro opens) — the
+// dialogue lines + voice playback advance underneath the same image.
 function showHeroIntroLine() {
   const st = _heroIntroState;
   if (!st.hero || !st.lines) return;
@@ -700,10 +698,10 @@ function showHeroIntroLine() {
   }
   const line = st.lines[st.lineIdx];
   const heroId = st.hero.id;
-  // Comic panel — falls back to the hero's action portrait if a comic
-  // panel image hasn't been generated yet, so the cinematic still works.
-  if (ui.heroIntroImg) {
-    ui.heroIntroImg.src = `assets/cast/${heroId}-comic-${st.lineIdx}.png?v=${ASSET_VERSION}`;
+  // Set the comic page once on the first line; subsequent lines keep
+  // the same manga page on screen while the dialogue advances.
+  if (ui.heroIntroImg && st.lineIdx === 0) {
+    ui.heroIntroImg.src = `assets/cast/${heroId}-comic.png?v=${ASSET_VERSION}`;
     ui.heroIntroImg.onerror = () => {
       ui.heroIntroImg.onerror = null;
       ui.heroIntroImg.src = `assets/cast/${st.hero.actionPortrait || st.hero.portrait}.png?v=${ASSET_VERSION}`;
