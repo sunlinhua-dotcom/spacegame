@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-manga3";
+const ASSET_VERSION = "20260505-fix-ult-zombies";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -4437,6 +4437,16 @@ function spawnEnemies(dt) {
     enemy.bestiaryMove = def?.move || null;
     enemy.spawnRadius = Math.hypot(enemy.x - C.x, enemy.y - C.y);
     enemy.t = 0;
+    // Copy per-type tuning parameters so move functions can read them
+    // (wobbleHz, wobbleMag, angVel, radialIn, chargeFor, targetR, etc.)
+    if (def) {
+      if (def.wobbleHz != null) enemy.wobbleHz = def.wobbleHz;
+      if (def.wobbleMag != null) enemy.wobbleMag = def.wobbleMag;
+      if (def.angVel != null) enemy.angVel = def.angVel;
+      if (def.radialIn != null) enemy.radialIn = def.radialIn;
+      if (def.chargeFor != null) enemy.chargeFor = def.chargeFor;
+      if (def.targetR != null) enemy.targetR = def.targetR;
+    }
     // Override the core sprite with the bestiary's td-{kind} top-down art.
     if (bestiaryKind && enemy.visual?.core && tex[`td-${bestiaryKind}`]) {
       enemy.visual.core.material.map = tex[`td-${bestiaryKind}`];
@@ -4786,6 +4796,7 @@ function nearestEnemy(from, maxRadius = Infinity) {
   const enemies = state.enemies;
   for (let i = 0; i < enemies.length; i++) {
     const enemy = enemies[i];
+    if (enemy.hp <= 0) continue; // skip dead/zombie enemies
     const dx = from.x - enemy.x;
     const dy = from.y - enemy.y;
     const d2 = dx * dx + dy * dy;
@@ -5070,6 +5081,14 @@ function updateEnemies(realDt) {
 
   for (let i = state.enemies.length - 1; i >= 0; i--) {
     const e = state.enemies[i];
+    // Safety net: any zombie enemy (hp<=0 but not yet removed) gets
+    // cleaned up here instead of lingering as a targeting blocker.
+    if (e.hp <= 0) {
+      disposeObject(e.mesh);
+      if (e.trail) disposeObject(e.trail);
+      swapRemove(state.enemies, i);
+      continue;
+    }
     // Per-enemy dt: bosses/mini-bosses unaffected, everyone else slowed.
     const dt = (e.isBoss || e.isMiniBoss) ? realDt : slowedDt;
 
@@ -5207,7 +5226,9 @@ function updateEnemies(realDt) {
     // its custom movement function (sine-wave / spiral / orbit / blink / etc).
     // Otherwise fall back to the legacy linear-toward-Earth path.
     if (e.bestiaryMove) {
-      e.t = (e.t || 0) + dt;
+      // NOTE: do NOT increment e.t here — each move function handles its
+      // own timer. Doing it twice made sine-weave/spiral/bezier run at 2×
+      // speed, worsening lead-aim predictions for curved paths.
       e.bestiaryMove(e, dt, { cx: C.x, cy: C.y, spawnRadius: e.spawnRadius || 700 });
     } else {
       const heading = e.angle + Math.sin(e.wobble) * 0.035;
@@ -5449,13 +5470,23 @@ function frame(now) {
     playUltCinematic(heroId);
     // Bulk damage — clear all currently-onscreen non-boss enemies as
     // the ULT visually slams the field. Boss takes a bigger chunk.
+    // IMPORTANT: properly remove killed enemies via killEnemy so they
+    // don't stay as "zombies" in state.enemies blocking targeting.
     for (const e of state.enemies) {
       if (e.isBoss) {
         e.hp -= e.maxHp * 0.12;
       } else if (e.isMiniBoss) {
         e.hp -= e.maxHp * 0.6;
       } else {
-        e.hp = 0; // fodder + mid wiped on-screen
+        e.hp = 0; // mark for removal below
+      }
+    }
+    // Remove dead fodder/mid in reverse order (safe with swapRemove).
+    for (let k = state.enemies.length - 1; k >= 0; k--) {
+      const e = state.enemies[k];
+      if (e.hp <= 0 && !e.isBoss && !e.isMiniBoss) {
+        addExplosion(e.x, e.y, 0.36);
+        killEnemy(k);
       }
     }
   }

@@ -32,7 +32,7 @@ function moveStraight(e, dt, ctx) {
 
 // Sine-wave horizontal across the approach axis, accelerating near Earth.
 function moveSineWeave(e, dt, ctx) {
-  e.t += dt;
+  e.t = (e.t || 0) + dt;
   const dx = ctx.cx - e.x;
   const dy = ctx.cy - e.y;
   const d = Math.hypot(dx, dy) || 1;
@@ -70,7 +70,7 @@ function moveTauntSpiral(e, dt, ctx) {
     e.r = Math.hypot(dx, dy);
     e.phase = 0;
   }
-  e.t += dt;
+  e.t = (e.t || 0) + dt;
   const phase1Dur = 1.6;
   if (e.t < phase1Dur) {
     e.theta += 0.9 * dt;
@@ -86,7 +86,7 @@ function moveTauntSpiral(e, dt, ctx) {
 
 // Bezier dive — curve in from edge corner, then straighten toward Earth.
 function moveBezierDive(e, dt, ctx) {
-  e.t += dt;
+  e.t = (e.t || 0) + dt;
   const T = Math.min(1, e.t / 1.4);
   if (e.bzStart == null) {
     e.bzStart = { x: e.x, y: e.y };
