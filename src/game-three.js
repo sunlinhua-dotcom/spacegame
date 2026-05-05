@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-manga2";
+const ASSET_VERSION = "20260504-manga3";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────

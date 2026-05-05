@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="BRIGHT.SUN × DIGIREPUB 出品 · 单指守住地球" />
     <meta name="twitter:image" content="https://spacegame.zeabur.app/assets/brand/icon-512.png" />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260504-manga2" />
+    <link rel="stylesheet" href="src/styles.css?v=20260504-manga3" />
   </head>
   <body>
     <main class="shell">
@@ -120,27 +120,29 @@
           <div class="boss-reveal-cta">▶ 点击迎战</div>
         </div>
 
-        <!-- Hero introduction cinematic: full-screen splash when a new pilot
-             joins the squad. Played once per stage transition (Lia at game
-             start, then one hero per cleared stage). Tap to continue. -->
+        <!-- Hero introduction cinematic: the four-panel manga comic IS the
+             feature; everything else is supporting metadata. The comic
+             takes the full overlay width; below it sits a thin meta strip
+             (eyebrow / name / country) and a dialogue ribbon that swaps
+             text per line. Played once per stage transition. Tap to
+             advance. -->
         <div id="heroIntro" class="hero-intro" hidden aria-live="polite">
           <div class="hero-intro-rays" aria-hidden="true"></div>
           <div class="hero-intro-frame">
-            <div class="hero-intro-portrait">
+            <div class="hero-intro-comic">
               <img id="heroIntroImg" alt="" />
             </div>
             <div class="hero-intro-meta">
-              <div class="hero-intro-eyebrow" id="heroIntroEyebrow">NEW PILOT JOINS</div>
-              <div class="hero-intro-name" id="heroIntroName">Lia</div>
-              <div class="hero-intro-country" id="heroIntroCountry">BR · 热带烈焰</div>
-              <div class="hero-intro-divider"></div>
-              <dl class="hero-intro-skills">
-                <div><dt>专属</dt><dd id="heroIntroPassive">焚尽 · 弹幕附燃</dd></div>
-                <div><dt>必杀</dt><dd id="heroIntroUlt">巨陨炎涌</dd></div>
-              </dl>
+              <span class="hero-intro-eyebrow" id="heroIntroEyebrow">NEW PILOT JOINS</span>
+              <span class="hero-intro-name" id="heroIntroName">Lia</span>
+              <span class="hero-intro-country" id="heroIntroCountry">BR · 热带烈焰</span>
+            </div>
+            <div class="hero-intro-dialogue">
+              <span class="hero-intro-speaker" id="heroIntroUlt">旁白</span>
+              <span class="hero-intro-text" id="heroIntroPassive">…</span>
             </div>
           </div>
-          <div class="hero-intro-cta">▶ 点击集结</div>
+          <div class="hero-intro-cta">▶ 点击翻页</div>
         </div>
 
         <!-- 殷师傅 unlock celebration — fired once at stage 1 wave 10. Full
@@ -152,7 +154,7 @@
           <div class="yin-intro-rays" aria-hidden="true"></div>
           <div class="yin-intro-frame">
             <div class="yin-intro-portrait">
-              <img id="yinIntroImg" src="assets/cast/yin-portrait.png?v=20260504-manga2" alt="" />
+              <img id="yinIntroImg" src="assets/cast/yin-portrait.png?v=20260504-manga3" alt="" />
             </div>
             <div class="yin-intro-meta">
               <div class="yin-intro-eyebrow">GUEST PILOT · 客座助阵</div>
@@ -171,7 +173,7 @@
         <!-- HUD badge: chibi icon (SD-style mascot) — small + cheerful so
              it reads at 32px. -->
         <div id="yinBadge" class="yin-badge" hidden aria-hidden="true">
-          <img src="assets/cast/yin-chibi.png?v=20260504-manga2" alt="" />
+          <img src="assets/cast/yin-chibi.png?v=20260504-manga3" alt="" />
           <span class="yin-badge-tag">嘲讽</span>
         </div>
 
@@ -343,6 +345,6 @@
         }
       }
     </script>
-    <script type="module" src="src/game-three.js?v=20260504-manga2"></script>
+    <script type="module" src="src/game-three.js?v=20260504-manga3"></script>
   </body>
 </html>

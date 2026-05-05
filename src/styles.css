@@ -497,13 +497,17 @@ canvas {
 }
 @keyframes heroIntroRays { to { transform: rotate(360deg); } }
 
+/* New layout: comic page is the FEATURE — fills the overlay top-down.
+   Below it sits a compact name strip and a single-line dialogue ribbon
+   that swaps text per line. No more sliver-thumbnail-next-to-meta. */
 .hero-intro-frame {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.1fr);
-  gap: 18px;
-  width: min(86%, 480px);
-  padding: 20px 22px 22px;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  width: min(94%, 560px);
+  max-height: calc(100% - 80px);
+  padding: 14px 14px 16px;
   background: linear-gradient(165deg, rgba(8, 12, 24, 0.86) 0%, rgba(2, 4, 12, 0.96) 100%);
   border: 2px solid var(--hero-tint, rgba(199, 125, 255, 0.85));
   box-shadow:
@@ -517,99 +521,100 @@ canvas {
   from { opacity: 0; transform: translateY(28px) scale(0.94); }
 }
 
-.hero-intro-portrait {
+.hero-intro-comic {
   position: relative;
   border-radius: 6px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.6);
   box-shadow: 0 0 32px var(--hero-tint, rgba(199, 125, 255, 0.45));
-  aspect-ratio: 358 / 256;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  min-height: 0;
 }
 
-.hero-intro-portrait img {
+.hero-intro-comic img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   animation: heroIntroFloat 4.2s ease-in-out infinite;
 }
 
 @keyframes heroIntroFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50%      { transform: translateY(-3px) scale(1.015); }
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.015); }
 }
 
+/* Slim metadata row directly under the comic — eyebrow / name / country
+   on a single horizontal line so we don't eat vertical space. */
 .hero-intro-meta {
-  display: grid;
-  gap: 6px;
-  align-content: center;
-  text-align: left;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px 12px;
+  text-align: center;
   min-width: 0;
 }
 
 .hero-intro-eyebrow {
   font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
+  letter-spacing: 0.4em;
+  padding-left: 0.4em;
   text-transform: uppercase;
   color: var(--hero-tint, rgba(199, 125, 255, 0.95));
 }
 
 .hero-intro-name {
-  font-size: clamp(28px, 7.4vw, 42px);
+  font-size: clamp(22px, 5.4vw, 30px);
   font-weight: 900;
   letter-spacing: 0.04em;
   color: #ffffff;
-  text-shadow: 0 0 28px var(--hero-tint, rgba(199, 125, 255, 0.7));
+  text-shadow: 0 0 24px var(--hero-tint, rgba(199, 125, 255, 0.7));
   line-height: 1;
-  margin-top: 2px;
 }
 
 .hero-intro-country {
   font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.32em;
-  text-indent: 0.32em;
+  letter-spacing: 0.28em;
+  padding-left: 0.28em;
   color: rgba(255, 255, 255, 0.7);
 }
 
-.hero-intro-divider {
-  height: 1px;
-  width: 100%;
-  background: linear-gradient(90deg, var(--hero-tint, rgba(199, 125, 255, 0.6)), transparent);
-  margin: 6px 0 4px;
-}
-
-.hero-intro-skills {
+/* Dialogue ribbon — speaker badge on the left, the line text on the
+   right. Swaps text per line as the cinematic advances. */
+.hero-intro-dialogue {
   display: grid;
-  gap: 6px;
-  margin: 0;
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-}
-
-.hero-intro-skills > div {
-  display: grid;
-  grid-template-columns: 38px 1fr;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
   align-items: baseline;
-  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.55);
+  border-left: 3px solid var(--hero-tint, rgba(199, 125, 255, 0.85));
+  border-radius: 4px;
 }
 
-.hero-intro-skills dt {
-  font-size: 9px;
+.hero-intro-speaker {
+  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.32em;
-  color: rgba(255, 255, 255, 0.42);
+  letter-spacing: 0.22em;
+  color: var(--hero-tint, rgba(199, 125, 255, 0.95));
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.hero-intro-skills dd {
-  margin: 0;
-  font-size: 12px;
+.hero-intro-text {
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.95);
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 .hero-intro-cta {
@@ -621,7 +626,7 @@ canvas {
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.42em;
-  text-indent: 0.42em;
+  padding-left: 0.42em;
   color: rgba(255, 255, 255, 0.5);
   animation: heroIntroPulse 1.4s ease-in-out infinite;
 }
@@ -629,17 +634,6 @@ canvas {
 @keyframes heroIntroPulse {
   0%, 100% { opacity: 0.45; }
   50%      { opacity: 0.95; }
-}
-
-@media (max-width: 410px) {
-  .hero-intro-frame {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-    padding: 16px 18px 18px;
-  }
-  .hero-intro-portrait { aspect-ratio: 358 / 200; }
-  .hero-intro-name { font-size: clamp(24px, 7.4vw, 36px); }
-  .hero-intro-country { font-size: 10px; letter-spacing: 0.28em; }
 }
 
 /* ───────────── 殷师傅 (Master Yin) unlock cinematic + HUD badge ─────────────
