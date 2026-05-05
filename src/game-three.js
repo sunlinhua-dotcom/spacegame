@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy6";
+const ASSET_VERSION = "20260504-juicy7";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -2569,7 +2569,15 @@ function reset() {
     yinActive: !!progress.yinUnlocked,
     message: "地球防御系统启动中",
   });
-  if (ui.yinBadge) ui.yinBadge.hidden = !progress.yinUnlocked;
+  // Yin's lower-left badge is ALWAYS visible (even from game start, before
+  // the stage 10 unlock). Pre-unlock it reads as "locked / 嘲讽" — a hint
+  // of the late-game reward; post-unlock the badge gets the active class
+  // and the slow takes effect.
+  if (ui.yinBadge) {
+    ui.yinBadge.hidden = false;
+    ui.yinBadge.classList.toggle("is-active", !!progress.yinUnlocked);
+    ui.yinBadge.classList.toggle("is-locked", !progress.yinUnlocked);
+  }
   rebuildDefenders();
   hideLevelPanel();
   hideShopPanel();
@@ -4018,7 +4026,11 @@ function triggerYinUnlock() {
     saveProgress(progress);
   }
   showYinUnlockOverlay();
-  if (ui.yinBadge) ui.yinBadge.hidden = false;
+  if (ui.yinBadge) {
+    ui.yinBadge.hidden = false;
+    ui.yinBadge.classList.add("is-active");
+    ui.yinBadge.classList.remove("is-locked");
+  }
   audio.levelUp();
 }
 
@@ -4656,7 +4668,12 @@ function shoot(from, target, spread = 0) {
       y: from.y + noseDy,
       vx: Math.cos(base + offset) * bulletSpeed,
       vy: Math.sin(base + offset) * bulletSpeed,
-      life: 1.05,
+      // Bullet life MUST cover the longest engagement distance. Hero range
+      // is 940 px and bulletSpeed is 620 px/s — at the old 1.05 s life,
+      // bullets only traveled 651 px and visibly EXPIRED before reaching
+      // distant gold-streak swarms. 1.7 s gives 1054 px of travel, enough
+      // to cross the full hero firing radius with margin.
+      life: 1.7,
       damage: state.bulletDamage,
       pierce: state.bulletPierce,
       mesh: makeSprite(tex.playerBullet, 17 * widthMul, 32 * lengthMul, { additive: true, color: tint, opacity: 0.96 }),
@@ -4695,14 +4712,15 @@ function updateCombat(dt) {
     defender.x = fromX + (orbitX - fromX) * launch;
     defender.y = fromY + (orbitY - fromY) * launch;
     setXY(defender.mesh, defender.x, defender.y, 4);
-    // Lock plane sprites to a fixed UP-facing orientation. Earlier they
-    // rotated to follow either "outward from earth" (hero) or "toward
-    // current target" (interceptor) — both produced visible spinning as
-    // the ship orbited or as targets shifted. Fixed orientation reads
-    // calmer + still looks correct because the ship is overhead-art that
-    // gets its character from the defenders' orbital motion, not its
-    // own roll.
-    defender.mesh.material.rotation = 0;
+    // All planes face OUTWARD from Earth (radial: nose pointing away from
+    // the planet, tails pointing in). This is the natural defending pose —
+    // weapons point at incoming enemies. Critically, this is one direction
+    // PER PLANE based on its current orbit position; we don't spin to
+    // follow targets (interceptors used to do that and looked frantic),
+    // and we don't lock to a single screen-up axis (which the user
+    // explicitly rejected as "all the same direction").
+    const outwardAngle = Math.atan2(defender.y - C.y, defender.x - C.x);
+    defender.mesh.material.rotation = outwardAngle - Math.PI / 2;
     if (defender.halo) {
       setXY(defender.halo, defender.x, defender.y, 3.9);
       defender.halo.material.opacity = 0.16 + Math.sin(state.time * 4 + defender.angle) * 0.06;

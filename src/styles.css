@@ -816,6 +816,10 @@ canvas {
   width: 32px;
   height: 32px;
   object-fit: cover;
+  /* Show the chibi's face, not its boots — the panel is taller than it is
+     wide, so a 1:1 cover crops to the middle (chest). object-position
+     pulls the crop to the head. */
+  object-position: top center;
   border-radius: 50%;
   border: 1px solid rgba(255, 178, 74, 0.55);
 }
@@ -825,6 +829,26 @@ canvas {
   font-weight: 800;
   letter-spacing: 0.22em;
   color: rgba(255, 217, 168, 0.95);
+}
+/* Pre-unlock state: dimmed + grayscale to hint "locked goal", with a
+   small 锁 marker. Post-unlock state: full color + soft pulse glow so
+   the player knows the buff is live. */
+.yin-badge.is-locked img {
+  filter: grayscale(0.85) brightness(0.65);
+}
+.yin-badge.is-locked .yin-badge-tag::before {
+  content: "🔒 ";
+  letter-spacing: 0;
+}
+.yin-badge.is-locked .yin-badge-tag {
+  color: rgba(255, 217, 168, 0.55);
+}
+.yin-badge.is-active {
+  animation: yinBadgePulse 2.4s ease-in-out infinite;
+}
+@keyframes yinBadgePulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(255, 178, 74, 0.32); }
+  50%      { box-shadow: 0 0 22px rgba(255, 178, 74, 0.65); }
 }
 
 @media (max-width: 410px) {
@@ -2031,16 +2055,16 @@ canvas {
 .title-banner-corner-bl { bottom: -6px; left: -6px; }
 .title-banner-corner-br { bottom: -6px; right: -6px; }
 
+/* All three banner lines: drop text-indent and use a left-padding equal
+   to one letter-space so the visible glyphs sit centered. text-indent
+   shifts only the first line of inline content and fights text-align:
+   center; padding-left + the trailing letter-space cancel cleanly. */
 .title-banner-eyebrow {
   font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.46em;
-  /* The trick to keep letter-spaced text visually centered: pad the line
-     with the trailing letter-space's worth of indent so the optical center
-     matches the geometric center. Without text-align: center as well, the
-     grid `justify-items: center` only centers the box, not the text inside. */
-  text-indent: 0.46em;
+  padding-left: 0.46em;
   text-align: center;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
@@ -2050,7 +2074,7 @@ canvas {
   font-size: clamp(38px, 11.5vw, 60px);
   font-weight: 900;
   letter-spacing: 0.08em;
-  text-indent: 0.08em;
+  padding-left: 0.08em;
   text-align: center;
   color: #ffffff;
   text-shadow:
@@ -2065,7 +2089,7 @@ canvas {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.36em;
-  text-indent: 0.36em;
+  padding-left: 0.36em;
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
 }
