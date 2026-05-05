@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-manga1";
+const ASSET_VERSION = "20260504-manga2";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -4802,22 +4802,11 @@ function nearestEnemy(from, maxRadius = Infinity) {
    ═══════════════════════════════════════════════════════════════ */
 function shoot(from, target, spread = 0) {
   if (!target) return;
-  // Lead-aim: enemies move continuously, aim at where the target WILL be
-  // by the time the bullet arrives so they land hits. Bestiary enemies
-  // update `e.facing` per frame (the actual motion direction set by their
-  // move primitive); swarm enemies update `e.angle` instead (straight-line
-  // heading set at spawn). Pick whichever the enemy actually uses, falling
-  // back to a zero direction so a stationary target just gets aimed at
-  // its current position.
   const bulletSpeed = 620 + state.laserLevel * 18;
-  const dxT = target.x - from.x;
-  const dyT = target.y - from.y;
-  const dist = Math.sqrt(dxT * dxT + dyT * dyT);
-  const tof = Math.min(0.4, dist / bulletSpeed);
-  // Lead-aim using the target's REAL velocity — the per-frame position
-  // delta tracked in updateEnemies. This is correct for sine-weave /
-  // spiral / dive / blink / any move primitive without each one needing
-  // its own velocity calculation. Falls back to e.facing × e.speed for
+  // Lead-aim using the target's REAL velocity from the per-frame
+  // position-delta tracked in updateEnemies. Works for any move primitive
+  // (sine-weave / spiral / dive / blink) because we read the actual
+  // velocity, not a model-derived one. Falls back to facing × speed for
   // brand-new enemies that haven't had a frame yet.
   let tvx = 0, tvy = 0;
   if (target._prevX != null && target._prevDt > 0) {
@@ -4829,14 +4818,13 @@ function shoot(from, target, spread = 0) {
     tvx = Math.cos(moveAngle) * moveSpeed;
     tvy = Math.sin(moveAngle) * moveSpeed;
   }
+  const dist = Math.hypot(target.x - from.x, target.y - from.y);
+  const tof = Math.min(0.5, dist / bulletSpeed);
   // Bosses + mini-bosses move along scripted patrol patterns where lead
-  // aim adds little. For everyone else, lead at 70% so we still land
-  // hits when the target's motion direction shifts mid-flight (typical
-  // sine-weave / spiral behavior).
+  // aim adds noise; aim straight. Everyone else gets a full velocity lead.
   const useLead = !target.isBoss && !target.isMiniBoss;
-  const leadFactor = useLead ? 0.7 : 0;
-  const aimX = target.x + tvx * tof * leadFactor;
-  const aimY = target.y + tvy * tof * leadFactor;
+  const aimX = useLead ? target.x + tvx * tof : target.x;
+  const aimY = useLead ? target.y + tvy * tof : target.y;
   const base = Math.atan2(aimY - from.y, aimX - from.x);
   const shots = 1 + Math.min(2, state.splitShot);
   const widthMul = 1 + (state.bulletDamage - 1) * 0.18 + state.bulletPierce * 0.06;
@@ -5033,20 +5021,17 @@ function updateBullets(dt) {
         if (enemy.hp <= 0) continue;
         const dx = b.x - enemy.x;
         const dy = b.y - enemy.y;
-        // Hit radius matches the visible silhouette, not internal size.
-        //   • Swarm: 26×84 gold streak sprite → 56 px radius covers the
-        //     fat front bulb + about half the trailing flame, so bullets
-        //     anywhere along the visible "射线" register.
-        //   • Bestiary "meteor" archetype gets the same gold flame tail
-        //     drawn behind its core (size × 3.4 long), so its visible
-        //     length is much bigger than its size stat. Use a wider
-        //     radius (1.1× + 22) so wave-2+ enemies aren't a pixel-
-        //     perfect target.
-        //   • Everyone else uses the bestiary baseline.
+        // Hit radii calibrated to the VISIBLE silhouette — the gold flame
+        // tail on meteor-archetype is `size × 3.4` long, so a 150-180 px
+        // radius wraps the entire visible streak. With curved motion (sine
+        // weave + spiral) lead-aim leaves real-world lead errors of up to
+        // 150 px, so the hitbox needs to absorb that slip too. Bullets
+        // are still faster than enemies (~3×) so even a "miss" by lead
+        // math lands somewhere on the long tail.
         let r;
-        if (enemy.isSwarm) r = 56;
-        else if (enemy.kind === "meteor") r = enemy.size * 1.1 + 22;
-        else r = enemy.size * 0.9 + 18;
+        if (enemy.isSwarm) r = 80;
+        else if (enemy.kind === "meteor") r = enemy.size * 2.0 + 40;
+        else r = enemy.size * 1.6 + 32;
         if (dx * dx + dy * dy < r * r) {
           applyHitDamage(enemy, b.damage, b.x, b.y);
           addExplosion(b.x, b.y, 0.42);
