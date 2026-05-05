@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicy7";
+const ASSET_VERSION = "20260504-juicy8";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -1241,9 +1241,9 @@ const state = {
   // the AudioContext is unlocked on the initial pointerdown anywhere on the stage.
   soundOn: true,
   miniBossesDefeated: 0,
-  // 殷师傅 ("嘲讽") guest support. Re-enables on each run if the player
-  // already unlocked him in a prior session, so the slow buff carries over.
-  yinActive: !!progress.yinUnlocked,
+  // 殷师傅 ("嘲讽") stage-1 guest. Each run earns him at stage 1 wave 10
+  // and loses him when stage 2 begins — never persists across sessions.
+  yinActive: false,
   message: "地球防御系统启动中",
 };
 
@@ -2564,19 +2564,16 @@ function reset() {
     moneyMul: 1,
     levelUpSource: "timer",
     miniBossesDefeated: 0,
-    // Carry the Master Yin unlock across runs — once unlocked, the slow
-    // applies from the start of each new run.
-    yinActive: !!progress.yinUnlocked,
+    // Yin always starts inactive. Earned afresh at stage 1 wave 10, lost
+    // at stage 2.
+    yinActive: false,
     message: "地球防御系统启动中",
   });
-  // Yin's lower-left badge is ALWAYS visible (even from game start, before
-  // the stage 10 unlock). Pre-unlock it reads as "locked / 嘲讽" — a hint
-  // of the late-game reward; post-unlock the badge gets the active class
-  // and the slow takes effect.
+  // Yin's badge is hidden by default — only appears when he's actively
+  // helping (during stage 1 from wave 10 onward). Stage 2+ he's gone.
   if (ui.yinBadge) {
-    ui.yinBadge.hidden = false;
-    ui.yinBadge.classList.toggle("is-active", !!progress.yinUnlocked);
-    ui.yinBadge.classList.toggle("is-locked", !progress.yinUnlocked);
+    ui.yinBadge.hidden = true;
+    ui.yinBadge.classList.remove("is-locked", "is-active");
   }
   rebuildDefenders();
   hideLevelPanel();
@@ -4021,10 +4018,10 @@ function updateWave(dt) {
 
 function triggerYinUnlock() {
   state.yinActive = true;
-  if (!progress.yinUnlocked) {
-    progress.yinUnlocked = true;
-    saveProgress(progress);
-  }
+  // Don't persist yinUnlocked — he's a stage-1 guest, not a campaign
+  // unlock. Each new game starts fresh and earns him at stage 1 wave 10
+  // again. Persisting would leak the slow buff to runs that already
+  // moved past stage 1.
   showYinUnlockOverlay();
   if (ui.yinBadge) {
     ui.yinBadge.hidden = false;
@@ -4032,6 +4029,57 @@ function triggerYinUnlock() {
     ui.yinBadge.classList.remove("is-locked");
   }
   audio.levelUp();
+  // 嘲讽 grand-entrance VFX: a big amber shockwave from Earth + a calm
+  // ripple ring that lingers for ~1 s. Sets the tone before the recurring
+  // pulse begins each frame in updateYinTauntVfx.
+  addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 5, {
+    life: 1.4, grow: 1.6, spin: -0.8, opacity: 0.92, z: 8.6, color: 0xffb24a,
+  });
+  addPolishEffect("polishBossRageAura", C.x, C.y, earthRadius * 4.2, {
+    life: 1.1, grow: 1.2, spin: 1.0, opacity: 0.78, z: 8.4, color: 0xffd166,
+  });
+  for (let i = 0; i < 12; i++) {
+    const a = (Math.PI * 2 * i) / 12;
+    spawnInterceptFlash(C.x + Math.cos(a) * (earthRadius + 60), C.y + Math.sin(a) * (earthRadius + 60), 1.1);
+  }
+  triggerScreenShake(0.4, 8);
+}
+
+// 嘲讽 ongoing visual: a soft amber ring pulses around Earth roughly
+// every 1.6 s while Yin is active, and a faint aura sprite is parked at
+// Earth's position breathing in/out so the slow effect has a constant
+// on-screen presence (not just an invisible stat).
+const _yinTauntVfx = { pulseTimer: 0, aura: null };
+function updateYinTauntVfx(dt) {
+  if (!state.yinActive || state.mode !== "playing") {
+    if (_yinTauntVfx.aura) {
+      _yinTauntVfx.aura.material.opacity = 0;
+    }
+    _yinTauntVfx.pulseTimer = 0;
+    return;
+  }
+  // Lazy-create the breathing aura the first time we render with Yin
+  // active. Parked at Earth's center, additive blending so it tints the
+  // backdrop amber without occluding gameplay.
+  if (!_yinTauntVfx.aura) {
+    const aura = createSprite(tex.explosionCore, earthRadius * 5.2, earthRadius * 5.2, {
+      additive: true, opacity: 0.18, color: 0xffb24a,
+    });
+    aura.position.set(C.x, C.y, -0.05);
+    _yinTauntVfx.aura = aura;
+  } else {
+    setXY(_yinTauntVfx.aura, C.x, C.y, -0.05);
+  }
+  _yinTauntVfx.aura.material.opacity = 0.14 + Math.sin(state.time * 1.6) * 0.08;
+  // Periodic shockwave — a single ring expanding outward every ~1.6 s.
+  // Reads as 殷师傅's voice "calling out" to the enemies, slowing them.
+  _yinTauntVfx.pulseTimer -= dt;
+  if (_yinTauntVfx.pulseTimer <= 0) {
+    _yinTauntVfx.pulseTimer = 1.6;
+    addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 3.6, {
+      life: 1.2, grow: 1.8, spin: -0.6, opacity: 0.55, z: 1.8, color: 0xffd166,
+    });
+  }
 }
 
 const miniBossKinds = ["meteor", "bolt", "saucer"];
@@ -4828,7 +4876,15 @@ function updateBullets(dt) {
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     b.life -= dt;
-    let remove = b.life <= 0 || b.x < -80 || b.x > W + 80 || b.y < -80 || b.y > H + 80;
+    // Bullet culling: expand bounds so bullets aren't killed before they
+    // can reach distant targets. Enemies spawn out to radius 760 from
+    // Earth center; with C.x=360, C.y=614 that means enemies can sit at
+    // game-space x = -400..1120 and y = -146..1374. The previous ±80
+    // margin around W×H was killing bullets aimed at the outer ring
+    // before they could traverse — that's the visible "bullets pass
+    // through gold streaks" symptom on stage 1. Use a 600 px margin so
+    // every targetable enemy stays within range.
+    let remove = b.life <= 0 || b.x < -600 || b.x > W + 600 || b.y < -600 || b.y > H + 600;
     if (!remove) {
       const nearby = queryNearbyEnemies(b.x, b.y);
       for (let k = nearby.length - 1; k >= 0 && !remove; k--) {
@@ -5129,6 +5185,13 @@ function completeBoss(enemy) {
   }
   state.stageLevel += 1;
   state.waveIndex = 1;
+  // 殷师傅 leaves at stage 2 — he's a stage-1 guest, not a permanent ally.
+  // Hide the badge, drop the slow buff, fade out the ambient aura.
+  if (state.yinActive) {
+    state.yinActive = false;
+    if (ui.yinBadge) ui.yinBadge.hidden = true;
+    if (_yinTauntVfx.aura) _yinTauntVfx.aura.material.opacity = 0;
+  }
   // Refresh active heroes + ult gauges for the new stage.
   const oldHeroIds = activeHeroes.map((h) => h.id);
   activeHeroes = activeHeroesForStage(state.stageLevel);
@@ -5215,6 +5278,7 @@ function frame(now) {
   updateDialogue(dt);
   updateUltFlashes();
   renderUltGauges();
+  updateYinTauntVfx(dt);
   // Auto-fire any ULT whose gauge is full + cooldown clear.
   const fired = heroGauges.consumePending(state.time);
   for (const heroId of fired) {
