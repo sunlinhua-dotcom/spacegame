@@ -203,7 +203,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260504-juicyB";
+const ASSET_VERSION = "20260504-juicyC";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -4764,20 +4764,30 @@ function shoot(from, target, spread = 0) {
   const dxT = target.x - from.x;
   const dyT = target.y - from.y;
   const dist = Math.sqrt(dxT * dxT + dyT * dyT);
-  const tof = Math.min(0.4, dist / bulletSpeed); // shorter lead-time clamp
-  const moveAngle = target.facing != null ? target.facing : (target.angle || 0);
-  const moveSpeed = target.speed || 0;
-  // Bosses & mini-bosses move along scripted patrol patterns where lead
-  // aim adds little; aim straight at them so charge attacks land.
-  // For everyone else, lead at HALF the predicted offset — bestiary
-  // enemies wobble/spiral/accelerate around their nominal speed, so
-  // a full-speed lead consistently overshoots into empty space ahead
-  // of the actual position. Half-lead lands on the target's body
-  // even when its motion is irregular.
+  const tof = Math.min(0.4, dist / bulletSpeed);
+  // Lead-aim using the target's REAL velocity — the per-frame position
+  // delta tracked in updateEnemies. This is correct for sine-weave /
+  // spiral / dive / blink / any move primitive without each one needing
+  // its own velocity calculation. Falls back to e.facing × e.speed for
+  // brand-new enemies that haven't had a frame yet.
+  let tvx = 0, tvy = 0;
+  if (target._prevX != null && target._prevDt > 0) {
+    tvx = (target.x - target._prevX) / target._prevDt;
+    tvy = (target.y - target._prevY) / target._prevDt;
+  } else {
+    const moveAngle = target.facing != null ? target.facing : (target.angle || 0);
+    const moveSpeed = target.speed || 0;
+    tvx = Math.cos(moveAngle) * moveSpeed;
+    tvy = Math.sin(moveAngle) * moveSpeed;
+  }
+  // Bosses + mini-bosses move along scripted patrol patterns where lead
+  // aim adds little. For everyone else, lead at 70% so we still land
+  // hits when the target's motion direction shifts mid-flight (typical
+  // sine-weave / spiral behavior).
   const useLead = !target.isBoss && !target.isMiniBoss;
-  const leadFactor = useLead ? 0.5 : 0;
-  const aimX = target.x + Math.cos(moveAngle) * moveSpeed * tof * leadFactor;
-  const aimY = target.y + Math.sin(moveAngle) * moveSpeed * tof * leadFactor;
+  const leadFactor = useLead ? 0.7 : 0;
+  const aimX = target.x + tvx * tof * leadFactor;
+  const aimY = target.y + tvy * tof * leadFactor;
   const base = Math.atan2(aimY - from.y, aimX - from.x);
   const shots = 1 + Math.min(2, state.splitShot);
   const widthMul = 1 + (state.bulletDamage - 1) * 0.18 + state.bulletPierce * 0.06;
@@ -5028,6 +5038,14 @@ function updateEnemies(realDt) {
     const e = state.enemies[i];
     // Per-enemy dt: bosses/mini-bosses unaffected, everyone else slowed.
     const dt = (e.isBoss || e.isMiniBoss) ? realDt : slowedDt;
+
+    // Track previous position before motion runs. shoot() uses (x-prevX, y-prevY)
+    // to derive the enemy's REAL velocity for lead-aim — much more accurate
+    // than trying to reconstruct it from e.facing × e.speed (which assumes
+    // straight-line motion and gets wave-2+ spirals/sine-weaves wrong).
+    e._prevX = e.x;
+    e._prevY = e.y;
+    e._prevDt = realDt;
 
     if (e.isSwarm) {
       e.x += Math.cos(e.angle) * e.speed * dt;
