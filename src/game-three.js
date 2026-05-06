@@ -666,9 +666,8 @@ const TUTORIAL_STEPS = [
   {
     id: "tap-ult",
     title: "点击头像释放大招",
-    text: "现在试试 — 等圆环充满后,点一下英雄头像,释放威力巨大的大招!",
+    text: "圆环充满后,点一下英雄头像就能释放威力巨大的大招!保留到关键时刻使用。",
     targetId: "heroRoster",
-    waitForAction: true,
   },
 ];
 
@@ -709,15 +708,10 @@ function showTutorialStep(idx) {
     spot.style.setProperty("--spot-y", "50%");
     spot.style.setProperty("--spot-r", "100px");
   }
-  // Next button: hide on wait-for-action steps
+  // Next button advances every step; final step says "开始战斗 ▶".
   const nextBtn = document.getElementById("tutorialNext");
-  if (step.waitForAction) {
-    nextBtn.textContent = "等待操作…";
-    nextBtn.disabled = true;
-  } else {
-    nextBtn.textContent = idx >= TUTORIAL_STEPS.length - 1 ? "开始战斗 ▶" : "下一步 ▶";
-    nextBtn.disabled = false;
-  }
+  nextBtn.textContent = idx >= TUTORIAL_STEPS.length - 1 ? "开始战斗 ▶" : "下一步 ▶";
+  nextBtn.disabled = false;
   overlay.hidden = false;
 }
 
@@ -2845,12 +2839,7 @@ function setShopButton() {
 
 function tryFireHeroUlt(heroId) {
   const ok = heroGauges.tryFireUlt(heroId);
-  if (!ok) return false;
-  // Tutorial: dismiss the "tap to fire ult" step on first successful fire.
-  if (tutorialState.active && tutorialState.step === "tap-ult") {
-    advanceTutorial();
-  }
-  return true;
+  return !!ok;
 }
 
 function renderHeroRoster() {
