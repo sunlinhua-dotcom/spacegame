@@ -2551,7 +2551,23 @@ function maybeRedrawEarth(t) {
 /* ═══════════════════════════════════════════════════════════════
    Scene Objects
    ═══════════════════════════════════════════════════════════════ */
-const background = makeSprite(tex.background, W, H, { opacity: 0.92 });
+
+// Procedural deep-space background — dark radial gradient so the centre
+// (where Earth sits) is slightly lighter and edges fall off to near-black.
+// Replaces the old loadTexture("background",...) which pointed at a file
+// that never existed, causing the sprite to render as solid white.
+const bgCanvas = document.createElement("canvas");
+bgCanvas.width = 512; bgCanvas.height = 910;
+const bgCtx = bgCanvas.getContext("2d");
+const bgGrad = bgCtx.createRadialGradient(256, 610, 30, 256, 480, 520);
+bgGrad.addColorStop(0, "#0a1628");   // slightly brighter centre
+bgGrad.addColorStop(0.45, "#050e1a");
+bgGrad.addColorStop(1, "#01060a");   // near-black edges
+bgCtx.fillStyle = bgGrad;
+bgCtx.fillRect(0, 0, 512, 910);
+const bgTex = new THREE.CanvasTexture(bgCanvas);
+bgTex.needsUpdate = true;
+const background = makeSprite(bgTex, W, H, { opacity: 0.92 });
 background.position.set(0, 0, -5);
 const starField = createStarField();
 createBarrageLayer();
