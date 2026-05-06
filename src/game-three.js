@@ -237,8 +237,8 @@ const PERF = {
   // benefits from 1.5 vs 2 with no perceptible quality drop on a 6"+ screen.
   dprCap: PERF_LOW ? 1 : 1.5,
   antialias: !PERF_LOW,
-  starCounts: PERF_LOW ? [240, 90, 32] : [620, 220, 80],
-  nebulaCount: PERF_LOW ? 0 : 7,
+  starCounts: PERF_LOW ? [380, 160, 60] : [1100, 420, 160],
+  nebulaCount: PERF_LOW ? 0 : 12,
   shootingStars: !PERF_LOW,
 };
 if (PERF_LOW) console.log("[perf] low-power tier active", { _deviceMemory, _cores, _isOldiOS });
@@ -2554,48 +2554,32 @@ function maybeRedrawEarth(t) {
    Scene Objects
    ═══════════════════════════════════════════════════════════════ */
 
-// Procedural deep-space background — painted starfield canvas with
-// nebula colour patches and thousands of tiny stars. Replaces the old
-// loadTexture("background",...) which pointed at a non-existent file.
+// Deep-space background — pure dark gradient, NO painted stars (they
+// blur on downsample and wash out the live Three.js particle stars
+// rendered on top). The Three.js star layers + nebula sprites + shooting
+// stars provide all the actual stars; this is just a coloured backdrop.
 const bgCanvas = (() => {
   const cv = document.createElement("canvas");
-  const cw = 1024, ch = 1820;
+  const cw = 512, ch = 910;
   cv.width = cw; cv.height = ch;
   const ctx = cv.getContext("2d");
-  // --- base: deep near-black ---
-  ctx.fillStyle = "#020810";
+  // Base: deep navy-black
+  ctx.fillStyle = "#02060d";
   ctx.fillRect(0, 0, cw, ch);
-
-  // --- subtle radial gradient: slightly brighter toward bottom-centre ---
-  const rg = ctx.createRadialGradient(cw / 2, ch * 0.78, 40, cw / 2, ch * 0.6, cw * 0.7);
-  rg.addColorStop(0, "rgba(12,24,48,0.55)");
-  rg.addColorStop(0.5, "rgba(6,14,28,0.35)");
-  rg.addColorStop(1, "rgba(2,8,16,0)");
+  // Soft radial vignette — slightly brighter toward Earth (bottom-centre)
+  const rg = ctx.createRadialGradient(cw / 2, ch * 0.72, 30, cw / 2, ch * 0.6, cw * 0.85);
+  rg.addColorStop(0, "rgba(18,32,58,0.85)");
+  rg.addColorStop(0.4, "rgba(8,18,32,0.6)");
+  rg.addColorStop(1, "rgba(2,6,12,0)");
   ctx.fillStyle = rg;
   ctx.fillRect(0, 0, cw, ch);
-
-  // --- Milky Way band: soft diagonal haze ---
-  ctx.save();
-  ctx.translate(cw * 0.3, 0);
-  ctx.rotate(0.38);
-  const mg = ctx.createLinearGradient(0, 0, 0, ch * 1.3);
-  mg.addColorStop(0, "rgba(40,52,90,0)");
-  mg.addColorStop(0.3, "rgba(50,60,110,0.06)");
-  mg.addColorStop(0.5, "rgba(60,72,130,0.10)");
-  mg.addColorStop(0.7, "rgba(50,60,110,0.06)");
-  mg.addColorStop(1, "rgba(40,52,90,0)");
-  ctx.fillStyle = mg;
-  ctx.fillRect(-200, -100, cw + 400, ch + 200);
-  ctx.restore();
-
-  // --- nebula patches: soft coloured blobs ---
+  // A few large soft nebula blooms — adds colour depth, blurs nicely.
   const nebulaSpots = [
-    { x: cw * 0.2, y: ch * 0.15, r: 180, c: "rgba(80,50,140,0.07)" },
-    { x: cw * 0.75, y: ch * 0.3, r: 140, c: "rgba(40,80,160,0.06)" },
-    { x: cw * 0.5, y: ch * 0.6, r: 200, c: "rgba(100,40,80,0.05)" },
-    { x: cw * 0.15, y: ch * 0.8, r: 120, c: "rgba(40,100,140,0.06)" },
-    { x: cw * 0.85, y: ch * 0.7, r: 160, c: "rgba(70,50,130,0.05)" },
-    { x: cw * 0.4, y: ch * 0.4, r: 100, c: "rgba(50,90,150,0.04)" },
+    { x: cw * 0.18, y: ch * 0.12, r: 220, c: "rgba(80,50,140,0.18)" },
+    { x: cw * 0.82, y: ch * 0.28, r: 180, c: "rgba(40,90,180,0.14)" },
+    { x: cw * 0.45, y: ch * 0.45, r: 200, c: "rgba(100,40,90,0.12)" },
+    { x: cw * 0.15, y: ch * 0.78, r: 160, c: "rgba(50,120,170,0.14)" },
+    { x: cw * 0.88, y: ch * 0.65, r: 200, c: "rgba(80,50,140,0.12)" },
   ];
   for (const n of nebulaSpots) {
     const ng = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
@@ -2604,39 +2588,13 @@ const bgCanvas = (() => {
     ctx.fillStyle = ng;
     ctx.fillRect(n.x - n.r, n.y - n.r, n.r * 2, n.r * 2);
   }
-
-  // --- dense painted stars ---
-  const starCount = 2400;
-  for (let i = 0; i < starCount; i++) {
-    const sx = Math.random() * cw;
-    const sy = Math.random() * ch;
-    const sz = Math.random();
-    const radius = sz < 0.92 ? 0.4 + Math.random() * 0.6 : 0.8 + Math.random() * 1.2;
-    // colour: most white-ish, a few warm yellow or cool blue
-    const roll = Math.random();
-    let r = 200, g = 210, b = 230;
-    if (roll < 0.12) { r = 255; g = 210; b = 160; }       // warm yellow
-    else if (roll < 0.22) { r = 150; g = 180; b = 255; }   // cool blue
-    else if (roll < 0.28) { r = 255; g = 170; b = 170; }   // warm red
-    const alpha = sz < 0.92 ? 0.25 + Math.random() * 0.55 : 0.7 + Math.random() * 0.3;
-    ctx.beginPath();
-    ctx.arc(sx, sy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-    ctx.fill();
-    // brighter stars get a soft glow
-    if (radius > 1.0) {
-      const gg = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius * 3);
-      gg.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.25})`);
-      gg.addColorStop(1, `rgba(${r},${g},${b},0)`);
-      ctx.fillStyle = gg;
-      ctx.fillRect(sx - radius * 3, sy - radius * 3, radius * 6, radius * 6);
-    }
-  }
   return cv;
 })();
 const bgTex = new THREE.CanvasTexture(bgCanvas);
+bgTex.minFilter = THREE.LinearFilter;
+bgTex.magFilter = THREE.LinearFilter;
 bgTex.needsUpdate = true;
-const background = makeSprite(bgTex, W, H, { opacity: 0.92 });
+const background = makeSprite(bgTex, W, H, { opacity: 0.95 });
 background.position.set(0, 0, -5);
 const starField = createStarField();
 createBarrageLayer();
@@ -6107,9 +6065,13 @@ function update(dt) {
       startLevelUp();
     }
   }
-  updateExplosions(dt);
-  updateInterceptFlashes(dt);
-  updatePolishEffects(dt);
+  // Visual effects use rawDt so they don't get cut short at 2×/3× speed —
+  // explosions, intercept flashes, and polish VFX should always render at
+  // their natural duration regardless of gameplay speed.
+  const visualDt = state.rawDt || dt;
+  updateExplosions(visualDt);
+  updateInterceptFlashes(visualDt);
+  updatePolishEffects(visualDt);
 }
 
 function updateScene(t, dt) {
@@ -6149,6 +6111,7 @@ function frame(now) {
   // Apply speed multiplier (1× / 2× / 3×) — only to gameplay, not menus.
   const isPlaying = state.mode === "playing" || state.mode === "shop";
   const dt = isPlaying ? rawDt * state.gameSpeed : rawDt;
+  state.rawDt = rawDt;        // visual-effect updates use this so they don't fade 3× faster
   state.time += dt;
   if (state.mode === "paused" || state.mode === "prologue" || state.mode === "heroIntro" || state.mode === "bossReveal") {
     updateExplosions(rawDt);
