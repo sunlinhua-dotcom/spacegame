@@ -91,6 +91,7 @@ const ui = {
   bossBannerSub: document.getElementById("bossBannerSub"),
   floaters: document.getElementById("floaters"),
   stageThemeBadge: document.getElementById("stageThemeBadge"),
+  speedBtn: document.getElementById("speedBtn"),
   stage: document.querySelector(".stage"),
 };
 
@@ -1759,6 +1760,7 @@ const state = {
   // only flips true during his 8s ult.
   yinUnlocked: false,
   yinActive: false,
+  gameSpeed: 1,            // 1× / 2× / 3× — toggled by speed button
   message: "地球防御系统启动中",
 };
 
@@ -2552,19 +2554,86 @@ function maybeRedrawEarth(t) {
    Scene Objects
    ═══════════════════════════════════════════════════════════════ */
 
-// Procedural deep-space background — dark radial gradient so the centre
-// (where Earth sits) is slightly lighter and edges fall off to near-black.
-// Replaces the old loadTexture("background",...) which pointed at a file
-// that never existed, causing the sprite to render as solid white.
-const bgCanvas = document.createElement("canvas");
-bgCanvas.width = 512; bgCanvas.height = 910;
-const bgCtx = bgCanvas.getContext("2d");
-const bgGrad = bgCtx.createRadialGradient(256, 610, 30, 256, 480, 520);
-bgGrad.addColorStop(0, "#0a1628");   // slightly brighter centre
-bgGrad.addColorStop(0.45, "#050e1a");
-bgGrad.addColorStop(1, "#01060a");   // near-black edges
-bgCtx.fillStyle = bgGrad;
-bgCtx.fillRect(0, 0, 512, 910);
+// Procedural deep-space background — painted starfield canvas with
+// nebula colour patches and thousands of tiny stars. Replaces the old
+// loadTexture("background",...) which pointed at a non-existent file.
+const bgCanvas = (() => {
+  const cv = document.createElement("canvas");
+  const cw = 1024, ch = 1820;
+  cv.width = cw; cv.height = ch;
+  const ctx = cv.getContext("2d");
+  // --- base: deep near-black ---
+  ctx.fillStyle = "#020810";
+  ctx.fillRect(0, 0, cw, ch);
+
+  // --- subtle radial gradient: slightly brighter toward bottom-centre ---
+  const rg = ctx.createRadialGradient(cw / 2, ch * 0.78, 40, cw / 2, ch * 0.6, cw * 0.7);
+  rg.addColorStop(0, "rgba(12,24,48,0.55)");
+  rg.addColorStop(0.5, "rgba(6,14,28,0.35)");
+  rg.addColorStop(1, "rgba(2,8,16,0)");
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, cw, ch);
+
+  // --- Milky Way band: soft diagonal haze ---
+  ctx.save();
+  ctx.translate(cw * 0.3, 0);
+  ctx.rotate(0.38);
+  const mg = ctx.createLinearGradient(0, 0, 0, ch * 1.3);
+  mg.addColorStop(0, "rgba(40,52,90,0)");
+  mg.addColorStop(0.3, "rgba(50,60,110,0.06)");
+  mg.addColorStop(0.5, "rgba(60,72,130,0.10)");
+  mg.addColorStop(0.7, "rgba(50,60,110,0.06)");
+  mg.addColorStop(1, "rgba(40,52,90,0)");
+  ctx.fillStyle = mg;
+  ctx.fillRect(-200, -100, cw + 400, ch + 200);
+  ctx.restore();
+
+  // --- nebula patches: soft coloured blobs ---
+  const nebulaSpots = [
+    { x: cw * 0.2, y: ch * 0.15, r: 180, c: "rgba(80,50,140,0.07)" },
+    { x: cw * 0.75, y: ch * 0.3, r: 140, c: "rgba(40,80,160,0.06)" },
+    { x: cw * 0.5, y: ch * 0.6, r: 200, c: "rgba(100,40,80,0.05)" },
+    { x: cw * 0.15, y: ch * 0.8, r: 120, c: "rgba(40,100,140,0.06)" },
+    { x: cw * 0.85, y: ch * 0.7, r: 160, c: "rgba(70,50,130,0.05)" },
+    { x: cw * 0.4, y: ch * 0.4, r: 100, c: "rgba(50,90,150,0.04)" },
+  ];
+  for (const n of nebulaSpots) {
+    const ng = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+    ng.addColorStop(0, n.c);
+    ng.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = ng;
+    ctx.fillRect(n.x - n.r, n.y - n.r, n.r * 2, n.r * 2);
+  }
+
+  // --- dense painted stars ---
+  const starCount = 2400;
+  for (let i = 0; i < starCount; i++) {
+    const sx = Math.random() * cw;
+    const sy = Math.random() * ch;
+    const sz = Math.random();
+    const radius = sz < 0.92 ? 0.4 + Math.random() * 0.6 : 0.8 + Math.random() * 1.2;
+    // colour: most white-ish, a few warm yellow or cool blue
+    const roll = Math.random();
+    let r = 200, g = 210, b = 230;
+    if (roll < 0.12) { r = 255; g = 210; b = 160; }       // warm yellow
+    else if (roll < 0.22) { r = 150; g = 180; b = 255; }   // cool blue
+    else if (roll < 0.28) { r = 255; g = 170; b = 170; }   // warm red
+    const alpha = sz < 0.92 ? 0.25 + Math.random() * 0.55 : 0.7 + Math.random() * 0.3;
+    ctx.beginPath();
+    ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.fill();
+    // brighter stars get a soft glow
+    if (radius > 1.0) {
+      const gg = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius * 3);
+      gg.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.25})`);
+      gg.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.fillStyle = gg;
+      ctx.fillRect(sx - radius * 3, sy - radius * 3, radius * 6, radius * 6);
+    }
+  }
+  return cv;
+})();
 const bgTex = new THREE.CanvasTexture(bgCanvas);
 bgTex.needsUpdate = true;
 const background = makeSprite(bgTex, W, H, { opacity: 0.92 });
@@ -3156,6 +3225,7 @@ function reset() {
     // 殷师傅 — re-unlocks at stage 10 in every new run (not persistent).
     yinUnlocked: false,
     yinActive: false,
+    gameSpeed: 1,
     message: "地球防御系统启动中",
   });
   // Reset Yin badge UI to hidden — the legacy badge is no longer used
@@ -3165,6 +3235,11 @@ function reset() {
     ui.yinBadge.classList.remove("is-locked", "is-active");
   }
   clearYinSushi();
+  // Reset speed toggle UI
+  if (ui.speedBtn) {
+    ui.speedBtn.textContent = "1×";
+    ui.speedBtn.classList.remove("speed-fast");
+  }
   rebuildDefenders();
   hideLevelPanel();
   hideShopPanel();
@@ -4642,13 +4717,6 @@ function updateWave(dt) {
   state.waveTimer = 0;
   state.waveIndex += 1;
   state.enemyCarry += state.waveIndex % 5 === 0 ? 3.0 : 1.0;
-  // Stage 1, wave 10 → unlock 殷师傅 (Master Yin) as a hero. Once unlocked
-  // he stays in the roster for the rest of the run.
-  if (state.stageLevel === MASTER_YIN.unlock.stage
-      && state.waveIndex === MASTER_YIN.unlock.wave
-      && !state.yinUnlocked) {
-    triggerYinUnlock();
-  }
   if (state.waveIndex >= wavesPerStage) {
     state.waveIndex = wavesPerStage;
     spawnBoss();
@@ -5993,19 +6061,23 @@ function completeBoss(enemy) {
   // scaling HP/reward so the game never ends — difficulty keeps rising.
   state.stageLevel += 1;
   state.waveIndex = 1;
-  // 殷师傅 leaves at stage 2 — he's a stage-1 guest, not a permanent ally.
-  // Hide the badge, drop the slow buff, clear any in-flight sushi.
+  // Clear Yin's active slow effect when transitioning between stages.
   if (state.yinActive) {
     state.yinActive = false;
     if (ui.yinBadge) ui.yinBadge.hidden = true;
     clearYinSushi();
   }
+  // 殷师傅 unlocks at the start of stage 10 (within this run only —
+  // does NOT persist across runs). Each new game requires reaching
+  // stage 10 again to re-unlock him.
+  if (state.stageLevel >= MASTER_YIN.unlock.stage && !state.yinUnlocked) {
+    triggerYinUnlock();
+  }
   // Refresh active heroes + ult gauges for the new stage.
   const oldHeroIds = activeHeroes.map((h) => h.id);
   activeHeroes = activeHeroesForStage(state.stageLevel);
   heroGauges = new HeroGauges(activeHeroes);
-  // Carry 殷师傅 across stages once unlocked WITHIN this run (his unlock
-  // doesn't persist across runs — each new game starts without him).
+  // Carry 殷师傅 across stages once unlocked WITHIN this run.
   if (state.yinUnlocked) heroGauges.addHero(MASTER_YIN.id);
   renderHeroRoster();
   // Find the new hero that joined this stage (if any) — show their
@@ -6072,12 +6144,15 @@ function updateScene(t, dt) {
    ═══════════════════════════════════════════════════════════════ */
 function frame(now) {
   if (!state.last) state.last = now;
-  const dt = Math.min(0.033, (now - state.last) / 1000);
+  const rawDt = Math.min(0.033, (now - state.last) / 1000);
   state.last = now;
+  // Apply speed multiplier (1× / 2× / 3×) — only to gameplay, not menus.
+  const isPlaying = state.mode === "playing" || state.mode === "shop";
+  const dt = isPlaying ? rawDt * state.gameSpeed : rawDt;
   state.time += dt;
   if (state.mode === "paused" || state.mode === "prologue" || state.mode === "heroIntro" || state.mode === "bossReveal") {
-    updateExplosions(dt);
-    updatePolishEffects(dt);
+    updateExplosions(rawDt);
+    updatePolishEffects(rawDt);
   } else {
     update(dt);
   }
@@ -6192,6 +6267,16 @@ ui.soundBtn.addEventListener("click", async () => {
   audio.setEnabled(state.soundOn);
   updateHud();
 });
+
+// Speed toggle — cycles 1× → 2× → 3× → 1×
+if (ui.speedBtn) {
+  ui.speedBtn.addEventListener("click", () => {
+    const next = state.gameSpeed === 1 ? 2 : state.gameSpeed === 2 ? 3 : 1;
+    state.gameSpeed = next;
+    ui.speedBtn.textContent = `${next}×`;
+    ui.speedBtn.classList.toggle("speed-fast", next > 1);
+  });
+}
 
 // Settings menu toggle
 const settingsBtn = document.getElementById("settingsBtn");
