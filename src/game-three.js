@@ -396,6 +396,8 @@ audio.preload();
 let progress = loadProgress();
 let activeHeroes = activeHeroesForStage(1); // recomputed when stage advances
 let heroGauges = new HeroGauges(activeHeroes);
+// If 殷师傅 was unlocked in a previous run, give him a charge slot from the start.
+if (progress.yinUnlocked) heroGauges.addHero(MASTER_YIN.id);
 
 // Dialogue queue — plays a list of {speaker, text} lines, auto-advancing on
 // duration timer. Tap-to-skip on the box advances immediately.
@@ -998,93 +1000,391 @@ function updateUltFlashes() {
   }
 }
 
+/* ─────────────── Per-hero ULT VFX ─────────────────────────────────
+ * Each hero's ult fires a custom Three.js scene effect that matches
+ * their theme: Lia = lava nova, Devi = vines + leaves, Rin = ice
+ * laser pillars, etc. Common helpers (fullscreen flash, audio, shake)
+ * are shared; the unique per-hero stuff lives in playUlt_<heroId>.
+ * ─────────────────────────────────────────────────────────────── */
 function playUltSceneEffect(hero) {
-  const tint = hero.color;
-  // Anchor every effect to the actual hero plane that's triggering the ULT.
-  // The previous version radiated everything from Earth's center, which felt
-  // generic — the player couldn't tell WHICH pilot just fired their ult.
-  // Now the shockwaves grow from the plane sprite outward, the beam streaks
-  // forward from the nose, and per-enemy explosions chain along the plane's
-  // line-of-fire instead of being scattered randomly.
   const heroDef = state.defenders.find((d) => d.kind === "hero" && d.heroId === hero.id);
-  const ox = heroDef ? heroDef.x : C.x;
-  const oy = heroDef ? heroDef.y : C.y;
+  // Common opening: fullscreen flash + screen shake + boom audio
+  spawnUltScreenFlash(hero.color);
+  triggerScreenShake(0.7, 16);
+  audio.boom();
+  // Dispatch to the hero-specific VFX implementation
+  const fn = ULT_VFX[hero.id] || ultVfxFallback;
+  fn(hero, heroDef);
+  // Closing audio crescendo (every hero gets a 2-tap boom curve)
+  setTimeout(() => audio.boom(), 380);
+  setTimeout(() => audio.boom(), 880);
+}
 
-  // 1. FULLSCREEN COLOR FLASH — keeps the moment readable through clutter.
-  spawnUltScreenFlash(tint);
-
-  // 2. FIVE staggered shockwaves growing FROM the hero plane (not Earth).
-  //    Smaller initial size + more growth so it visually launches outward.
-  for (let i = 0; i < 5; i++) {
+// Lia · 巨陨炎涌 — 4 concentric flame rings expanding outward from Earth +
+// embers raining from above. Burning crimson/orange palette.
+function playUlt_lia(hero, heroDef) {
+  const tint = hero.color;
+  // 4 large flame shockwaves expanding outward from Earth
+  for (let i = 0; i < 4; i++) {
     setTimeout(() => {
-      const baseSize = (heroDef?.size || 100) * (1.4 + i * 0.7);
-      addPolishEffect("polishDangerWarningRing", ox, oy, baseSize, {
-        life: 1.4, grow: 1.6, spin: -1.4, opacity: 0.95, z: 8.6, color: tint,
+      const baseSize = 220 + i * 120;
+      addPolishEffect("polishBossRageAura", C.x, C.y, baseSize, {
+        life: 1.6, grow: 1.5, spin: 1.0, opacity: 0.88, z: 8.6, color: tint,
       });
-      addPolishEffect("polishBossRageAura", ox, oy, baseSize * 0.7, {
-        life: 1.1, grow: 1.2, spin: 1.6, opacity: 0.85, z: 8.4, color: tint,
+      addPolishEffect("polishDangerWarningRing", C.x, C.y, baseSize, {
+        life: 1.2, grow: 1.3, spin: -1.2, opacity: 0.7, z: 8.5, color: 0xff5a18,
       });
-    }, i * 160);
+    }, i * 220);
   }
+  // 60 ember particles raining from sky + earth (sustained 1.5s)
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const a = rand(0, Math.PI * 2);
+      const dist = rand(120, 460);
+      const px = C.x + Math.cos(a) * dist;
+      const py = C.y + Math.sin(a) * dist;
+      spawnInterceptFlash(px, py, 0.7 + Math.random() * 0.9);
+      if (i % 4 === 0) addExplosion(px, py, 0.5);
+    }, i * 25);
+  }
+  // Final molten core blast at earth
+  setTimeout(() => {
+    addExplosion(C.x, C.y, 5.2);
+    addPolishEffect("polishBossRageAura", C.x, C.y, 540, {
+      life: 1.3, grow: 1.6, spin: 2.4, opacity: 1.0, z: 9.0, color: tint,
+    });
+    triggerScreenShake(0.95, 22);
+  }, 880);
+}
 
-  // 3. Forward beam — long streaking energy line in the plane's outward
-  //    direction. createEnergyBeam draws a glowing line; we feed it the
-  //    radial-outward angle so it streaks away from Earth past the hero.
-  if (heroDef) {
-    const outwardAngle = Math.atan2(heroDef.y - C.y, heroDef.x - C.x);
-    createEnergyBeam(outwardAngle, {
-      from: heroDef,
-      to: {
-        x: heroDef.x + Math.cos(outwardAngle) * 720,
-        y: heroDef.y + Math.sin(outwardAngle) * 720,
-      },
-      life: 0.62,
+// Devi · 绿潮蔓延 — 12 vine beams burst outward from Earth in radial pattern,
+// each "branching" with smaller secondary beams. Leaves (green flashes)
+// scatter as the vines grow.
+function playUlt_devi(hero) {
+  const tint = 0x6bff5e; // lush green even though hero color is purple
+  // 12 primary vine beams from Earth in all directions
+  const branches = 12;
+  for (let i = 0; i < branches; i++) {
+    const angle = (Math.PI * 2 * i) / branches;
+    const reach = rand(380, 560);
+    createEnergyBeam(angle, {
+      from: { x: C.x, y: C.y },
+      to: { x: C.x + Math.cos(angle) * reach, y: C.y + Math.sin(angle) * reach },
+      life: 1.4,
       color: tint,
       opacity: 0.95,
       wide: true,
     });
+    // Secondary branches at 0.3s — split off the primary at 60% length
+    setTimeout(() => {
+      const branchAngleA = angle + 0.45;
+      const branchAngleB = angle - 0.45;
+      const splitPt = { x: C.x + Math.cos(angle) * reach * 0.6, y: C.y + Math.sin(angle) * reach * 0.6 };
+      for (const ba of [branchAngleA, branchAngleB]) {
+        createEnergyBeam(ba, {
+          from: splitPt,
+          to: { x: splitPt.x + Math.cos(ba) * 220, y: splitPt.y + Math.sin(ba) * 220 },
+          life: 1.0,
+          color: 0xa6ff7c,
+          opacity: 0.85,
+          wide: false,
+        });
+      }
+    }, 280 + i * 18);
   }
-
-  // 4. Particle storm originating AT the hero plane and fanning outward.
-  //    50 flashes within an outward cone, fading with distance.
+  // 50 leaf-scatter green flashes radiating outward over 1.5s
   for (let i = 0; i < 50; i++) {
     setTimeout(() => {
-      const fanAngle = Math.atan2(oy - C.y, ox - C.x) + rand(-1.0, 1.0);
-      const dist = rand(0, 380);
-      const px = ox + Math.cos(fanAngle) * dist;
-      const py = oy + Math.sin(fanAngle) * dist;
-      spawnInterceptFlash(px, py, 0.7 + Math.random() * 0.7);
+      const a = rand(0, Math.PI * 2);
+      const dist = rand(80, 440);
+      const px = C.x + Math.cos(a) * dist;
+      const py = C.y + Math.sin(a) * dist;
+      spawnInterceptFlash(px, py, 0.6 + Math.random() * 0.5);
+    }, i * 28);
+  }
+  // Pulsing green growth ring — visualizes the spreading bloom
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishEarthRepairNanites", C.x, C.y, 220 + i * 160, {
+        life: 1.4, grow: 1.4, spin: 0.6, opacity: 0.85, z: 8.5, color: tint,
+      });
+    }, i * 240);
+  }
+  triggerScreenShake(0.5, 12);
+}
+
+// Rin · 极冰穿刺 — 3 thick vertical ice laser pillars sweep across screen.
+// Each pillar leaves frost particles in its wake.
+function playUlt_rin(hero) {
+  const tint = hero.color;
+  // 3 vertical laser pillars at left, center, right with stagger
+  const xPositions = [C.x - 240, C.x, C.x + 240];
+  for (let i = 0; i < xPositions.length; i++) {
+    setTimeout(() => {
+      const lx = xPositions[i];
+      // Long vertical beam
+      createEnergyBeam(Math.PI / 2, {
+        from: { x: lx, y: C.y - 720 },
+        to: { x: lx, y: C.y + 720 },
+        life: 1.0,
+        color: tint,
+        opacity: 1.0,
+        wide: true,
+      });
+      // Frost shockwave at the pillar's anchor point (Earth-level)
+      addPolishEffect("polishFreezeBomb", lx, C.y, 220, {
+        life: 1.2, grow: 0.9, spin: 0.8, opacity: 0.95, z: 8.7, color: tint,
+      });
+      // Ice splinter particles along the beam path
+      for (let k = 0; k < 14; k++) {
+        const py = C.y - 600 + k * 90;
+        spawnInterceptFlash(lx + rand(-30, 30), py, 0.7 + Math.random() * 0.5);
+      }
+      triggerScreenShake(0.4, 10);
+    }, i * 200);
+  }
+}
+
+// Yue · 月相幻镜 — 8 ghostly mirror clones flicker around Earth in a circle,
+// each pulsing red moonlight. Crimson rage aura between them.
+function playUlt_yue(hero) {
+  const tint = hero.color;
+  const clones = 8;
+  for (let i = 0; i < clones; i++) {
+    const angle = (Math.PI * 2 * i) / clones;
+    const r = 240;
+    const px = C.x + Math.cos(angle) * r;
+    const py = C.y + Math.sin(angle) * r;
+    setTimeout(() => {
+      // Mirror shard explosion
+      addPolishEffect("polishRarityRerollPrism", px, py, 110, {
+        life: 1.2, grow: 1.1, spin: 4.0, opacity: 0.95, z: 8.6, color: tint,
+      });
+      addExplosion(px, py, 1.4);
+      spawnInterceptFlash(px, py, 1.6);
+    }, i * 90);
+  }
+  // 3 expanding red moon rings from Earth
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishDangerWarningRing", C.x, C.y, 280 + i * 120, {
+        life: 1.4, grow: 1.0, spin: -0.8, opacity: 0.9, z: 8.4, color: tint,
+      });
+    }, i * 180);
+  }
+  triggerScreenShake(0.6, 14);
+}
+
+// Ade · 黄金圣铠 — Massive golden shield bubble surrounds all defenders.
+// 16 gold shimmer particles rotate around the bubble.
+function playUlt_ade(hero) {
+  const tint = hero.color;
+  // Big shield-overcharge bubble centered on Earth
+  addPolishEffect("polishShieldOvercharge", C.x, C.y, 580, {
+    life: 1.8, grow: 0.4, spin: 0.5, opacity: 0.95, z: 8.8, color: tint,
+  });
+  addPolishEffect("polishShieldOvercharge", C.x, C.y, 460, {
+    life: 1.6, grow: 0.5, spin: -0.5, opacity: 0.85, z: 8.7, color: 0xfff0a0,
+  });
+  // Gold ring expanding from earth
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishDangerWarningRing", C.x, C.y, 260 + i * 110, {
+        life: 1.4, grow: 1.2, spin: 1.4, opacity: 0.92, z: 8.6, color: tint,
+      });
+    }, i * 180);
+  }
+  // 16 gold sparkles orbiting the shield perimeter
+  for (let i = 0; i < 16; i++) {
+    setTimeout(() => {
+      const a = (Math.PI * 2 * i) / 16;
+      const r = 320;
+      spawnInterceptFlash(C.x + Math.cos(a) * r, C.y + Math.sin(a) * r, 1.4);
+    }, i * 50);
+  }
+  // Per-defender shield mini-bubble
+  for (const def of state.defenders) {
+    addPolishEffect("polishShieldOvercharge", def.x, def.y, def.size * 3.4, {
+      life: 1.4, grow: 0.6, spin: 1.0, opacity: 0.85, z: 6.0, color: tint,
+    });
+  }
+  triggerScreenShake(0.4, 8);
+}
+
+// Sakura · 樱花脉冲 — Forking lightning bolts from sky + 12 zig-zag chains
+// jumping between random points. The user asked specifically for thick
+// lightning, so beams are wide + we layer multiple branches.
+function playUlt_sakura(hero) {
+  const tint = hero.color;
+  // 5 thick downward lightning bolts from above into Earth
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => {
+      const startX = C.x + rand(-360, 360);
+      // Main bolt
+      createEnergyBeam(Math.PI / 2, {
+        from: { x: startX, y: C.y - 720 },
+        to: { x: startX + rand(-60, 60), y: C.y + 100 },
+        life: 0.45,
+        color: 0xffffff,
+        opacity: 1.0,
+        wide: true,
+      });
+      // Pink halo bolt parallel to it
+      createEnergyBeam(Math.PI / 2, {
+        from: { x: startX + rand(-12, 12), y: C.y - 720 },
+        to: { x: startX + rand(-80, 80), y: C.y + 80 },
+        life: 0.55,
+        color: tint,
+        opacity: 0.9,
+        wide: true,
+      });
+      // Forking branches mid-bolt
+      const forkY = C.y - rand(120, 280);
+      const forkX = startX + rand(-30, 30);
+      const forkAngleA = -Math.PI / 2 + rand(-1.0, -0.4);
+      const forkAngleB = -Math.PI / 2 + rand(0.4, 1.0);
+      for (const fa of [forkAngleA, forkAngleB]) {
+        const len = rand(160, 240);
+        createEnergyBeam(fa, {
+          from: { x: forkX, y: forkY },
+          to: { x: forkX + Math.cos(fa) * len, y: forkY + Math.sin(fa) * len },
+          life: 0.35,
+          color: 0xffffff,
+          opacity: 0.85,
+          wide: false,
+        });
+      }
+      addPolishEffect("polishStageIonStorm", startX, C.y + 60, 200, {
+        life: 0.8, grow: 1.2, spin: 0, opacity: 0.92, z: 8.7, color: tint,
+      });
+      addExplosion(startX, C.y + 60, 1.3);
+      triggerScreenShake(0.5, 10);
+    }, i * 130);
+  }
+  // 12 chain-jump zig-zag bolts between random screen points
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const ax = C.x + rand(-380, 380), ay = C.y + rand(-560, 560);
+      const bx = C.x + rand(-380, 380), by = C.y + rand(-560, 560);
+      createEnergyBeam(Math.atan2(by - ay, bx - ax), {
+        from: { x: ax, y: ay },
+        to: { x: bx, y: by },
+        life: 0.32,
+        color: 0xffffff,
+        opacity: 0.95,
+        wide: false,
+      });
+      spawnInterceptFlash(bx, by, 1.2);
+    }, 200 + i * 60);
+  }
+}
+
+// Aria · 天罗音网 — Spinning storm net: 16 wind streak beams arranged in a
+// spiral, plus 3 expanding pink storm rings.
+function playUlt_aria(hero) {
+  const tint = hero.color;
+  const streaks = 16;
+  for (let i = 0; i < streaks; i++) {
+    setTimeout(() => {
+      // Storm streaks emanate from Earth at progressively rotated angles
+      const baseAngle = (Math.PI * 2 * i) / streaks + (i * 0.05); // spiral offset
+      const len = 480;
+      createEnergyBeam(baseAngle, {
+        from: { x: C.x, y: C.y },
+        to: { x: C.x + Math.cos(baseAngle) * len, y: C.y + Math.sin(baseAngle) * len },
+        life: 0.9,
+        color: tint,
+        opacity: 0.92,
+        wide: true,
+      });
+      // Wind sparkle at the tip
+      spawnInterceptFlash(C.x + Math.cos(baseAngle) * len, C.y + Math.sin(baseAngle) * len, 1.4);
+    }, i * 35);
+  }
+  // 3 expanding storm rings
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishDangerWarningRing", C.x, C.y, 260 + i * 140, {
+        life: 1.5, grow: 1.6, spin: 3.0, opacity: 0.92, z: 8.6, color: tint,
+      });
+      addPolishEffect("polishStageIonStorm", C.x, C.y, 320 + i * 100, {
+        life: 1.4, grow: 1.2, spin: -2.2, opacity: 0.7, z: 8.5, color: 0xff8ff0,
+      });
+    }, i * 180);
+  }
+  triggerScreenShake(0.5, 12);
+}
+
+// BRIGHT · 日蚀降临 — Eclipse: black expanding circle covers everything,
+// then explodes outward as a giant white flash. Most cinematic ult.
+function playUlt_bright(hero) {
+  const tint = hero.color;
+  // Black mothership shadow expanding from Earth
+  addPolishEffect("polishStageMothershipShadow", C.x, C.y, 200, {
+    life: 1.4, grow: 4.5, spin: 0.4, opacity: 0.95, z: 9.0,
+  });
+  // 0.6s in: massive eclipse finale ring
+  setTimeout(() => {
+    addPolishEffect("polishStageEclipseFinale", C.x, C.y, 720, {
+      life: 1.2, grow: 0.8, spin: -1.0, opacity: 0.98, z: 9.2, color: tint,
+    });
+    addPolishEffect("polishDangerWarningRing", C.x, C.y, 720, {
+      life: 1.0, grow: 1.5, spin: 2.0, opacity: 0.95, z: 9.1, color: 0xffffff,
+    });
+    // White flash burst
+    spawnUltScreenFlash(0xffffff);
+    triggerScreenShake(1.0, 24);
+    audio.boom();
+    // Radial particle storm
+    for (let i = 0; i < 80; i++) {
+      const a = rand(0, Math.PI * 2);
+      const dist = rand(100, 540);
+      spawnInterceptFlash(C.x + Math.cos(a) * dist, C.y + Math.sin(a) * dist, 1.0 + Math.random() * 0.7);
+    }
+  }, 600);
+  // Final core implosion
+  setTimeout(() => {
+    addExplosion(C.x, C.y, 6.0);
+    addPolishEffect("polishBossRageAura", C.x, C.y, 580, {
+      life: 1.2, grow: 0.9, spin: 3.0, opacity: 1.0, z: 9.0, color: tint,
+    });
+  }, 1100);
+}
+
+// Generic fallback — used if we ever add a hero without a custom VFX.
+function ultVfxFallback(hero, heroDef) {
+  const tint = hero.color;
+  const ox = heroDef ? heroDef.x : C.x;
+  const oy = heroDef ? heroDef.y : C.y;
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishDangerWarningRing", ox, oy, 200 + i * 120, {
+        life: 1.4, grow: 1.4, spin: -1.4, opacity: 0.92, z: 8.6, color: tint,
+      });
+    }, i * 180);
+  }
+  for (let i = 0; i < 40; i++) {
+    setTimeout(() => {
+      const a = rand(0, Math.PI * 2);
+      const dist = rand(100, 380);
+      spawnInterceptFlash(C.x + Math.cos(a) * dist, C.y + Math.sin(a) * dist, 0.9);
     }, i * 22);
   }
-
-  // 5. Companion explosion at every other defender so the squad reads as
-  //    "in synch" with the ulting hero — but the BIG burst is at the hero.
-  if (state.defenders) {
-    for (const def of state.defenders) {
-      const isUlting = def === heroDef;
-      addExplosion(def.x, def.y, isUlting ? 2.4 : 1.0);
-      addPolishEffect("polishBossRageAura", def.x, def.y, def.size * (isUlting ? 3.2 : 1.6), {
-        life: 0.8, grow: 0.42, spin: 1.6, opacity: isUlting ? 1.0 : 0.7, z: 4.2, color: tint,
-      });
-    }
-  }
-
-  // 6. Final closing burst — at the hero plane, not Earth, so the energy
-  //    visually started AT them and is ending AT them.
-  setTimeout(() => {
-    addExplosion(ox, oy, 4.6);
-    addPolishEffect("polishDangerWarningRing", ox, oy, (heroDef?.size || 100) * 6, {
-      life: 1.0, grow: 1.4, spin: -2.4, opacity: 1.0, z: 9.0, color: tint,
-    });
-    triggerScreenShake(0.95, 22);
-  }, 880);
-
-  // Audio + early shake to prime the moment.
+  setTimeout(() => addExplosion(ox, oy, 4.0), 700);
   triggerScreenShake(0.7, 16);
-  audio.boom();
-  setTimeout(() => audio.boom(), 380);
-  setTimeout(() => audio.boom(), 880);
 }
+
+// Per-hero VFX dispatch table
+const ULT_VFX = {
+  lia: playUlt_lia,
+  devi: playUlt_devi,
+  rin: playUlt_rin,
+  yue: playUlt_yue,
+  ade: playUlt_ade,
+  sakura: playUlt_sakura,
+  aria: playUlt_aria,
+  bright: playUlt_bright,
+};
 
 function playUltCinematic(heroId) {
   // 殷师傅 doesn't fly a mecha so we render his cinematic from MASTER_YIN
@@ -1184,106 +1484,122 @@ const individualAssetBase = "assets/generated/individual/final";
 const bossAssetBase = "assets/generated/bosses/frames";
 const characterAssetBase = "assets/generated/characters/final";
 
+// Bosses now have 3 phases (transformations). HP is tripled compared to
+// the old single-phase fights, so each phase is roughly the length of the
+// old fight. Phase transitions happen at 66% and 33% HP — see updateBossPhase.
+// Phase 2 form: faster attacks (+25%), more aggressive charges, slight red tint.
+// Phase 3 form: rage state — even faster attacks (+60%), heavy red tint,
+// charge cooldown halved.
 const bossConfigs = [
   {
     level: 1,
     name: "熔核陨星",
     slug: "molten-asteroid",
     ability: "火山裂隙核心，周期喷发岩浆弹",
-    maxHp: 595,
-    reward: 28,
+    maxHp: 1785,
+    reward: 32,
     size: 160,
     color: 0xff8a34,
+    phaseNames: ["熔岩苏醒", "裂壳暴怒", "陨星核爆"],
   },
   {
     level: 2,
     name: "寄生蜂巢",
     slug: "bio-saucer-hive",
     ability: "绿色生物机械外壳，召唤修复虫群",
-    maxHp: 1060,
-    reward: 36,
+    maxHp: 3180,
+    reward: 42,
     size: 164,
     color: 0x7bff5a,
+    phaseNames: ["巢穴沉默", "孢子怒放", "蜂母觉醒"],
   },
   {
     level: 3,
     name: "霜晶利维坦",
     slug: "ice-crystal-leviathan",
     ability: "冰晶护甲，释放减速晶刺",
-    maxHp: 1715,
-    reward: 44,
+    maxHp: 5150,
+    reward: 52,
     size: 168,
     color: 0x8cefff,
+    phaseNames: ["冰封封印", "霜晶崩裂", "极寒终极"],
   },
   {
     level: 4,
     name: "虚空母舰",
     slug: "void-mothership",
     ability: "紫色暗能量舰体，发射扇形切割线",
-    maxHp: 2560,
-    reward: 52,
+    maxHp: 7680,
+    reward: 62,
     size: 172,
     color: 0xba83ff,
+    phaseNames: ["虚空巡航", "暗能裂缝", "母舰超载"],
   },
   {
     level: 5,
     name: "黄金炮垒",
     slug: "gold-artillery-fortress",
     ability: "重型火炮平台，多炮口轮射",
-    maxHp: 3595,
-    reward: 60,
+    maxHp: 10785,
+    reward: 70,
     size: 176,
     color: 0xffd260,
+    phaseNames: ["重炮装填", "炮组齐射", "黄金核爆"],
   },
   {
     level: 6,
     name: "赤环蛇影",
     slug: "red-plasma-coil",
     ability: "环形等离子生命体，缠绕式攻击",
-    maxHp: 4820,
-    reward: 68,
+    maxHp: 14460,
+    reward: 80,
     size: 180,
     color: 0xff6257,
+    phaseNames: ["蛇环游弋", "赤焰缠斗", "蛇神咆哮"],
   },
   {
     level: 7,
     name: "离子雷巢",
     slug: "blue-ion-hive",
     ability: "蓝色电弧核心，跳跃电击",
-    maxHp: 6235,
-    reward: 76,
+    maxHp: 18705,
+    reward: 90,
     size: 184,
     color: 0x63dfff,
+    phaseNames: ["雷电蓄势", "电弧分裂", "雷巢失控"],
   },
   {
     level: 8,
     name: "黑骨无畏舰",
     slug: "black-dreadnought",
     ability: "黑色装甲巨舰，冲撞与装甲阶段",
-    maxHp: 7840,
-    reward: 84,
+    maxHp: 23520,
+    reward: 100,
     size: 188,
     color: 0x8d9ab8,
+    phaseNames: ["装甲推进", "破甲狂暴", "无畏死战"],
   },
   {
     level: 9,
     name: "白环引力机",
     slug: "white-graviton-ring",
     ability: "多层引力环，牵引小飞机",
-    maxHp: 9635,
-    reward: 92,
+    maxHp: 28905,
+    reward: 110,
     size: 192,
     color: 0xf4fbff,
+    phaseNames: ["引力束缚", "环带崩解", "奇点超载"],
   },
   {
     level: 10,
     name: "日蚀核心",
     slug: "solar-eclipse-core",
     ability: "最终日蚀体，释放全屏脉冲",
-    maxHp: 11620,
-    reward: 100,
+    maxHp: 34860,
+    reward: 120,
     size: 196,
     color: 0xffef80,
+    phaseNames: ["日蚀凝视", "光环爆发", "终末超新星"],
   },
 ];
 
@@ -1418,10 +1734,10 @@ const state = {
   // the AudioContext is unlocked on the initial pointerdown anywhere on the stage.
   soundOn: true,
   miniBossesDefeated: 0,
-  // 殷师傅 (Master Yin) — unlocked at stage 1 wave 10. yinUnlocked flips
-  // to true permanently for the run; yinActive only flips true while his
-  // ult is firing (charge gauge fires sushi-rain + slow for 8s).
-  yinUnlocked: false,
+  // 殷师傅 — once unlocked he persists across runs (saved in progress).
+  // yinUnlocked mirrors progress.yinUnlocked at run start; yinActive only
+  // flips true during his 8s ult.
+  yinUnlocked: !!progress.yinUnlocked,
   yinActive: false,
   message: "地球防御系统启动中",
 };
@@ -1790,11 +2106,23 @@ function updateEnemyVisual(enemy, dt) {
 
   if (enemy.isBoss) {
     const config = enemy.bossConfig;
-    const frame = Math.floor(state.time * (6.2 + config.level * 0.18)) % 4;
+    // Phase-aware frame range: phase 1 cycles frames [0,1] (calm),
+    // phase 2 cycles [1,2] (damaged + agitated), phase 3 cycles [2,3] (enraged).
+    // This makes each transformation read as a visually distinct form even
+    // though we re-use the existing 4-frame asset set per boss.
+    const phase = enemy.phaseLevel || 1;
+    const frameBase = phase === 3 ? 2 : (phase === 2 ? 1 : 0);
+    const animSpeed = 6.2 + config.level * 0.18 + (phase - 1) * 1.5;
+    const frame = frameBase + (Math.floor(state.time * animSpeed) % 2);
     if (frame !== visual.frame) {
       visual.frame = frame;
       visual.core.material.map = tex[`boss-${config.level}-${frame}`];
       visual.core.material.needsUpdate = true;
+    }
+    // Phase tint: phase 2 = warm orange overlay, phase 3 = deep red rage
+    if (phase >= 2 && visual.core.material.color) {
+      const tintHex = phase === 3 ? 0xff7878 : 0xffb878;
+      visual.core.material.color.setHex(tintHex);
     }
     const hpRatio = Math.max(0, enemy.hp / enemy.maxHp);
     const danger = 1 - hpRatio;
@@ -2789,10 +3117,10 @@ function reset() {
     moneyMul: 1,
     levelUpSource: "timer",
     miniBossesDefeated: 0,
-    // Yin starts locked + inactive. He unlocks at stage 1 wave 10 (joins
-    // the hero roster permanently for the run). yinActive only flips on
-    // while his ult is firing.
-    yinUnlocked: false,
+    // 殷师傅 — once unlocked he persists across runs (saved in progress).
+    // yinUnlocked is the run-level flag (mirrors progress.yinUnlocked at
+    // run start). yinActive is the temporary "ult firing" flag.
+    yinUnlocked: !!progress.yinUnlocked,
     yinActive: false,
     message: "地球防御系统启动中",
   });
@@ -4298,9 +4626,11 @@ function updateWave(dt) {
 }
 
 function triggerYinUnlock() {
-  // Yin joins the squad permanently for this run. yinActive stays false
-  // — it only flips on briefly when the player fires his ult.
+  // Yin joins the squad permanently — both for this run AND saved in
+  // progress so future runs start with him already in the roster.
   state.yinUnlocked = true;
+  progress.yinUnlocked = true;
+  saveProgress(progress);
   heroGauges.addHero(MASTER_YIN.id);
   renderHeroRoster();
   // 4-line story dialogue still plays in the unlock overlay.
@@ -4728,6 +5058,9 @@ function _spawnBossActual() {
     attackTimer: Math.max(1.45, 3.7 - config.level * 0.16),
     wobble: rand(0, Math.PI * 2),
     spin: 0,
+    // Phase tracking for the 3-form transformation system
+    phaseLevel: 1,        // 1, 2, or 3 — current transformation
+    phaseTransitioning: 0, // > 0 while transition VFX is playing
     visual: createBossVisual(config),
     trail: makeGlowLine(config.color, 0.36),
   };
@@ -4751,6 +5084,46 @@ function _spawnBossActual() {
   }
   triggerScreenShake(0.6, 14);
   audio.levelUp();
+  updateHud();
+}
+
+// 3-phase transformation: when a boss crosses 66% / 33% HP, freeze the boss
+// briefly, fire a screen-shaking transformation VFX, swap visual frame range
+// and announce the new phase via the banner. Boss attacks resume after.
+function triggerBossPhaseTransition(boss, newPhase) {
+  if (!boss || boss.phaseLevel >= newPhase) return;
+  boss.phaseLevel = newPhase;
+  boss.phaseTransitioning = 0.9; // seconds of transition lock-out
+  // Phase color tint: phase 2 = orange-red, phase 3 = deep red
+  const tint = newPhase === 3 ? 0xff2030 : 0xff7a32;
+  // Pause boss attacks during transition
+  boss.attackTimer = Math.max(boss.attackTimer, 1.0);
+  boss.bossChargeTimer = 4.5;
+  boss.bossCharging = false;
+  // Visual: 4 expanding warning rings + giant rage aura at boss
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishDangerWarningRing", boss.x, boss.y, boss.size * (1.6 + i * 0.5), {
+        life: 0.9, grow: 1.3, spin: -2.0, opacity: 0.95, z: 8.7, color: tint,
+      });
+      addPolishEffect("polishBossRageAura", boss.x, boss.y, boss.size * (1.4 + i * 0.3), {
+        life: 1.1, grow: 1.0, spin: 1.8, opacity: 0.9, z: 8.5, color: tint,
+      });
+    }, i * 130);
+  }
+  // Particle storm
+  for (let i = 0; i < 18; i++) {
+    const a = (Math.PI * 2 * i) / 18;
+    spawnInterceptFlash(boss.x + Math.cos(a) * boss.size * 0.8, boss.y + Math.sin(a) * boss.size * 0.8, 1.4);
+  }
+  addExplosion(boss.x, boss.y, 2.6);
+  triggerScreenShake(0.8, 18);
+  audio.boom();
+  // Banner: announce phase name
+  const phaseNames = boss.bossConfig?.phaseNames;
+  const phaseName = (phaseNames && phaseNames[newPhase - 1]) || `形态 ${newPhase}`;
+  showBossBanner(`${boss.bossConfig.name} · 形态 ${newPhase}`, phaseName);
+  state.message = `${boss.bossConfig.name} 进入 ${phaseName}!`;
   updateHud();
 }
 
@@ -5353,14 +5726,25 @@ function updateEnemies(realDt) {
 
     if (e.isBoss) {
       e.bossPhase += dt * (0.32 + e.bossConfig.level * 0.012);
+      // 3-phase transformation: phase 1 → 2 at 66% HP, phase 2 → 3 at 33% HP.
+      // Each transition pauses the boss briefly, fires a screen-shaking VFX,
+      // and applies stat boosts (faster attack, faster charge cooldown).
+      const hpRatio = e.hp / e.maxHp;
+      if (e.phaseLevel === 1 && hpRatio <= 0.66) {
+        triggerBossPhaseTransition(e, 2);
+      } else if (e.phaseLevel === 2 && hpRatio <= 0.33) {
+        triggerBossPhaseTransition(e, 3);
+      }
       // Phase-7: boss-half dialogue, fires once when HP first crosses 50%.
-      if (!e.halfDialogueDone && e.hp / e.maxHp <= 0.5 && state.mode === "playing") {
+      if (!e.halfDialogueDone && hpRatio <= 0.5 && state.mode === "playing") {
         e.halfDialogueDone = true;
         const halfLines = getEvent(state.stageLevel, "boss-half");
         if (halfLines.length) dialoguePlay(halfLines, `stage-${state.stageLevel}`, "boss-half");
       }
+      // Phase 2 → +25% attack speed; phase 3 → +60% (effectively halves cooldown)
+      const phaseAttackMul = e.phaseLevel === 3 ? 1.6 : (e.phaseLevel === 2 ? 1.25 : 1.0);
       // Boss state machine: PATROL (full orbit) ↔ CHARGE (dive at Earth then retreat)
-      e.bossChargeTimer = (e.bossChargeTimer ?? 5 + Math.random() * 3) - dt;
+      e.bossChargeTimer = (e.bossChargeTimer ?? 5 + Math.random() * 3) - dt * phaseAttackMul;
       if (e.bossChargeTimer <= 0 && !e.bossCharging) {
         e.bossCharging = true;
         e.bossChargeStart = state.time;
@@ -5439,10 +5823,12 @@ function updateEnemies(realDt) {
         // Slight cooldown so we don't fire 2 ults the same frame
         e.attackTimer = Math.max(e.attackTimer, 1.6);
       }
-      e.attackTimer -= dt;
+      e.attackTimer -= dt * phaseAttackMul;
       if (e.attackTimer <= 0) {
         spawnBossAttack(e);
-        e.attackTimer = Math.max(1.18, 3.5 - e.bossConfig.level * 0.16 - (1 - e.hp / e.maxHp) * 0.8);
+        // Phase 3 cuts the cooldown floor — hard mode for the rage state.
+        const cooldownFloor = e.phaseLevel === 3 ? 0.7 : (e.phaseLevel === 2 ? 0.95 : 1.18);
+        e.attackTimer = Math.max(cooldownFloor, 3.5 - e.bossConfig.level * 0.16 - (1 - e.hp / e.maxHp) * 0.8);
       }
       continue;
     }
@@ -5586,6 +5972,8 @@ function completeBoss(enemy) {
   const oldHeroIds = activeHeroes.map((h) => h.id);
   activeHeroes = activeHeroesForStage(state.stageLevel);
   heroGauges = new HeroGauges(activeHeroes);
+  // Carry 殷师傅 across stages once unlocked (he's a permanent hero).
+  if (state.yinUnlocked) heroGauges.addHero(MASTER_YIN.id);
   renderHeroRoster();
   // Find the new hero that joined this stage (if any) — show their
   // introduction cinematic before the upgrade-card panel.
