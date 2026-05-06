@@ -403,8 +403,8 @@ audio.preload();
 let progress = loadProgress();
 let activeHeroes = activeHeroesForStage(1); // recomputed when stage advances
 let heroGauges = new HeroGauges(activeHeroes);
-// If 殷师傅 was unlocked in a previous run, give him a charge slot from the start.
-if (progress.yinUnlocked) heroGauges.addHero(MASTER_YIN.id);
+// 殷师傅 is NOT persisted across runs — each new run requires reaching
+// stage 10 to unlock him as a 9th hero for the final stretch.
 
 // Dialogue queue — plays a list of {speaker, text} lines, auto-advancing on
 // duration timer. Tap-to-skip on the box advances immediately.
@@ -1754,10 +1754,10 @@ const state = {
   // the AudioContext is unlocked on the initial pointerdown anywhere on the stage.
   soundOn: true,
   miniBossesDefeated: 0,
-  // 殷师傅 — once unlocked he persists across runs (saved in progress).
-  // yinUnlocked mirrors progress.yinUnlocked at run start; yinActive only
-  // flips true during his 8s ult.
-  yinUnlocked: !!progress.yinUnlocked,
+  // 殷师傅 — unlocks at stage 10 within each run (NOT persistent across
+  // runs). yinUnlocked flips true when stage 10 is reached. yinActive
+  // only flips true during his 8s ult.
+  yinUnlocked: false,
   yinActive: false,
   message: "地球防御系统启动中",
 };
@@ -3137,10 +3137,8 @@ function reset() {
     moneyMul: 1,
     levelUpSource: "timer",
     miniBossesDefeated: 0,
-    // 殷师傅 — once unlocked he persists across runs (saved in progress).
-    // yinUnlocked is the run-level flag (mirrors progress.yinUnlocked at
-    // run start). yinActive is the temporary "ult firing" flag.
-    yinUnlocked: !!progress.yinUnlocked,
+    // 殷师傅 — re-unlocks at stage 10 in every new run (not persistent).
+    yinUnlocked: false,
     yinActive: false,
     message: "地球防御系统启动中",
   });
@@ -4646,11 +4644,9 @@ function updateWave(dt) {
 }
 
 function triggerYinUnlock() {
-  // Yin joins the squad permanently — both for this run AND saved in
-  // progress so future runs start with him already in the roster.
+  // Yin joins the squad for THIS run only — does NOT persist across runs.
+  // Each new game requires reaching stage 10 to re-unlock him.
   state.yinUnlocked = true;
-  progress.yinUnlocked = true;
-  saveProgress(progress);
   heroGauges.addHero(MASTER_YIN.id);
   renderHeroRoster();
   // 4-line story dialogue still plays in the unlock overlay.
@@ -5992,7 +5988,8 @@ function completeBoss(enemy) {
   const oldHeroIds = activeHeroes.map((h) => h.id);
   activeHeroes = activeHeroesForStage(state.stageLevel);
   heroGauges = new HeroGauges(activeHeroes);
-  // Carry 殷师傅 across stages once unlocked (he's a permanent hero).
+  // Carry 殷师傅 across stages once unlocked WITHIN this run (his unlock
+  // doesn't persist across runs — each new game starts without him).
   if (state.yinUnlocked) heroGauges.addHero(MASTER_YIN.id);
   renderHeroRoster();
   // Find the new hero that joined this stage (if any) — show their

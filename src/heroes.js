@@ -266,8 +266,12 @@ export const MASTER_YIN = {
     desc: "全场敌人减速 45%,持续 8 秒",
   },
   unlock: {
-    stage: 1,
-    wave: 10,
+    // Yin unlocks at stage 10 — late-game guest pilot. He's NOT persistent
+    // across runs, so each new run requires the player to push back to
+    // stage 10 to unlock him again. The reward is "you got this far —
+    // here's a 9th hero for the final stretch".
+    stage: 10,
+    wave: 1,
     eyebrow: "GUEST PILOT",
     blurb: "居酒屋的殷师傅赶来助阵 —— 击杀蓄力,点击释放寿司风暴!",
   },

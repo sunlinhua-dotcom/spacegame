@@ -75,20 +75,22 @@ export function getStageReward(stageLevel) {
 const STORAGE_KEY = "edr-roguelite-v1";
 
 export function loadProgress() {
+  // Note: 殷师傅 is intentionally NOT in persistent progress — he must be
+  // re-unlocked at stage 10 in each run. The yinUnlocked field is only
+  // tracked at the run level (state.yinUnlocked).
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0, prologueSeen: false, yinUnlocked: false, tutorialSeen: false };
+    if (!raw) return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0, prologueSeen: false, tutorialSeen: false };
     const obj = JSON.parse(raw);
     return {
       unlockedHeroes: Array.isArray(obj.unlockedHeroes) ? obj.unlockedHeroes : ["lia"],
       bestStage: typeof obj.bestStage === "number" ? obj.bestStage : 1,
       totalRuns: typeof obj.totalRuns === "number" ? obj.totalRuns : 0,
       prologueSeen: !!obj.prologueSeen,
-      yinUnlocked: !!obj.yinUnlocked,
       tutorialSeen: !!obj.tutorialSeen,
     };
   } catch (e) {
-    return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0, prologueSeen: false, yinUnlocked: false, tutorialSeen: false };
+    return { unlockedHeroes: ["lia"], bestStage: 1, totalRuns: 0, prologueSeen: false, tutorialSeen: false };
   }
 }
 
