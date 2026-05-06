@@ -342,29 +342,41 @@ export const ENEMY_TYPES = {
    Stage 8+ throws everything in the blender.
    ─────────────────────────────────────────────────────────────── */
 
+// Each stage has a unique enemy "theme" — adjacent stages never share the
+// same fodder pair, and mid / elite tiers rotate so every stage feels fresh.
 export const STAGE_BAGS = {
-  1: { fodder: ["crystal-stalker", "magma-worm"], mid: [], elite: [] },
-  2: { fodder: ["crystal-stalker", "magma-worm", "bio-beetle"], mid: [], elite: [] },
-  3: { fodder: ["crystal-stalker", "shadow-cone", "bio-beetle"], mid: ["ion-sentinel", "magma-spider"], elite: [] },
-  4: { fodder: ["shadow-cone", "magma-worm", "bio-beetle"], mid: ["ion-sentinel", "void-hunter"], elite: [] },
-  5: { fodder: ["crystal-stalker", "shadow-cone", "magma-worm"], mid: ["ion-sentinel", "magma-spider", "bio-cloud"], elite: [] },
-  6: { fodder: ["shadow-cone", "bio-beetle"], mid: ["void-hunter", "magma-spider", "storm-wraith"], elite: ["gold-carapace"] },
-  7: { fodder: ["crystal-stalker", "bio-beetle"], mid: ["void-hunter", "bio-cloud", "storm-wraith"], elite: ["gold-carapace", "mirror-splitter"] },
-  8: { fodder: ["shadow-cone", "magma-worm"], mid: ["ion-sentinel", "magma-spider", "storm-wraith"], elite: ["gold-carapace", "mirror-splitter", "gravity-pulse"] },
-  9: { fodder: ["shadow-cone", "crystal-stalker"], mid: ["void-hunter", "storm-wraith", "bio-cloud"], elite: ["mirror-splitter", "gravity-pulse"] },
-  10: { fodder: ["shadow-cone", "magma-worm", "crystal-stalker"], mid: ["void-hunter", "magma-spider", "storm-wraith", "bio-cloud"], elite: ["gold-carapace", "mirror-splitter", "gravity-pulse"] },
+  // 1 — 水晶降临: crystal + magma rush, pure fodder intro
+  1:  { fodder: ["crystal-stalker", "magma-worm"],          mid: [],                                  elite: [] },
+  // 2 — 暗影突袭: shadow cones + bio-beetles, fast & swarmy
+  2:  { fodder: ["bio-beetle", "shadow-cone"],              mid: [],                                  elite: [] },
+  // 3 — 岩浆风暴: magma-heavy + magma-spider ambush
+  3:  { fodder: ["magma-worm", "bio-beetle"],               mid: ["magma-spider"],                    elite: [] },
+  // 4 — 离子封锁: crystal + shadow + ion sentinels raining fire
+  4:  { fodder: ["crystal-stalker", "shadow-cone"],         mid: ["ion-sentinel"],                    elite: [] },
+  // 5 — 虚空追猎: fast assassins + storm-wraith blinks
+  5:  { fodder: ["shadow-cone", "magma-worm"],              mid: ["void-hunter", "storm-wraith"],     elite: [] },
+  // 6 — 生化侵蚀: bio-cloud poison + gold-carapace armor tanks
+  6:  { fodder: ["bio-beetle", "crystal-stalker"],          mid: ["bio-cloud", "magma-spider"],       elite: ["gold-carapace"] },
+  // 7 — 离子风暴: ranged barrage + mirror-splitter chain-spawns
+  7:  { fodder: ["magma-worm", "shadow-cone"],              mid: ["ion-sentinel", "storm-wraith"],    elite: ["mirror-splitter"] },
+  // 8 — 重力深渊: gravity-pulse pulls + void-hunter dive-bombs
+  8:  { fodder: ["crystal-stalker", "bio-beetle"],          mid: ["void-hunter", "bio-cloud"],        elite: ["gravity-pulse"] },
+  // 9 — 混沌前线: triple fodder, triple mid, dual elites
+  9:  { fodder: ["shadow-cone", "magma-worm", "bio-beetle"], mid: ["magma-spider", "storm-wraith", "void-hunter"], elite: ["gold-carapace", "mirror-splitter"] },
+  // 10 — 终极决战: everything in the blender
+  10: { fodder: ["crystal-stalker", "bio-beetle", "shadow-cone", "magma-worm"], mid: ["ion-sentinel", "void-hunter", "magma-spider", "storm-wraith", "bio-cloud"], elite: ["gold-carapace", "mirror-splitter", "gravity-pulse"] },
 };
 
-// Mini-boss roster per stage (one is dropped at the mid-wave checkpoint).
+// Mini-boss roster — cycles through all 3 so no two adjacent stages share one.
 export const MINI_BOSSES = {
-  3: "mega-asteroid",
-  4: "hook-reaper",
-  5: "mega-asteroid",
-  6: "shadow-apostle",
-  7: "hook-reaper",
-  8: "shadow-apostle",
-  9: "mega-asteroid",
-  10: "shadow-apostle",
+  3:  "hook-reaper",
+  4:  "mega-asteroid",
+  5:  "shadow-apostle",
+  6:  "hook-reaper",
+  7:  "mega-asteroid",
+  8:  "shadow-apostle",
+  9:  "hook-reaper",
+  10: "mega-asteroid",
 };
 
 /* ─────────────── Per-stage wave director ─────────────────────────
@@ -373,7 +385,9 @@ export const MINI_BOSSES = {
    ─────────────────────────────────────────────────────────────── */
 
 export function planWave(stage, waveIdx, wavesPerStage = 6) {
-  const bag = STAGE_BAGS[stage] || STAGE_BAGS[1];
+  // Stages 11+ cycle through stage bags 1-10
+  const effectiveStage = stage <= 10 ? stage : ((stage - 1) % 10) + 1;
+  const bag = STAGE_BAGS[effectiveStage];
   const ratio = waveIdx / Math.max(1, wavesPerStage);
   const baseCount = Math.round(5 + waveIdx * 1.2 + (stage - 1) * 0.6);
   const out = [];
@@ -404,7 +418,10 @@ export function planWave(stage, waveIdx, wavesPerStage = 6) {
 }
 
 export function pickMiniBossKind(stage) {
-  return MINI_BOSSES[stage] || null;
+  if (stage < 3) return null;
+  // Stages 3+: cycle through the three mini-boss types
+  const bosses = ["hook-reaper", "mega-asteroid", "shadow-apostle"];
+  return bosses[(stage - 3) % bosses.length];
 }
 
 /* ─────────────── Enemy factory ───────────────────────────────────
