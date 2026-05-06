@@ -458,115 +458,155 @@ canvas {
   animation: heroIntroPulse 1.4s ease-in-out infinite;
 }
 
-/* ───────────── Hero introduction cinematic ─────────────
- * Full-screen splash when a new pilot is unlocked. Action portrait pops
- * in, country-tinted ray streaks fan out behind, name + skills card
- * slides up. Tap to continue. Sits between prologue (z-11) and modal
- * panels (z-10), z-12 so nothing else competes. */
+/* ───────────── Phase 1: Hero comic overlay (fullscreen 4-panel) ───── */
+.hero-comic-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 51;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  cursor: pointer;
+  animation: heroComicIn 400ms ease;
+}
+.hero-comic-overlay[hidden] { display: none; }
+@keyframes heroComicIn { from { opacity: 0; } }
+
+.hero-comic-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.hero-comic-cta {
+  position: absolute;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.2em;
+}
+
+/* ───────────── Phase 2: Hero join card ───────────── */
 .hero-intro {
   position: absolute;
   inset: 0;
   z-index: 50;
   display: flex;
   flex-direction: column;
-  background: #000;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 40%, var(--hero-tint, rgba(124,232,255,0.15)) 0%, rgba(0,0,0,0.98) 60%);
   overflow: hidden;
   cursor: pointer;
   pointer-events: auto;
   animation: heroIntroIn 540ms cubic-bezier(0.22, 0.85, 0.32, 1);
 }
 .hero-intro[hidden] { display: none; }
-@keyframes heroIntroIn { from { opacity: 0; } }
+@keyframes heroIntroIn { from { opacity: 0; transform: scale(0.96); } }
 
 .hero-intro-rays { display: none; }
 
-/* Fullscreen layout: comic image covers the entire 9:16 viewport.
-   Meta + dialogue overlay at the bottom with dark gradient. */
 .hero-intro-frame {
-  position: relative;
-  width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.hero-intro-comic {
-  position: absolute;
-  inset: 0;
-  display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 16px;
+  width: min(88%, 380px);
+  text-align: center;
 }
 
-.hero-intro-comic img {
+.hero-intro-portrait {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--hero-tint, var(--cyan));
+  box-shadow: 0 0 40px var(--hero-tint, rgba(124,232,255,0.4));
+  animation: heroPortraitPop 600ms cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+@keyframes heroPortraitPop {
+  from { transform: scale(0.6); opacity: 0; }
+}
+
+.hero-intro-portrait img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
 .hero-intro-meta {
-  position: absolute;
-  bottom: 80px;
-  left: 0; right: 0;
-  padding: 16px 20px 8px;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--cyan-soft);
+  gap: 4px;
 }
 
-.hero-intro-eyebrow { display: none; }
+.hero-intro-eyebrow {
+  font-family: "SF Mono", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  color: var(--hero-tint, var(--cyan));
+  text-transform: uppercase;
+}
 
 .hero-intro-name {
-  font-size: clamp(18px, 4.2vw, 24px);
+  font-size: clamp(24px, 6vw, 36px);
   font-weight: 900;
-  letter-spacing: 0.04em;
   color: #ffffff;
-  text-shadow: 0 0 24px var(--hero-tint, rgba(199, 125, 255, 0.7));
+  text-shadow: 0 0 30px var(--hero-tint, rgba(199, 125, 255, 0.7));
   line-height: 1;
 }
 
 .hero-intro-country {
-  font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.hero-intro-dialogue {
-  position: absolute;
-  bottom: 0;
-  left: 0; right: 0;
-  padding: 14px 20px 24px;
-  background: rgba(0,0,0,0.88);
-  border-top: 1px solid var(--line);
-}
-
-.hero-intro-speaker {
+  font-family: "SF Mono", monospace;
   font-size: 11px;
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.hero-intro-text {
-  display: block;
-  margin-top: 4px;
-  font-size: 15px;
-  line-height: 1.5;
+.hero-intro-skills {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  text-align: left;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.hero-intro-skill-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--cyan);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+
+.hero-intro-skill,
+.hero-intro-ult {
+  font-size: 14px;
   color: var(--text);
+  line-height: 1.4;
 }
 
 .hero-intro-cta {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 12px;
   color: var(--text-muted);
   opacity: 0.7;
+  animation: heroIntroPulse 1.6s ease-in-out infinite;
 }
 
 @keyframes heroIntroPulse {

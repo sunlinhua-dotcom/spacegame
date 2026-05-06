@@ -123,10 +123,16 @@
              (eyebrow / name / country) and a dialogue ribbon that swaps
              text per line. Played once per stage transition. Tap to
              advance. -->
+        <!-- Phase 1: fullscreen comic strip (tap to continue) -->
+        <div id="heroComic" class="hero-comic-overlay" hidden>
+          <img id="heroComicImg" class="hero-comic-img" alt="" />
+          <div class="hero-comic-cta">点击继续</div>
+        </div>
+        <!-- Phase 2: hero join card (portrait + name + skills) -->
         <div id="heroIntro" class="hero-intro" hidden aria-live="polite">
           <div class="hero-intro-rays" aria-hidden="true"></div>
           <div class="hero-intro-frame">
-            <div class="hero-intro-comic">
+            <div class="hero-intro-portrait">
               <img id="heroIntroImg" alt="" />
             </div>
             <div class="hero-intro-meta">
@@ -134,12 +140,14 @@
               <span class="hero-intro-name" id="heroIntroName">Lia</span>
               <span class="hero-intro-country" id="heroIntroCountry">BR · 热带烈焰</span>
             </div>
-            <div class="hero-intro-dialogue">
-              <span class="hero-intro-speaker" id="heroIntroUlt">旁白</span>
-              <span class="hero-intro-text" id="heroIntroPassive">…</span>
+            <div class="hero-intro-skills">
+              <span class="hero-intro-skill-label">技能</span>
+              <span class="hero-intro-skill" id="heroIntroPassive">…</span>
+              <span class="hero-intro-skill-label">大招</span>
+              <span class="hero-intro-ult" id="heroIntroUlt">…</span>
             </div>
           </div>
-          <div class="hero-intro-cta">▶ 点击翻页</div>
+          <div class="hero-intro-cta">▶ 点击出击</div>
         </div>
 
         <!-- 殷师傅 unlock celebration — fired once at stage 1 wave 10. Fullscreen

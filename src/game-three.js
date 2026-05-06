@@ -637,110 +637,80 @@ if (ui.prologueOverlay) {
  * Splash screen when a new pilot joins the squad. Plays once per stage
  * transition (Lia at game start, then one new hero per cleared stage).
  * Tap to dismiss → run onDone callback (next stage start). */
-const _heroIntroState = { hero: null, onDone: null, voicePath: null, lineIdx: 0, lines: [], lineTimer: 0 };
+const _heroIntroState = { hero: null, onDone: null, phase: "idle" };
 
+// Two-phase hero intro:
+//   Phase 1 → fullscreen comic strip (tap to go to phase 2)
+//   Phase 2 → hero join card with portrait + name + skills (tap to dismiss)
 function playHeroIntro(heroId, onDone = null) {
   const hero = getHero(heroId);
-  if (!hero || !ui.heroIntro) { if (onDone) onDone(); return; }
+  if (!hero) { if (onDone) onDone(); return; }
   _heroIntroState.hero = hero;
   _heroIntroState.onDone = onDone;
-  _heroIntroState.lineIdx = 0;
-  _heroIntroState.lines = HERO_INTROS[hero.id] || [];
-  _heroIntroState.lineTimer = 0;
-  holdMusicForVoice();
-  // Set color custom property for the border + ray streaks.
+  _heroIntroState.phase = "comic";
+  // Phase 1: show fullscreen comic
+  const comicOverlay = document.getElementById("heroComic");
+  const comicImg = document.getElementById("heroComicImg");
+  if (comicOverlay && comicImg) {
+    comicImg.src = `assets/cast/${heroId}-comic.png?v=${ASSET_VERSION}`;
+    comicOverlay.hidden = false;
+  } else {
+    // No comic overlay → skip to join card
+    showHeroJoinCard();
+  }
+}
+
+function showHeroJoinCard() {
+  const hero = _heroIntroState.hero;
+  if (!hero || !ui.heroIntro) { dismissHeroIntro(); return; }
+  _heroIntroState.phase = "join";
+  // Hide comic overlay
+  const comicOverlay = document.getElementById("heroComic");
+  if (comicOverlay) comicOverlay.hidden = true;
+  // Set up join card
   const r = (hero.color >> 16) & 0xff, g = (hero.color >> 8) & 0xff, b = hero.color & 0xff;
   ui.heroIntro.style.setProperty("--hero-tint", `rgba(${r}, ${g}, ${b}, 0.85)`);
-  // Action portrait — large, cinematic.
   if (ui.heroIntroImg) {
     ui.heroIntroImg.src = `assets/cast/${hero.actionPortrait || hero.portrait}.png?v=${ASSET_VERSION}`;
   }
   if (ui.heroIntroEyebrow) {
-    ui.heroIntroEyebrow.textContent = hero.id === "bright" ? "COMMANDER ENGAGES" : "NEW PILOT JOINS";
+    ui.heroIntroEyebrow.textContent = hero.id === "bright" ? "指挥官出击" : "新队员加入";
   }
   if (ui.heroIntroName) ui.heroIntroName.textContent = hero.name;
   if (ui.heroIntroCountry) ui.heroIntroCountry.textContent = `${hero.country} · ${hero.title}`;
-  if (ui.heroIntroPassive) ui.heroIntroPassive.textContent = `${hero.passive.id ? "" : ""}${hero.skillCardName || hero.passive.desc}`;
+  if (ui.heroIntroPassive) ui.heroIntroPassive.textContent = hero.skillCardName || hero.passive.desc;
   if (ui.heroIntroUlt) ui.heroIntroUlt.textContent = hero.ult.name;
   ui.heroIntro.hidden = false;
-  // Restart entrance animation
   ui.heroIntro.style.animation = "none";
-  // eslint-disable-next-line no-unused-expressions
-  ui.heroIntro.offsetHeight;
+  ui.heroIntro.offsetHeight; // reflow
   ui.heroIntro.style.animation = "";
-  // Show comic + dialogue line 0 immediately, auto-advance from there.
-  showHeroIntroLine();
-}
-
-// Step the hero-intro 4-line story. Comic image is the single
-// {id}-comic.png manga page (loaded once when the intro opens) — the
-// dialogue lines + voice playback advance underneath the same image.
-function showHeroIntroLine() {
-  const st = _heroIntroState;
-  if (!st.hero || !st.lines) return;
-  if (st.lineIdx >= st.lines.length) {
-    // All four lines played → close the cinematic.
-    dismissHeroIntro();
-    return;
-  }
-  const line = st.lines[st.lineIdx];
-  const heroId = st.hero.id;
-  // Set the comic page once on the first line; subsequent lines keep
-  // the same manga page on screen while the dialogue advances.
-  if (ui.heroIntroImg && st.lineIdx === 0) {
-    ui.heroIntroImg.src = `assets/cast/${heroId}-comic.png?v=${ASSET_VERSION}`;
-    ui.heroIntroImg.onerror = () => {
-      ui.heroIntroImg.onerror = null;
-      ui.heroIntroImg.src = `assets/cast/${st.hero.actionPortrait || st.hero.portrait}.png?v=${ASSET_VERSION}`;
-    };
-  }
-  // Dialogue overlay — show the line text where the skills card used to sit.
-  if (ui.heroIntroPassive) {
-    ui.heroIntroPassive.textContent = line.text;
-  }
-  if (ui.heroIntroUlt) {
-    ui.heroIntroUlt.textContent = line.speaker === "narrator" ? "" : st.hero.name;
-  }
-  // Voice + auto-advance.
-  const queuedIdx = st.lineIdx;
-  playLineVoice("hero-intro", st.lineIdx, line.speaker, heroId, {
-    onEnded: () => {
-      if (st.lineIdx === queuedIdx && st.hero) {
-        st.lineIdx += 1;
-        showHeroIntroLine();
-      }
-    },
-  });
-  st.lineTimer = 0;
 }
 
 function dismissHeroIntro() {
-  if (!ui.heroIntro || ui.heroIntro.hidden) return;
-  ui.heroIntro.hidden = true;
+  const comicOverlay = document.getElementById("heroComic");
+  if (comicOverlay) comicOverlay.hidden = true;
+  if (ui.heroIntro) ui.heroIntro.hidden = true;
   stopVoice();
   releaseMusicHold();
   const cb = _heroIntroState.onDone;
   _heroIntroState.hero = null;
   _heroIntroState.onDone = null;
+  _heroIntroState.phase = "idle";
   if (cb) cb();
 }
 
+// Comic overlay tap → advance to join card
+const _heroComicEl = document.getElementById("heroComic");
+if (_heroComicEl) {
+  _heroComicEl.addEventListener("pointerdown", () => {
+    if (_heroIntroState.phase === "comic") showHeroJoinCard();
+  });
+}
+
 if (ui.heroIntro) {
-  // Tap advances to the next line (or dismisses on the last line). Lets
-  // impatient players read ahead while still showing the four-panel
-  // story to anyone who wants the cinematic.
+  // Tap on join card → dismiss and proceed
   ui.heroIntro.addEventListener("pointerdown", () => {
-    const st = _heroIntroState;
-    if (!st.hero || !st.lines?.length) {
-      dismissHeroIntro();
-      return;
-    }
-    if (st.lineIdx >= st.lines.length - 1) {
-      dismissHeroIntro();
-    } else {
-      st.lineIdx += 1;
-      showHeroIntroLine();
-    }
+    dismissHeroIntro();
   });
 }
 
