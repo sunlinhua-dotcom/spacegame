@@ -3,8 +3,8 @@
    ─────────────────────────────────────────────────────────────────
    8 distinct heroes, unlocked one-per-stage. Each has:
      - name, country, color (signature rim)
-     - base sprite (td-{name}.png) + ULT sprite (td-{name}-ult.png)
-     - weapon (wp-{name}.png) + ult weapon (wp-{name}-ult.png)
+     - base sprite (td-{name}.webp) + ULT sprite (td-{name}-ult.webp)
+     - weapon (wp-{name}.webp) + ult weapon (wp-{name}-ult.webp)
      - passive: passive(state) — auto-applied modifier
      - ultimate: ult(state, ctx) — fires when gauge fills, resets gauge
      - voice description for mimo TTS

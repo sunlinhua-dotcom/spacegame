@@ -1427,7 +1427,7 @@ canvas {
   width: 56px;
   height: 56px;
   transform: translateY(-50%);
-  background: url("../assets/generated/polish/final/boss-weakpoint-core.png?v=20260503-polish-runtime1") center / contain no-repeat;
+  background: url("../assets/generated/polish/final/boss-weakpoint-core.webp?v=20260503-polish-runtime1") center / contain no-repeat;
   opacity: 0.74;
   filter: drop-shadow(0 0 16px rgba(255, 184, 77, 0.5));
   pointer-events: none;
@@ -1898,7 +1898,7 @@ canvas {
   left: 12px;
   width: 28px;
   height: 28px;
-  background: url("../assets/generated/polish/final/rarity-reroll-prism.png?v=20260503-polish-runtime1") center / contain no-repeat;
+  background: url("../assets/generated/polish/final/rarity-reroll-prism.webp?v=20260503-polish-runtime1") center / contain no-repeat;
   opacity: 0.78;
   filter: drop-shadow(0 0 10px rgba(217, 122, 255, 0.45));
 }

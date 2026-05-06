@@ -25,8 +25,8 @@ function loadImage(src) {
 }
 
 const imageAssets = {
-  background: loadImage("assets/generated/images/earth-defense-background.png"),
-  atlas: loadImage("assets/generated/images/earth-defense-atlas-alpha.png")
+  background: loadImage("assets/generated/images/earth-defense-background.webp"),
+  atlas: loadImage("assets/generated/images/earth-defense-atlas-alpha.webp")
 };
 
 function assetReady(image) {

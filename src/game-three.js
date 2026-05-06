@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { AudioEngine } from "./audio.js?v=20260504-techrave2";
 import { firstChoices, unlockedPool, upgrades } from "./upgrades.js?v=20260503-polish-runtime1";
-import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260505-photo";
-import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260505-photo";
-import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260505-photo";
-import { PROLOGUE, EPILOGUE, getEvent, HERO_INTROS, YIN_STORY } from "./dialogue.js?v=20260505-photo";
+import { ENEMY_TYPES, planWave, pickMiniBossKind, createEnemyData } from "./enemies.js?v=20260506-webp";
+import { HEROES, activeHeroesForStage, getHero, HeroGauges, MASTER_YIN } from "./heroes.js?v=20260506-webp";
+import { getStageBalance, loadProgress, saveProgress, unlockHeroForStage } from "./balance.js?v=20260506-webp";
+import { PROLOGUE, EPILOGUE, getEvent, HERO_INTROS, YIN_STORY } from "./dialogue.js?v=20260506-webp";
 
 /* ═══════════════════════════════════════════════════════════════
    UI References
@@ -204,7 +204,7 @@ const W = 720;
 const H = 1280;
 const C = { x: W / 2, y: H * 0.48 };
 const earthRadius = 64;
-const ASSET_VERSION = "20260505-photo";
+const ASSET_VERSION = "20260506-webp";
 const qaParams = new URLSearchParams(window.location.search);
 
 // ─── Performance tier ─────────────────────────────────────────────────
@@ -379,6 +379,13 @@ loadingManager.onLoad = () => {
   _assetsLoadedCount = Math.max(_assetsLoadedCount, _assetsTotalCount);
   _emitProgress();
 };
+// onError fires when a texture fails to load. We treat it as "loaded" so a
+// missing asset doesn't permanently stall the loading promise.
+loadingManager.onError = (url) => {
+  console.warn("[loadingManager] failed:", url);
+  _assetsLoadedCount += 1;
+  _emitProgress();
+};
 function onAssetProgress(fn) { _progressListeners.add(fn); }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -471,22 +478,22 @@ function dialogueShowLine(line) {
     isYin ? MASTER_YIN.name :
     line.speaker === "boss" ? "BOSS" :
     line.speaker === "narrator" ? "" : line.speaker.toUpperCase();
-  // Portrait resolution: hero → cast/{portrait}.png; boss → current
+  // Portrait resolution: hero → cast/{portrait}.webp; boss → current
   // bossConfig's frame-00 sprite; narrator → no portrait.
   let portraitSrc = null;
   if (speakerHero) {
-    portraitSrc = `assets/cast/${speakerHero.portrait}.png?v=${ASSET_VERSION}`;
+    portraitSrc = `assets/cast/${speakerHero.portrait}.webp?v=${ASSET_VERSION}`;
   } else if (isYin) {
-    portraitSrc = `assets/cast/${MASTER_YIN.portrait}.png?v=${ASSET_VERSION}`;
+    portraitSrc = `assets/cast/${MASTER_YIN.portrait}.webp?v=${ASSET_VERSION}`;
   } else if (line.speaker === "boss") {
     const bossConfig = getBossConfig(state.stageLevel);
     if (bossConfig) {
-      // Boss frame files: boss-{NN}-{slug}-frame-00.png — pull from texture
+      // Boss frame files: boss-{NN}-{slug}-frame-00.webp — pull from texture
       // map by guessing the loaded key. game-three loads them as
       // `boss-N-frame-0` style; fallback to the polished card-portrait if
       // the frame texture key isn't found.
       const idx = String(bossConfig.level).padStart(2, "0");
-      portraitSrc = `assets/generated/bosses/frames/boss-${idx}-${bossConfig.slug || ""}-frame-00.png?v=${ASSET_VERSION}`;
+      portraitSrc = `assets/generated/bosses/frames/boss-${idx}-${bossConfig.slug || ""}-frame-00.webp?v=${ASSET_VERSION}`;
     }
   }
   if (ui.dialogueSpeaker) ui.dialogueSpeaker.textContent = speakerLabel;
@@ -581,8 +588,8 @@ if (ui.dialogueBox) {
 
 /* ─────────────── Prologue (comic pages) ─────────────── */
 const PROLOGUE_PAGES = [
-  "assets/story/prologue-1.png",
-  "assets/story/prologue-2.png",
+  "assets/story/prologue-1.webp",
+  "assets/story/prologue-2.webp",
 ];
 const _prologueState = { pages: [], idx: 0, onDone: null, done: false };
 
@@ -770,7 +777,7 @@ function playHeroIntro(heroId, onDone = null) {
   const comicOverlay = document.getElementById("heroComic");
   const comicImg = document.getElementById("heroComicImg");
   if (comicOverlay && comicImg) {
-    comicImg.src = `assets/cast/${heroId}-comic.png?v=${ASSET_VERSION}`;
+    comicImg.src = `assets/cast/${heroId}-comic.webp?v=${ASSET_VERSION}`;
     comicOverlay.hidden = false;
   } else {
     // No comic overlay → skip to join card
@@ -789,7 +796,7 @@ function showHeroJoinCard() {
   const r = (hero.color >> 16) & 0xff, g = (hero.color >> 8) & 0xff, b = hero.color & 0xff;
   ui.heroIntro.style.setProperty("--hero-tint", `rgba(${r}, ${g}, ${b}, 0.85)`);
   if (ui.heroIntroImg) {
-    ui.heroIntroImg.src = `assets/cast/${hero.actionPortrait || hero.portrait}.png?v=${ASSET_VERSION}`;
+    ui.heroIntroImg.src = `assets/cast/${hero.actionPortrait || hero.portrait}.webp?v=${ASSET_VERSION}`;
   }
   if (ui.heroIntroEyebrow) {
     ui.heroIntroEyebrow.textContent = hero.id === "bright" ? "指挥官出击" : "新队员加入";
@@ -850,7 +857,7 @@ function playBossReveal(bossConfig, onDone = null) {
   const idx = String(bossConfig.level).padStart(2, "0");
   const slug = bossConfig.slug || "molten-asteroid";
   if (ui.bossRevealImg) {
-    ui.bossRevealImg.src = `assets/generated/bosses/frames/boss-${idx}-${slug}-frame-00.png?v=${ASSET_VERSION}`;
+    ui.bossRevealImg.src = `assets/generated/bosses/frames/boss-${idx}-${slug}-frame-00.webp?v=${ASSET_VERSION}`;
   }
   if (ui.bossRevealName) ui.bossRevealName.textContent = bossConfig.name;
   if (ui.bossRevealAbility) ui.bossRevealAbility.textContent = bossConfig.ability || "";
@@ -895,10 +902,10 @@ function showYinUnlockOverlay() {
   // Set comic image with fallback to action portrait
   const yinImg = document.getElementById("yinIntroImg");
   if (yinImg) {
-    yinImg.src = `assets/cast/yin-comic.png?v=${ASSET_VERSION}`;
+    yinImg.src = `assets/cast/yin-comic.webp?v=${ASSET_VERSION}`;
     yinImg.onerror = () => {
       yinImg.onerror = null;
-      yinImg.src = `assets/cast/${MASTER_YIN.actionPortrait || MASTER_YIN.portrait}.png?v=${ASSET_VERSION}`;
+      yinImg.src = `assets/cast/${MASTER_YIN.actionPortrait || MASTER_YIN.portrait}.webp?v=${ASSET_VERSION}`;
     };
   }
   ui.yinIntro.hidden = false;
@@ -1402,7 +1409,7 @@ function playUltCinematic(heroId) {
   const colorRgba = (a) => `rgba(${r}, ${g}, ${b}, ${a})`;
   ui.ultCinematic.style.setProperty("--ult-color", colorRgba(0.92));
   if (ui.ultCinematicPortrait) {
-    ui.ultCinematicPortrait.src = `assets/cast/${hero.actionPortrait || hero.portrait}.png?v=${ASSET_VERSION}`;
+    ui.ultCinematicPortrait.src = `assets/cast/${hero.actionPortrait || hero.portrait}.webp?v=${ASSET_VERSION}`;
   }
   if (ui.ultCinematicName) ui.ultCinematicName.textContent = hero.ult.name;
   if (ui.ultCinematicHero) ui.ultCinematicHero.textContent = hero.name;
@@ -1472,7 +1479,18 @@ renderer.setClearColor(0x02070b, 1);
    Textures
    ═══════════════════════════════════════════════════════════════ */
 function loadTexture(key, src) {
-  const texture = loader.load(`${src}?v=${ASSET_VERSION}`);
+  const texture = loader.load(
+    `${src}?v=${ASSET_VERSION}`,
+    undefined, // onLoad — TextureLoader sets the data automatically
+    undefined, // onProgress
+    (err) => {
+      // 404 / network errors: log a warning but don't block the loading
+      // manager. Three.js's LoadingManager already calls itemEnd on error,
+      // but some assets reference legacy paths that no longer exist
+      // (e.g. earth-defense-background) — keep the game playable anyway.
+      console.warn(`[asset] failed to load ${src}`, err);
+    },
+  );
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
@@ -1603,8 +1621,10 @@ const bossConfigs = [
   },
 ];
 
-loadTexture("background", "assets/generated/images/earth-defense-background.png");
-loadTexture("earth", `${individualAssetBase}/earth-core.png`);
+// Note: earth-defense-background.png/webp doesn't exist in assets — legacy
+// reference from the old 2D version. Three.js LoadingManager onLoad never
+// fires if any texture fails, so we skip it here.
+loadTexture("earth", `${individualAssetBase}/earth-core.webp`);
 
 // 嘲讽 — fly-out sushi sprites. Renders eight food emoji into 128×128
 // canvases on startup; each becomes a Three.js texture we can reuse
@@ -1636,10 +1656,10 @@ for (let i = 0; i < SUSHI_EMOJI.length; i++) {
 // projectiles. Loaded for all 8 even though stage N only uses N — preload
 // keeps the unlock animation snappy when a new pilot joins the squad.
 for (const h of HEROES) {
-  loadTexture(`td-${h.id}`, `assets/cast/td-${h.id}.png`);
-  loadTexture(`td-${h.id}-ult`, `assets/cast/td-${h.id}-ult.png`);
-  loadTexture(`wp-${h.id}`, `assets/weapons/wp-${h.id}.png`);
-  loadTexture(`wp-${h.id}-ult`, `assets/weapons/wp-${h.id}-ult.png`);
+  loadTexture(`td-${h.id}`, `assets/cast/td-${h.id}.webp`);
+  loadTexture(`td-${h.id}-ult`, `assets/cast/td-${h.id}-ult.webp`);
+  loadTexture(`wp-${h.id}`, `assets/weapons/wp-${h.id}.webp`);
+  loadTexture(`wp-${h.id}-ult`, `assets/weapons/wp-${h.id}-ult.webp`);
 }
 
 // Portrait <img> elements used in DialogueBox + ULT cinematic. Use the
@@ -1656,33 +1676,33 @@ function preloadHtmlImage(src) {
   portraitPreload.push(img);
 }
 for (const h of HEROES) {
-  preloadHtmlImage(`assets/cast/${h.portrait}.png`);
+  preloadHtmlImage(`assets/cast/${h.portrait}.webp`);
   // BRIGHT also has an alt cool-side portrait used in some dialogue moments.
-  if (h.portraitCool) preloadHtmlImage(`assets/cast/${h.portraitCool}.png`);
+  if (h.portraitCool) preloadHtmlImage(`assets/cast/${h.portraitCool}.webp`);
   // Action portrait used in the ULT cinematic card.
-  if (h.actionPortrait) preloadHtmlImage(`assets/cast/${h.actionPortrait}.png`);
+  if (h.actionPortrait) preloadHtmlImage(`assets/cast/${h.actionPortrait}.webp`);
 }
-for (let i = 0; i < 4; i++) loadTexture(`topdownPlane-${i}`, `${individualAssetBase}/topdown-plane-${i}.png`);
-loadTexture("alienSaucer", `${individualAssetBase}/alien-saucer.png`);
-loadTexture("alienMeteor", `${individualAssetBase}/alien-meteor.png`);
-loadTexture("playerBullet", `${individualAssetBase}/player-bullet.png`);
-loadTexture("enemyBolt", `${individualAssetBase}/enemy-bolt.png`);
-loadTexture("explosionCore", `${individualAssetBase}/explosion-core.png`);
-loadTexture("barrageProjectile", `${individualAssetBase}/barrage-projectile.png`);
-loadTexture("starCircle", "assets/textures/star-circle.png");
-loadTexture("charPlaneBlue", `${characterAssetBase}/interceptor-blue.png`);
-loadTexture("charPlaneGold", `${characterAssetBase}/interceptor-gold.png`);
-loadTexture("charPlaneLaser", `${characterAssetBase}/interceptor-laser.png`);
-loadTexture("charEnemyMeteor", `${characterAssetBase}/enemy-meteor-crab.png`);
-loadTexture("charEnemyBolt", `${characterAssetBase}/enemy-bolt-needle.png`);
-loadTexture("charEnemySaucer", `${characterAssetBase}/enemy-saucer-hunter.png`);
+for (let i = 0; i < 4; i++) loadTexture(`topdownPlane-${i}`, `${individualAssetBase}/topdown-plane-${i}.webp`);
+loadTexture("alienSaucer", `${individualAssetBase}/alien-saucer.webp`);
+loadTexture("alienMeteor", `${individualAssetBase}/alien-meteor.webp`);
+loadTexture("playerBullet", `${individualAssetBase}/player-bullet.webp`);
+loadTexture("enemyBolt", `${individualAssetBase}/enemy-bolt.webp`);
+loadTexture("explosionCore", `${individualAssetBase}/explosion-core.webp`);
+loadTexture("barrageProjectile", `${individualAssetBase}/barrage-projectile.webp`);
+loadTexture("starCircle", "assets/textures/star-circle.webp");
+loadTexture("charPlaneBlue", `${characterAssetBase}/interceptor-blue.webp`);
+loadTexture("charPlaneGold", `${characterAssetBase}/interceptor-gold.webp`);
+loadTexture("charPlaneLaser", `${characterAssetBase}/interceptor-laser.webp`);
+loadTexture("charEnemyMeteor", `${characterAssetBase}/enemy-meteor-crab.webp`);
+loadTexture("charEnemyBolt", `${characterAssetBase}/enemy-bolt-needle.webp`);
+loadTexture("charEnemySaucer", `${characterAssetBase}/enemy-saucer-hunter.webp`);
 for (const [key, file] of Object.entries(polishTextureFiles)) {
-  loadTexture(key, `${polishAssetBase}/${file}.png`);
+  loadTexture(key, `${polishAssetBase}/${file}.webp`);
 }
 for (const boss of bossConfigs) {
   const id = String(boss.level).padStart(2, "0");
   for (let frame = 0; frame < 4; frame++) {
-    loadTexture(`boss-${boss.level}-${frame}`, `${bossAssetBase}/boss-${id}-${boss.slug}-frame-${String(frame).padStart(2, "0")}.png`);
+    loadTexture(`boss-${boss.level}-${frame}`, `${bossAssetBase}/boss-${id}-${boss.slug}-frame-${String(frame).padStart(2, "0")}.webp`);
   }
 }
 
@@ -1864,7 +1884,7 @@ function currentStageTheme() {
 }
 
 function polishAssetUrl(slug) {
-  return `${polishAssetBase}/${slug}.png?v=${ASSET_VERSION}`;
+  return `${polishAssetBase}/${slug}.webp?v=${ASSET_VERSION}`;
 }
 
 function polishTextureKeyFromSlug(slug) {
@@ -2209,7 +2229,7 @@ function updateEnemyVisual(enemy, dt) {
    Star Field & Barrage Layer
    ═══════════════════════════════════════════════════════════════ */
 // Multi-layer star field with parallax, HSL color variety (bobbyroe pattern),
-// circle.png star texture for crisp round points, twinkle shader on near layer,
+// circle.webp star texture for crisp round points, twinkle shader on near layer,
 // nebula tinting, and occasional shooting stars.
 const _twinkleMaterials = [];
 const _shootingStars = [];
@@ -3188,7 +3208,7 @@ function renderHeroRoster() {
       tryFireHeroUlt(hero.id);
     });
     const img = document.createElement("img");
-    img.src = `assets/cast/${hero.portrait}.png?v=${ASSET_VERSION}`;
+    img.src = `assets/cast/${hero.portrait}.webp?v=${ASSET_VERSION}`;
     img.className = "hero-roster-avatar";
     img.alt = hero.name;
     // SVG ring — clockwise fill from top (stroke-dashoffset animation)
@@ -3253,7 +3273,7 @@ function updateHud() {
 function updateStageThemeHud() {
   if (!ui.stageThemeIcon || !ui.stageThemeText) return;
   const theme = currentStageTheme();
-  const src = `${polishAssetBase}/${polishTextureFiles[theme.key]}.png?v=${ASSET_VERSION}`;
+  const src = `${polishAssetBase}/${polishTextureFiles[theme.key]}.webp?v=${ASSET_VERSION}`;
   if (ui.stageThemeIcon.getAttribute("src") !== src) ui.stageThemeIcon.setAttribute("src", src);
   setHT(ui.stageThemeText, "stageThemeText", theme.label);
 }
@@ -3424,12 +3444,12 @@ function iconSrc(option) {
   const polishIcon = polishIconByUpgradeName[option.name];
   if (polishIcon) return polishAssetUrl(polishIcon);
   const iconName = iconMap[option.category] || "special-icon";
-  return `${individualAssetBase}/${iconName}.png?v=${ASSET_VERSION}`;
+  return `${individualAssetBase}/${iconName}.webp?v=${ASSET_VERSION}`;
 }
 
 function upgradeVfxSrc(option) {
   const vfxName = upgradeVfxMap[option.category] || "card-reveal";
-  return `/assets/generated/upgrades/final/${vfxName}.png?v=${ASSET_VERSION}`;
+  return `/assets/generated/upgrades/final/${vfxName}.webp?v=${ASSET_VERSION}`;
 }
 
 function renderLevelPanel() {
@@ -4918,7 +4938,7 @@ function prefillSwarm() {
 // The old createEnemyVisual chooses one of three layered Three.js setups
 // based on enemy.kind ("meteor"/"bolt"/"saucer"). We keep that fallback for
 // shape variety + per-archetype trail color, but override the central sprite
-// with the new td-{bestiaryKind}.png so the player sees the full bestiary.
+// with the new td-{bestiaryKind}.webp so the player sees the full bestiary.
 // Lean toward "meteor" archetype on stage-1 fodder so the iconic golden
 // flame streak that defined the previous build stays the dominant visual.
 // Saucer / bolt are reserved for thematic special types (energy, fast).
@@ -5813,8 +5833,8 @@ function updateEnemies(realDt) {
       updateLineXY(e.trail, tailX, tailY, e.x, e.y, 2.6);
       e.trail.material.opacity = 0.22 + Math.sin(state.time * 5 + e.wobble) * 0.08 + (e.bossCharging ? 0.2 : 0);
       // Boss ultimates fire at 70% / 40% / 15% HP thresholds (one-shot per
-      // threshold per boss instance). Each boss has a unique impl + color.
-      const hpRatio = e.hp / e.maxHp;
+      // threshold per boss instance). hpRatio reuses the value computed
+      // above for phase-transition checks.
       e.bossUltsFired = e.bossUltsFired || 0;
       const thresholds = [0.7, 0.4, 0.15];
       while (e.bossUltsFired < thresholds.length && hpRatio < thresholds[e.bossUltsFired]) {
