@@ -1028,357 +1028,384 @@ function playUltSceneEffect(hero) {
   setTimeout(() => audio.boom(), 880);
 }
 
-// Lia · 巨陨炎涌 — 4 concentric flame rings expanding outward from Earth +
-// embers raining from above. Burning crimson/orange palette.
+// ───── Helpers for full-screen VFX ─────
+// Game world is 0..W (720) x, 0..H (1280) y. These give full-screen coverage.
+function randScreenX(margin = 30) { return rand(margin, W - margin); }
+function randScreenY(margin = 30) { return rand(margin, H - margin); }
+
+// Lia · 巨陨炎涌 — METEOR RAIN: flaming meteors streak from sky to ground
+// across the entire screen, leaving fire impacts everywhere. + screen-wide
+// fire wave from top to bottom.
 function playUlt_lia(hero, heroDef) {
   const tint = hero.color;
-  // 4 large flame shockwaves expanding outward from Earth
-  for (let i = 0; i < 4; i++) {
+  // 18 meteors raining diagonally across the entire screen
+  for (let i = 0; i < 18; i++) {
     setTimeout(() => {
-      const baseSize = 220 + i * 120;
-      addPolishEffect("polishBossRageAura", C.x, C.y, baseSize, {
-        life: 1.6, grow: 1.5, spin: 1.0, opacity: 0.88, z: 8.6, color: tint,
+      const targetX = randScreenX(40);
+      const targetY = randScreenY(80);
+      const startX = targetX - 220;     // streaks come from upper-left
+      const startY = targetY - 380;
+      // Bright orange meteor trail beam
+      createEnergyBeam(Math.atan2(targetY - startY, targetX - startX), {
+        from: { x: startX, y: startY },
+        to: { x: targetX, y: targetY },
+        life: 0.45,
+        color: 0xff7028,
+        opacity: 0.95,
+        wide: true,
       });
-      addPolishEffect("polishDangerWarningRing", C.x, C.y, baseSize, {
-        life: 1.2, grow: 1.3, spin: -1.2, opacity: 0.7, z: 8.5, color: 0xff5a18,
+      // Impact: fire ring + explosion + ember flash
+      addPolishEffect("polishBossRageAura", targetX, targetY, 180, {
+        life: 1.0, grow: 1.6, spin: rand(-2, 2), opacity: 0.92, z: 8.6, color: tint,
       });
-    }, i * 220);
+      addExplosion(targetX, targetY, 1.6 + Math.random() * 1.0);
+      spawnInterceptFlash(targetX, targetY, 1.5);
+      if (i % 3 === 0) triggerScreenShake(0.3, 6);
+    }, i * 70);
   }
-  // 60 ember particles raining from sky + earth (sustained 1.5s)
-  for (let i = 0; i < 60; i++) {
+  // 80 ember flashes scattered across full screen
+  for (let i = 0; i < 80; i++) {
     setTimeout(() => {
-      const a = rand(0, Math.PI * 2);
-      const dist = rand(120, 460);
-      const px = C.x + Math.cos(a) * dist;
-      const py = C.y + Math.sin(a) * dist;
-      spawnInterceptFlash(px, py, 0.7 + Math.random() * 0.9);
-      if (i % 4 === 0) addExplosion(px, py, 0.5);
-    }, i * 25);
+      spawnInterceptFlash(randScreenX(), randScreenY(), 0.6 + Math.random() * 0.8);
+    }, i * 18);
   }
-  // Final molten core blast at earth
+  // Final apocalyptic full-screen fire wave
   setTimeout(() => {
-    addExplosion(C.x, C.y, 5.2);
-    addPolishEffect("polishBossRageAura", C.x, C.y, 540, {
-      life: 1.3, grow: 1.6, spin: 2.4, opacity: 1.0, z: 9.0, color: tint,
+    spawnUltScreenFlash(0xff5018);
+    addPolishEffect("polishBossRageAura", W / 2, H / 2, 1400, {
+      life: 1.4, grow: 1.5, spin: 2.4, opacity: 0.85, z: 9.0, color: tint,
     });
-    triggerScreenShake(0.95, 22);
-  }, 880);
+    triggerScreenShake(1.0, 22);
+  }, 1300);
 }
 
-// Devi · 绿潮蔓延 — 12 vine beams burst outward from Earth in radial pattern,
-// each "branching" with smaller secondary beams. Leaves (green flashes)
-// scatter as the vines grow.
+// Devi · 绿潮蔓延 — VINES FROM SCREEN EDGES: thick vines grow inward from
+// all four edges of the screen, criss-crossing the playfield. Leaves
+// scatter across the entire screen.
 function playUlt_devi(hero) {
-  const tint = 0x6bff5e; // lush green even though hero color is purple
-  // 12 primary vine beams from Earth in all directions
-  const branches = 12;
-  for (let i = 0; i < branches; i++) {
-    const angle = (Math.PI * 2 * i) / branches;
-    const reach = rand(380, 560);
-    createEnergyBeam(angle, {
-      from: { x: C.x, y: C.y },
-      to: { x: C.x + Math.cos(angle) * reach, y: C.y + Math.sin(angle) * reach },
-      life: 1.4,
-      color: tint,
-      opacity: 0.95,
-      wide: true,
-    });
-    // Secondary branches at 0.3s — split off the primary at 60% length
+  const tint = 0x6bff5e;
+  // Vines from each edge — 6 from top, 6 from bottom, 4 from each side
+  const vineSpawns = [];
+  for (let i = 0; i < 6; i++) vineSpawns.push({ from: { x: rand(40, W - 40), y: -20 }, dirY: 1 });
+  for (let i = 0; i < 6; i++) vineSpawns.push({ from: { x: rand(40, W - 40), y: H + 20 }, dirY: -1 });
+  for (let i = 0; i < 4; i++) vineSpawns.push({ from: { x: -20, y: rand(60, H - 60) }, dirY: 0, dirX: 1 });
+  for (let i = 0; i < 4; i++) vineSpawns.push({ from: { x: W + 20, y: rand(60, H - 60) }, dirY: 0, dirX: -1 });
+  vineSpawns.forEach((v, i) => {
     setTimeout(() => {
-      const branchAngleA = angle + 0.45;
-      const branchAngleB = angle - 0.45;
-      const splitPt = { x: C.x + Math.cos(angle) * reach * 0.6, y: C.y + Math.sin(angle) * reach * 0.6 };
-      for (const ba of [branchAngleA, branchAngleB]) {
-        createEnergyBeam(ba, {
-          from: splitPt,
-          to: { x: splitPt.x + Math.cos(ba) * 220, y: splitPt.y + Math.sin(ba) * 220 },
-          life: 1.0,
-          color: 0xa6ff7c,
-          opacity: 0.85,
-          wide: false,
-        });
-      }
-    }, 280 + i * 18);
-  }
-  // 50 leaf-scatter green flashes radiating outward over 1.5s
-  for (let i = 0; i < 50; i++) {
-    setTimeout(() => {
-      const a = rand(0, Math.PI * 2);
-      const dist = rand(80, 440);
-      const px = C.x + Math.cos(a) * dist;
-      const py = C.y + Math.sin(a) * dist;
-      spawnInterceptFlash(px, py, 0.6 + Math.random() * 0.5);
-    }, i * 28);
-  }
-  // Pulsing green growth ring — visualizes the spreading bloom
-  for (let i = 0; i < 3; i++) {
-    setTimeout(() => {
-      addPolishEffect("polishEarthRepairNanites", C.x, C.y, 220 + i * 160, {
-        life: 1.4, grow: 1.4, spin: 0.6, opacity: 0.85, z: 8.5, color: tint,
+      const length = rand(550, 850);
+      const angle = v.dirY !== 0
+        ? Math.PI / 2 * v.dirY + rand(-0.3, 0.3)   // mostly vertical
+        : (v.dirX > 0 ? 0 : Math.PI) + rand(-0.3, 0.3); // horizontal
+      const ex = v.from.x + Math.cos(angle) * length;
+      const ey = v.from.y + Math.sin(angle) * length;
+      createEnergyBeam(angle, {
+        from: v.from,
+        to: { x: ex, y: ey },
+        life: 1.4,
+        color: tint,
+        opacity: 0.9,
+        wide: true,
       });
-    }, i * 240);
+      // Branch off mid-vine
+      setTimeout(() => {
+        const midX = v.from.x + Math.cos(angle) * length * 0.55;
+        const midY = v.from.y + Math.sin(angle) * length * 0.55;
+        for (const da of [0.65, -0.65]) {
+          const ba = angle + da;
+          createEnergyBeam(ba, {
+            from: { x: midX, y: midY },
+            to: { x: midX + Math.cos(ba) * 220, y: midY + Math.sin(ba) * 220 },
+            life: 1.0, color: 0xa6ff7c, opacity: 0.85, wide: false,
+          });
+        }
+      }, 220);
+    }, i * 50);
+  });
+  // 80 leaf flashes everywhere on screen
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      spawnInterceptFlash(randScreenX(), randScreenY(), 0.6 + Math.random() * 0.7);
+    }, i * 18);
+  }
+  // Bloom rings at random screen positions (not just earth)
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => {
+      addPolishEffect("polishEarthRepairNanites", randScreenX(60), randScreenY(60), 220 + Math.random() * 180, {
+        life: 1.4, grow: 1.4, spin: rand(-1, 1), opacity: 0.85, z: 8.5, color: tint,
+      });
+    }, i * 180);
   }
   triggerScreenShake(0.5, 12);
 }
 
-// Rin · 极冰穿刺 — 3 thick vertical ice laser pillars sweep across screen.
-// Each pillar leaves frost particles in its wake.
+// Rin · 极冰穿刺 — 7 vertical ice pillars across the FULL screen width,
+// staggered so the whole screen freezes column by column.
 function playUlt_rin(hero) {
   const tint = hero.color;
-  // 3 vertical laser pillars at left, center, right with stagger
-  const xPositions = [C.x - 240, C.x, C.x + 240];
-  for (let i = 0; i < xPositions.length; i++) {
+  // 7 vertical pillars spread evenly across the screen
+  const pillars = 7;
+  for (let i = 0; i < pillars; i++) {
     setTimeout(() => {
-      const lx = xPositions[i];
-      // Long vertical beam
+      const lx = (W / (pillars + 1)) * (i + 1) + rand(-20, 20);
+      // Vertical full-height beam (top of screen to bottom)
       createEnergyBeam(Math.PI / 2, {
-        from: { x: lx, y: C.y - 720 },
-        to: { x: lx, y: C.y + 720 },
-        life: 1.0,
-        color: tint,
-        opacity: 1.0,
-        wide: true,
+        from: { x: lx, y: 0 },
+        to: { x: lx, y: H },
+        life: 1.0, color: tint, opacity: 1.0, wide: true,
       });
-      // Frost shockwave at the pillar's anchor point (Earth-level)
-      addPolishEffect("polishFreezeBomb", lx, C.y, 220, {
-        life: 1.2, grow: 0.9, spin: 0.8, opacity: 0.95, z: 8.7, color: tint,
-      });
-      // Ice splinter particles along the beam path
-      for (let k = 0; k < 14; k++) {
-        const py = C.y - 600 + k * 90;
-        spawnInterceptFlash(lx + rand(-30, 30), py, 0.7 + Math.random() * 0.5);
+      // Frost shockwaves along the pillar height (top, middle, bottom)
+      for (const py of [H * 0.2, H * 0.5, H * 0.8]) {
+        addPolishEffect("polishFreezeBomb", lx, py, 200, {
+          life: 1.0, grow: 0.9, spin: 0.8, opacity: 0.9, z: 8.7, color: tint,
+        });
+      }
+      // Ice splinter particles all the way down
+      for (let k = 0; k < 18; k++) {
+        spawnInterceptFlash(lx + rand(-30, 30), (H / 18) * k + rand(-20, 20), 0.7 + Math.random() * 0.5);
       }
       triggerScreenShake(0.4, 10);
-    }, i * 200);
+    }, i * 100);
   }
+  // Frost particles scattered across full screen
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => spawnInterceptFlash(randScreenX(), randScreenY(), 0.7), i * 22);
+  }
+  // Final full-screen frost burst
+  setTimeout(() => {
+    spawnUltScreenFlash(0x88e0ff);
+    addPolishEffect("polishDangerWarningRing", W / 2, H / 2, 1400, {
+      life: 1.0, grow: 1.4, spin: 1.5, opacity: 0.7, z: 9.0, color: tint,
+    });
+  }, 900);
 }
 
-// Yue · 月相幻镜 — 8 ghostly mirror clones flicker around Earth in a circle,
-// each pulsing red moonlight. Crimson rage aura between them.
+// Yue · 月相幻镜 — 12 mirror clones flicker at RANDOM positions across the
+// whole screen (not orbiting Earth). Crimson moonlight ripples follow.
 function playUlt_yue(hero) {
   const tint = hero.color;
-  const clones = 8;
+  const clones = 12;
   for (let i = 0; i < clones; i++) {
-    const angle = (Math.PI * 2 * i) / clones;
-    const r = 240;
-    const px = C.x + Math.cos(angle) * r;
-    const py = C.y + Math.sin(angle) * r;
+    const px = randScreenX(60);
+    const py = randScreenY(80);
     setTimeout(() => {
-      // Mirror shard explosion
-      addPolishEffect("polishRarityRerollPrism", px, py, 110, {
-        life: 1.2, grow: 1.1, spin: 4.0, opacity: 0.95, z: 8.6, color: tint,
+      // Mirror shard flash
+      addPolishEffect("polishRarityRerollPrism", px, py, 140, {
+        life: 1.2, grow: 1.2, spin: 4.0, opacity: 0.95, z: 8.6, color: tint,
       });
-      addExplosion(px, py, 1.4);
-      spawnInterceptFlash(px, py, 1.6);
-    }, i * 90);
-  }
-  // 3 expanding red moon rings from Earth
-  for (let i = 0; i < 3; i++) {
-    setTimeout(() => {
-      addPolishEffect("polishDangerWarningRing", C.x, C.y, 280 + i * 120, {
-        life: 1.4, grow: 1.0, spin: -0.8, opacity: 0.9, z: 8.4, color: tint,
+      addExplosion(px, py, 1.6);
+      spawnInterceptFlash(px, py, 1.8);
+      // Each clone emits a moon ring outward
+      addPolishEffect("polishDangerWarningRing", px, py, 220, {
+        life: 1.2, grow: 1.4, spin: -1.2, opacity: 0.85, z: 8.5, color: tint,
       });
-    }, i * 180);
+    }, i * 70);
   }
-  triggerScreenShake(0.6, 14);
+  // 50 moonlight sparkles across screen
+  for (let i = 0; i < 50; i++) {
+    setTimeout(() => spawnInterceptFlash(randScreenX(), randScreenY(), 0.8), i * 22);
+  }
+  // Final full-screen crimson flash
+  setTimeout(() => {
+    spawnUltScreenFlash(0xff3850);
+    addPolishEffect("polishBossRageAura", W / 2, H / 2, 1300, {
+      life: 1.0, grow: 0.7, spin: -2.0, opacity: 0.7, z: 9.0, color: tint,
+    });
+    triggerScreenShake(0.8, 18);
+  }, 1100);
 }
 
-// Ade · 黄金圣铠 — Massive golden shield bubble surrounds all defenders.
-// 16 gold shimmer particles rotate around the bubble.
+// Ade · 黄金圣铠 — Gold rings expand from MULTIPLE points across the screen,
+// gold sparkles shower the entire field. Layered protective shockwaves.
 function playUlt_ade(hero) {
   const tint = hero.color;
-  // Big shield-overcharge bubble centered on Earth
-  addPolishEffect("polishShieldOvercharge", C.x, C.y, 580, {
-    life: 1.8, grow: 0.4, spin: 0.5, opacity: 0.95, z: 8.8, color: tint,
-  });
-  addPolishEffect("polishShieldOvercharge", C.x, C.y, 460, {
-    life: 1.6, grow: 0.5, spin: -0.5, opacity: 0.85, z: 8.7, color: 0xfff0a0,
-  });
-  // Gold ring expanding from earth
-  for (let i = 0; i < 4; i++) {
+  // 6 gold ring shockwaves at random screen positions
+  for (let i = 0; i < 6; i++) {
     setTimeout(() => {
-      addPolishEffect("polishDangerWarningRing", C.x, C.y, 260 + i * 110, {
-        life: 1.4, grow: 1.2, spin: 1.4, opacity: 0.92, z: 8.6, color: tint,
+      const px = randScreenX(60), py = randScreenY(80);
+      addPolishEffect("polishShieldOvercharge", px, py, 380, {
+        life: 1.4, grow: 0.6, spin: 1.0, opacity: 0.92, z: 8.7, color: tint,
       });
-    }, i * 180);
+      addPolishEffect("polishDangerWarningRing", px, py, 280, {
+        life: 1.2, grow: 1.4, spin: 2.0, opacity: 0.9, z: 8.6, color: 0xfff0a0,
+      });
+    }, i * 130);
   }
-  // 16 gold sparkles orbiting the shield perimeter
-  for (let i = 0; i < 16; i++) {
-    setTimeout(() => {
-      const a = (Math.PI * 2 * i) / 16;
-      const r = 320;
-      spawnInterceptFlash(C.x + Math.cos(a) * r, C.y + Math.sin(a) * r, 1.4);
-    }, i * 50);
+  // 60 gold sparkles across full screen
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => spawnInterceptFlash(randScreenX(), randScreenY(), 1.0 + Math.random() * 0.7), i * 22);
   }
-  // Per-defender shield mini-bubble
+  // Per-defender shield mini-bubble (still useful)
   for (const def of state.defenders) {
     addPolishEffect("polishShieldOvercharge", def.x, def.y, def.size * 3.4, {
       life: 1.4, grow: 0.6, spin: 1.0, opacity: 0.85, z: 6.0, color: tint,
     });
   }
+  // Final full-screen golden cathedral light
+  setTimeout(() => {
+    spawnUltScreenFlash(0xffcc44);
+    addPolishEffect("polishShieldOvercharge", W / 2, H / 2, 1500, {
+      life: 1.2, grow: 0.4, spin: 0.5, opacity: 0.65, z: 9.0, color: tint,
+    });
+  }, 1100);
   triggerScreenShake(0.4, 8);
 }
 
-// Sakura · 樱花脉冲 — Forking lightning bolts from sky + 12 zig-zag chains
-// jumping between random points. The user asked specifically for thick
-// lightning, so beams are wide + we layer multiple branches.
+// Sakura · 樱花脉冲 — Lightning storm: thick bolts strike DOWN from sky to
+// random ground points across the entire screen. Forking + pink halos.
 function playUlt_sakura(hero) {
   const tint = hero.color;
-  // 5 thick downward lightning bolts from above into Earth
-  for (let i = 0; i < 5; i++) {
+  // 9 thick downward lightning bolts at random X across full width
+  for (let i = 0; i < 9; i++) {
     setTimeout(() => {
-      const startX = C.x + rand(-360, 360);
-      // Main bolt
+      const strikeX = randScreenX(50);
+      const strikeY = randScreenY(150);
+      // Main white bolt from top of screen
       createEnergyBeam(Math.PI / 2, {
-        from: { x: startX, y: C.y - 720 },
-        to: { x: startX + rand(-60, 60), y: C.y + 100 },
-        life: 0.45,
-        color: 0xffffff,
-        opacity: 1.0,
-        wide: true,
+        from: { x: strikeX, y: -40 },
+        to: { x: strikeX + rand(-40, 40), y: strikeY },
+        life: 0.45, color: 0xffffff, opacity: 1.0, wide: true,
       });
-      // Pink halo bolt parallel to it
+      // Pink halo bolt parallel
       createEnergyBeam(Math.PI / 2, {
-        from: { x: startX + rand(-12, 12), y: C.y - 720 },
-        to: { x: startX + rand(-80, 80), y: C.y + 80 },
-        life: 0.55,
-        color: tint,
-        opacity: 0.9,
-        wide: true,
+        from: { x: strikeX + rand(-12, 12), y: -40 },
+        to: { x: strikeX + rand(-60, 60), y: strikeY - 20 },
+        life: 0.55, color: tint, opacity: 0.9, wide: true,
       });
-      // Forking branches mid-bolt
-      const forkY = C.y - rand(120, 280);
-      const forkX = startX + rand(-30, 30);
-      const forkAngleA = -Math.PI / 2 + rand(-1.0, -0.4);
-      const forkAngleB = -Math.PI / 2 + rand(0.4, 1.0);
-      for (const fa of [forkAngleA, forkAngleB]) {
+      // Forks mid-bolt
+      const forkY = strikeY - rand(140, 240);
+      const forkX = strikeX + rand(-30, 30);
+      for (const fa of [-Math.PI / 2 + rand(-1.0, -0.4), -Math.PI / 2 + rand(0.4, 1.0)]) {
         const len = rand(160, 240);
         createEnergyBeam(fa, {
           from: { x: forkX, y: forkY },
           to: { x: forkX + Math.cos(fa) * len, y: forkY + Math.sin(fa) * len },
-          life: 0.35,
-          color: 0xffffff,
-          opacity: 0.85,
-          wide: false,
+          life: 0.35, color: 0xffffff, opacity: 0.85, wide: false,
         });
       }
-      addPolishEffect("polishStageIonStorm", startX, C.y + 60, 200, {
-        life: 0.8, grow: 1.2, spin: 0, opacity: 0.92, z: 8.7, color: tint,
+      // Ground impact
+      addPolishEffect("polishStageIonStorm", strikeX, strikeY, 220, {
+        life: 0.8, grow: 1.3, spin: 0, opacity: 0.92, z: 8.7, color: tint,
       });
-      addExplosion(startX, C.y + 60, 1.3);
+      addExplosion(strikeX, strikeY, 1.6);
       triggerScreenShake(0.5, 10);
-    }, i * 130);
+    }, i * 110);
   }
-  // 12 chain-jump zig-zag bolts between random screen points
-  for (let i = 0; i < 12; i++) {
+  // 18 chain-jump zig-zag bolts between random screen points
+  for (let i = 0; i < 18; i++) {
     setTimeout(() => {
-      const ax = C.x + rand(-380, 380), ay = C.y + rand(-560, 560);
-      const bx = C.x + rand(-380, 380), by = C.y + rand(-560, 560);
+      const ax = randScreenX(), ay = randScreenY();
+      const bx = randScreenX(), by = randScreenY();
       createEnergyBeam(Math.atan2(by - ay, bx - ax), {
-        from: { x: ax, y: ay },
-        to: { x: bx, y: by },
-        life: 0.32,
-        color: 0xffffff,
-        opacity: 0.95,
-        wide: false,
+        from: { x: ax, y: ay }, to: { x: bx, y: by },
+        life: 0.32, color: 0xffffff, opacity: 0.95, wide: false,
       });
-      spawnInterceptFlash(bx, by, 1.2);
-    }, 200 + i * 60);
+      spawnInterceptFlash(bx, by, 1.4);
+    }, 200 + i * 45);
   }
+  // Final pink thunder flash
+  setTimeout(() => spawnUltScreenFlash(tint), 1400);
 }
 
-// Aria · 天罗音网 — Spinning storm net: 16 wind streak beams arranged in a
-// spiral, plus 3 expanding pink storm rings.
+// Aria · 天罗音网 — Wind streaks sweep DIAGONALLY across the screen in a
+// crisscross pattern (not radiating from earth). Storm rings at multiple
+// random screen positions.
 function playUlt_aria(hero) {
   const tint = hero.color;
-  const streaks = 16;
-  for (let i = 0; i < streaks; i++) {
+  // 24 diagonal wind streaks crossing the entire screen
+  for (let i = 0; i < 24; i++) {
     setTimeout(() => {
-      // Storm streaks emanate from Earth at progressively rotated angles
-      const baseAngle = (Math.PI * 2 * i) / streaks + (i * 0.05); // spiral offset
-      const len = 480;
-      createEnergyBeam(baseAngle, {
-        from: { x: C.x, y: C.y },
-        to: { x: C.x + Math.cos(baseAngle) * len, y: C.y + Math.sin(baseAngle) * len },
-        life: 0.9,
-        color: tint,
-        opacity: 0.92,
-        wide: true,
+      // Random start on one side, exit through the other
+      const side = i % 4;
+      let from, to;
+      if (side === 0) { from = { x: -50, y: rand(0, H) }; to = { x: W + 50, y: rand(0, H) }; }
+      else if (side === 1) { from = { x: rand(0, W), y: -50 }; to = { x: rand(0, W), y: H + 50 }; }
+      else if (side === 2) { from = { x: W + 50, y: rand(0, H) }; to = { x: -50, y: rand(0, H) }; }
+      else { from = { x: rand(0, W), y: H + 50 }; to = { x: rand(0, W), y: -50 }; }
+      createEnergyBeam(Math.atan2(to.y - from.y, to.x - from.x), {
+        from, to,
+        life: 0.7, color: tint, opacity: 0.92, wide: true,
       });
-      // Wind sparkle at the tip
-      spawnInterceptFlash(C.x + Math.cos(baseAngle) * len, C.y + Math.sin(baseAngle) * len, 1.4);
-    }, i * 35);
+      spawnInterceptFlash(to.x, to.y, 1.4);
+    }, i * 30);
   }
-  // 3 expanding storm rings
-  for (let i = 0; i < 3; i++) {
+  // 4 storm rings at random points on screen
+  for (let i = 0; i < 4; i++) {
     setTimeout(() => {
-      addPolishEffect("polishDangerWarningRing", C.x, C.y, 260 + i * 140, {
-        life: 1.5, grow: 1.6, spin: 3.0, opacity: 0.92, z: 8.6, color: tint,
+      const px = randScreenX(80), py = randScreenY(80);
+      addPolishEffect("polishDangerWarningRing", px, py, 320, {
+        life: 1.4, grow: 1.6, spin: 3.0, opacity: 0.92, z: 8.6, color: tint,
       });
-      addPolishEffect("polishStageIonStorm", C.x, C.y, 320 + i * 100, {
+      addPolishEffect("polishStageIonStorm", px, py, 380, {
         life: 1.4, grow: 1.2, spin: -2.2, opacity: 0.7, z: 8.5, color: 0xff8ff0,
       });
     }, i * 180);
   }
+  // 60 wind-sparkle flashes
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => spawnInterceptFlash(randScreenX(), randScreenY(), 0.8), i * 18);
+  }
   triggerScreenShake(0.5, 12);
 }
 
-// BRIGHT · 日蚀降临 — Eclipse: black expanding circle covers everything,
-// then explodes outward as a giant white flash. Most cinematic ult.
+// BRIGHT · 日蚀降临 — Eclipse storm: dark sweep covers the screen, then
+// EXPLODES outward in a full-screen white nova. Multiple impacts scattered
+// across the playfield.
 function playUlt_bright(hero) {
   const tint = hero.color;
-  // Black mothership shadow expanding from Earth
-  addPolishEffect("polishStageMothershipShadow", C.x, C.y, 200, {
+  // Dark eclipse shadow sweeps from centre — covers whole screen
+  addPolishEffect("polishStageMothershipShadow", W / 2, H / 2, 400, {
     life: 1.4, grow: 4.5, spin: 0.4, opacity: 0.95, z: 9.0,
   });
-  // 0.6s in: massive eclipse finale ring
+  // 0.6s in: full-screen white nova
   setTimeout(() => {
-    addPolishEffect("polishStageEclipseFinale", C.x, C.y, 720, {
+    spawnUltScreenFlash(0xffffff);
+    addPolishEffect("polishStageEclipseFinale", W / 2, H / 2, 1500, {
       life: 1.2, grow: 0.8, spin: -1.0, opacity: 0.98, z: 9.2, color: tint,
     });
-    addPolishEffect("polishDangerWarningRing", C.x, C.y, 720, {
+    addPolishEffect("polishDangerWarningRing", W / 2, H / 2, 1500, {
       life: 1.0, grow: 1.5, spin: 2.0, opacity: 0.95, z: 9.1, color: 0xffffff,
     });
-    // White flash burst
-    spawnUltScreenFlash(0xffffff);
     triggerScreenShake(1.0, 24);
     audio.boom();
-    // Radial particle storm
-    for (let i = 0; i < 80; i++) {
-      const a = rand(0, Math.PI * 2);
-      const dist = rand(100, 540);
-      spawnInterceptFlash(C.x + Math.cos(a) * dist, C.y + Math.sin(a) * dist, 1.0 + Math.random() * 0.7);
+    // 120 particle storm scattered across full screen
+    for (let i = 0; i < 120; i++) {
+      spawnInterceptFlash(randScreenX(), randScreenY(), 1.0 + Math.random() * 0.7);
     }
   }, 600);
+  // 8 secondary impact rings at random screen points
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const px = randScreenX(80), py = randScreenY(80);
+      addExplosion(px, py, 2.5 + Math.random() * 1.5);
+      addPolishEffect("polishBossRageAura", px, py, 280, {
+        life: 1.0, grow: 1.4, spin: rand(-3, 3), opacity: 0.9, z: 9.0, color: tint,
+      });
+    }, 700 + i * 80);
+  }
   // Final core implosion
   setTimeout(() => {
-    addExplosion(C.x, C.y, 6.0);
-    addPolishEffect("polishBossRageAura", C.x, C.y, 580, {
+    addExplosion(W / 2, H / 2, 6.0);
+    addPolishEffect("polishBossRageAura", W / 2, H / 2, 800, {
       life: 1.2, grow: 0.9, spin: 3.0, opacity: 1.0, z: 9.0, color: tint,
     });
-  }, 1100);
+  }, 1500);
 }
 
 // Generic fallback — used if we ever add a hero without a custom VFX.
 function ultVfxFallback(hero, heroDef) {
   const tint = hero.color;
-  const ox = heroDef ? heroDef.x : C.x;
-  const oy = heroDef ? heroDef.y : C.y;
-  for (let i = 0; i < 4; i++) {
+  // Full-screen rings at random positions
+  for (let i = 0; i < 5; i++) {
     setTimeout(() => {
-      addPolishEffect("polishDangerWarningRing", ox, oy, 200 + i * 120, {
+      addPolishEffect("polishDangerWarningRing", randScreenX(60), randScreenY(80), 200 + Math.random() * 220, {
         life: 1.4, grow: 1.4, spin: -1.4, opacity: 0.92, z: 8.6, color: tint,
       });
-    }, i * 180);
+    }, i * 160);
   }
-  for (let i = 0; i < 40; i++) {
-    setTimeout(() => {
-      const a = rand(0, Math.PI * 2);
-      const dist = rand(100, 380);
-      spawnInterceptFlash(C.x + Math.cos(a) * dist, C.y + Math.sin(a) * dist, 0.9);
-    }, i * 22);
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => spawnInterceptFlash(randScreenX(), randScreenY(), 0.9), i * 22);
   }
-  setTimeout(() => addExplosion(ox, oy, 4.0), 700);
+  setTimeout(() => spawnUltScreenFlash(tint), 1100);
   triggerScreenShake(0.7, 16);
 }
 
@@ -4733,19 +4760,21 @@ const _yinSushi = { spawnTimer: 0, pieces: [] };
 
 function spawnYinSushiPiece() {
   const idx = Math.floor(Math.random() * SUSHI_EMOJI.length);
-  const angle = rand(0, Math.PI * 2);
-  const speed = rand(140, 280);
-  const size = rand(34, 56);
-  // Start a touch outside Earth's surface so it visually launches OUT
-  // rather than appearing in space.
-  const launchR = earthRadius + rand(8, 18);
+  const size = rand(40, 64);
   const sprite = makeSprite(tex[`sushi-${idx}`], size, size, { opacity: 1.0 });
+  // Sushi STORM: spawn at random X across the top of the screen and rain
+  // down across the entire playfield (not radiating from Earth). Some
+  // come at angles so it feels chaotic.
+  const startX = rand(20, W - 20);
+  const startY = rand(-80, -20);                 // just above the top edge
+  const fallSpeed = rand(280, 480);              // downward velocity
+  const drift = rand(-160, 160);                 // horizontal sway
   const piece = {
-    x: C.x + Math.cos(angle) * launchR,
-    y: C.y + Math.sin(angle) * launchR,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    life: rand(1.6, 2.4),
+    x: startX,
+    y: startY,
+    vx: drift,
+    vy: fallSpeed,
+    life: rand(2.4, 3.4),
     maxLife: 0,
     spin: rand(-7, 7),
     rotation: rand(0, Math.PI * 2),
