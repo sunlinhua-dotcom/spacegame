@@ -150,6 +150,19 @@
           <div class="hero-intro-cta">▶ 点击出击</div>
         </div>
 
+        <!-- Tutorial overlay — first-run only, walks through earth defense
+             basics + manual ULT trigger. Steps cycle on tap. -->
+        <div id="tutorialOverlay" class="tutorial-overlay" hidden>
+          <div class="tutorial-mask"></div>
+          <div class="tutorial-spotlight" id="tutorialSpot"></div>
+          <div class="tutorial-card">
+            <div class="tutorial-step" id="tutorialStep">1 / 4</div>
+            <div class="tutorial-title" id="tutorialTitle">守护地球</div>
+            <div class="tutorial-text" id="tutorialText">外星敌人会从四周袭击地球，让它们靠近就会扣血。</div>
+            <button class="tutorial-next" id="tutorialNext">下一步 ▶</button>
+          </div>
+        </div>
+
         <!-- 殷师傅 unlock celebration — fired once at stage 1 wave 10. Fullscreen
              comic splash with 4-line story dialogue, same pattern as hero intros.
              After it dismisses, a small badge stays in the HUD area to signal

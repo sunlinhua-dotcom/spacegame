@@ -633,6 +633,128 @@ if (ui.prologueOverlay) {
   });
 }
 
+/* ─────────────── Tutorial overlay (first-run only) ───────────────
+ * 4-step walkthrough that fires after Lia's join card the first time.
+ * Steps 1-3 advance on tap; step "tap-ult" waits until the player
+ * actually fires their first ult by tapping the hero portrait. */
+const tutorialState = {
+  active: false,
+  step: null,        // string id of current step
+  stepIdx: 0,
+  resumeMode: null,  // gameplay mode to resume into when done
+};
+
+const TUTORIAL_STEPS = [
+  {
+    id: "earth",
+    title: "守护地球",
+    text: "外星敌人从四周向地球进攻。每次撞击都会扣血,血量归零就失败。",
+    targetId: null, // center spotlight on earth
+  },
+  {
+    id: "auto-fire",
+    title: "英雄会自动射击",
+    text: "你的英雄绕着地球巡逻,自动锁定并射击敌人。你不用控制移动。",
+    targetId: "heroRoster",
+  },
+  {
+    id: "ult-charge",
+    title: "击杀蓄力大招",
+    text: "每击杀一个敌人,英雄头像周围的圆环就会蓄力。圆环金光闪烁时大招就绪。",
+    targetId: "heroRoster",
+  },
+  {
+    id: "tap-ult",
+    title: "点击头像释放大招",
+    text: "现在试试 — 等圆环充满后,点一下英雄头像,释放威力巨大的大招!",
+    targetId: "heroRoster",
+    waitForAction: true,
+  },
+];
+
+function startTutorialIfNeeded(onDone = null) {
+  if (progress.tutorialSeen) { if (onDone) onDone(); return; }
+  tutorialState.active = true;
+  tutorialState.stepIdx = 0;
+  tutorialState.onDone = onDone;
+  showTutorialStep(0);
+}
+
+function showTutorialStep(idx) {
+  const overlay = document.getElementById("tutorialOverlay");
+  if (!overlay) { finishTutorial(); return; }
+  const step = TUTORIAL_STEPS[idx];
+  if (!step) { finishTutorial(); return; }
+  tutorialState.step = step.id;
+  tutorialState.stepIdx = idx;
+  document.getElementById("tutorialStep").textContent = `${idx + 1} / ${TUTORIAL_STEPS.length}`;
+  document.getElementById("tutorialTitle").textContent = step.title;
+  document.getElementById("tutorialText").textContent = step.text;
+  // Position spotlight on the target
+  const spot = document.getElementById("tutorialSpot");
+  if (step.targetId) {
+    const target = document.getElementById(step.targetId);
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const r = Math.max(rect.width, rect.height) / 2 + 14;
+      spot.style.setProperty("--spot-x", `${cx}px`);
+      spot.style.setProperty("--spot-y", `${cy}px`);
+      spot.style.setProperty("--spot-r", `${r}px`);
+    }
+  } else {
+    // Center on the canvas (earth)
+    spot.style.setProperty("--spot-x", "50%");
+    spot.style.setProperty("--spot-y", "50%");
+    spot.style.setProperty("--spot-r", "100px");
+  }
+  // Next button: hide on wait-for-action steps
+  const nextBtn = document.getElementById("tutorialNext");
+  if (step.waitForAction) {
+    nextBtn.textContent = "等待操作…";
+    nextBtn.disabled = true;
+  } else {
+    nextBtn.textContent = idx >= TUTORIAL_STEPS.length - 1 ? "开始战斗 ▶" : "下一步 ▶";
+    nextBtn.disabled = false;
+  }
+  overlay.hidden = false;
+}
+
+function advanceTutorial() {
+  if (!tutorialState.active) return;
+  const next = tutorialState.stepIdx + 1;
+  if (next >= TUTORIAL_STEPS.length) {
+    finishTutorial();
+  } else {
+    showTutorialStep(next);
+  }
+}
+
+function finishTutorial() {
+  tutorialState.active = false;
+  tutorialState.step = null;
+  const overlay = document.getElementById("tutorialOverlay");
+  if (overlay) overlay.hidden = true;
+  progress.tutorialSeen = true;
+  saveProgress(progress);
+  if (tutorialState.onDone) {
+    const cb = tutorialState.onDone;
+    tutorialState.onDone = null;
+    cb();
+  }
+}
+
+// Hook up tutorial next button (steps without waitForAction advance on click)
+const _tutorialNextBtn = document.getElementById("tutorialNext");
+if (_tutorialNextBtn) {
+  _tutorialNextBtn.addEventListener("pointerdown", (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (!_tutorialNextBtn.disabled) advanceTutorial();
+  });
+}
+
 /* ─────────────── Hero introduction cinematic ───────────────
  * Splash screen when a new pilot joins the squad. Plays once per stage
  * transition (Lia at game start, then one new hero per cleared stage).
@@ -692,11 +814,17 @@ function dismissHeroIntro() {
   if (ui.heroIntro) ui.heroIntro.hidden = true;
   stopVoice();
   releaseMusicHold();
+  const wasLia = _heroIntroState.hero?.id === "lia";
   const cb = _heroIntroState.onDone;
   _heroIntroState.hero = null;
   _heroIntroState.onDone = null;
   _heroIntroState.phase = "idle";
-  if (cb) cb();
+  // First-run tutorial: after Lia's intro, walk the player through basics.
+  if (wasLia && !progress.tutorialSeen) {
+    startTutorialIfNeeded(() => { if (cb) cb(); });
+  } else {
+    if (cb) cb();
+  }
 }
 
 // Comic overlay tap → advance to join card
@@ -2707,6 +2835,16 @@ function setShopButton() {
   }
 }
 
+function tryFireHeroUlt(heroId) {
+  const ok = heroGauges.tryFireUlt(heroId);
+  if (!ok) return false;
+  // Tutorial: dismiss the "tap to fire ult" step on first successful fire.
+  if (tutorialState.active && tutorialState.step === "tap-ult") {
+    advanceTutorial();
+  }
+  return true;
+}
+
 function renderHeroRoster() {
   const roster = document.getElementById("heroRoster");
   if (!roster) return;
@@ -2716,6 +2854,11 @@ function renderHeroRoster() {
     const wrap = document.createElement("div");
     wrap.className = "hero-roster-slot";
     wrap.dataset.heroId = hero.id;
+    // Tap to fire ULT (only fires when gauge is full)
+    wrap.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      tryFireHeroUlt(hero.id);
+    });
     const img = document.createElement("img");
     img.src = `assets/cast/${hero.portrait}.png?v=${ASSET_VERSION}`;
     img.className = "hero-roster-avatar";
@@ -5497,22 +5640,6 @@ function frame(now) {
   if (state.mode === "paused" || state.mode === "prologue" || state.mode === "heroIntro" || state.mode === "bossReveal") {
     updateExplosions(dt);
     updatePolishEffects(dt);
-    // Hero-intro fallback: if the voice file is missing or autoplay
-    // got blocked, the auto-advance via onEnded never fires. Tick a
-    // timer so each line still advances after ~3.6 s, keeping the
-    // 4-panel story playable without voice.
-    if (state.mode === "heroIntro" && _heroIntroState.lines?.length) {
-      _heroIntroState.lineTimer += dt;
-      if (_heroIntroState.lineTimer > 3.6) {
-        _heroIntroState.lineTimer = 0;
-        _heroIntroState.lineIdx += 1;
-        if (_heroIntroState.lineIdx >= _heroIntroState.lines.length) {
-          dismissHeroIntro();
-        } else {
-          showHeroIntroLine();
-        }
-      }
-    }
   } else {
     update(dt);
   }

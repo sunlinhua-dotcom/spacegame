@@ -308,7 +308,8 @@ export class HeroGauges {
   }
 
   // Distribute a kill across all active heroes so they all charge in parallel.
-  // Different distribution rules could be implemented; current = even split.
+  // Gauge fills to ready state, but does NOT auto-fire — the player must
+  // tap the hero portrait to release the ult (see tryFireUlt below).
   onKill(tier) {
     const tierKey = ["fodder", "mid", "elite", "miniBoss", "boss"][Math.min(tier, 4)];
     const gain = ULT_GAUGE_GAIN[tierKey] || 1;
@@ -316,11 +317,23 @@ export class HeroGauges {
     for (const g of this.gauges) {
       if (g.ultActive) continue;
       g.value = Math.min(g.max, g.value + perHero);
-      if (g.value >= g.max && !g.pendingTrigger) g.pendingTrigger = true;
     }
   }
 
-  // Called each frame; returns array of hero ids whose ult should fire NOW.
+  // Manual fire: called when user taps a hero's portrait. Returns the
+  // heroId if the ult successfully fired (gauge full, not already active),
+  // or null if not ready.
+  tryFireUlt(heroId) {
+    const g = this.gauges.find((x) => x.heroId === heroId);
+    if (!g) return null;
+    if (g.ultActive) return null;
+    if (g.value < g.max) return null;
+    g.pendingTrigger = true;
+    return heroId;
+  }
+
+  // Called each frame; expires active ults and returns ids whose pending
+  // manual trigger should fire this tick.
   consumePending(now) {
     const fired = [];
     for (const g of this.gauges) {
@@ -334,6 +347,12 @@ export class HeroGauges {
       }
     }
     return fired;
+  }
+
+  // Has the gauge filled but not yet been fired? Drives the ready glow.
+  isReady(heroId) {
+    const g = this.gauges.find((x) => x.heroId === heroId);
+    return !!(g && !g.ultActive && g.value >= g.max);
   }
 
   beginUlt(heroId, durationSec, now) {
