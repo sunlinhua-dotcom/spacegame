@@ -230,13 +230,13 @@ export const HEROES = [
   },
 ];
 
-/* ─────────────── Master Yin — guest support character ───────────
-   Original side character, unlocks at stage 1 wave 10 as a mid-stage
-   reward (the player's first "you got something extra" moment).
-   He is NOT a pilot — has no top-down sprite, no orbit slot, no ULT
-   gauge. Instead he's a permanent passive: his "嘲讽" (taunt) skill
-   slows every enemy on the field by ENEMY_SLOW_FACTOR once unlocked,
-   and his portrait appears as a small badge next to the HUD.
+/* ─────────────── Master Yin — guest hero with sushi-rain ULT ─────
+   Unlocks at stage 1 wave 10. He doesn't fly a mecha (no top-down
+   sprite), but he occupies a portrait slot in the bottom hero roster
+   and earns a charge gauge from kills like the other heroes. When the
+   player taps his portrait, his ult fires:
+     • A radial sushi explosion (大量寿司从地球扔出去)
+     • All non-boss enemies slowed for ult.durationSec
    ─────────────────────────────────────────────────────────────── */
 
 export const MASTER_YIN = {
@@ -253,23 +253,23 @@ export const MASTER_YIN = {
   actionPortrait: "yin-action",
   actionAlt: "yin-action-alt",
   chibi: "yin-chibi",
-  // 0.78 = 22% slow. Strong enough to feel a difference on stage 2+
-  // (where enemies start moving fast), gentle enough not to break
-  // the mid-stage power curve.
-  enemySlowFactor: 0.78,
+  // 0.55 = 45% slow during ult — much stronger than the old passive
+  // 22% slow, but only lasts for ult.durationSec instead of forever.
+  enemySlowFactor: 0.55,
   skill: {
     name: "嘲讽",
-    desc: "全场敌人移动减速 22%",
+    desc: "击杀蓄力,点击释放大招",
+  },
+  ult: {
+    name: "寿司风暴 · 全场嘲讽",
+    durationSec: 8,
+    desc: "全场敌人减速 45%,持续 8 秒",
   },
   unlock: {
-    // Yin is a stage-1 mid-stage GUEST — he shows up at wave 10 to help
-    // close out the first stage, then leaves when stage 2 begins. He's
-    // NOT a permanent unlock; the buff is scoped to stage 1 only so the
-    // 8-pilot roster stays the focus for the rest of the run.
     stage: 1,
     wave: 10,
     eyebrow: "GUEST PILOT",
-    blurb: "居酒屋的殷师傅赶来助阵 —— 一句嘲讽,所有怪物都得放慢脚步。",
+    blurb: "居酒屋的殷师傅赶来助阵 —— 击杀蓄力,点击释放寿司风暴!",
   },
 };
 
@@ -305,6 +305,20 @@ export class HeroGauges {
       ultActive: false,
       ultEndsAt: 0,
     }));
+  }
+
+  // Add a hero mid-run (used when 殷师傅 unlocks at stage 1 wave 10).
+  // Idempotent — calling twice for the same hero is a no-op.
+  addHero(heroId) {
+    if (this.gauges.some((g) => g.heroId === heroId)) return;
+    this.gauges.push({
+      heroId,
+      value: 0,
+      max: ULT_GAUGE_MAX,
+      pendingTrigger: false,
+      ultActive: false,
+      ultEndsAt: 0,
+    });
   }
 
   // Distribute a kill across all active heroes so they all charge in parallel.

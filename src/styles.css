@@ -2518,15 +2518,18 @@ canvas {
   display: none;
 }
 
+/* Subtle bottom fade only — used to be a heavy mask that was very
+   visible on darker scenes. Pull-down opacity keeps button legibility
+   without painting a visible band across the playfield. */
 .controls::before {
   content: "";
   position: absolute;
   z-index: -1;
   left: -12px;
   right: -12px;
-  top: -42px;
+  top: -20px;
   bottom: -12px;
-  background: linear-gradient(180deg, rgba(1, 7, 11, 0) 0%, rgba(1, 7, 11, 0.85) 48%, rgba(1, 7, 11, 0.96));
+  background: linear-gradient(180deg, rgba(1, 7, 11, 0) 0%, rgba(1, 7, 11, 0.18) 60%, rgba(1, 7, 11, 0.32));
   pointer-events: none;
 }
 

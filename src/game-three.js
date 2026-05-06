@@ -1093,14 +1093,18 @@ function playUltSceneEffect(hero) {
 }
 
 function playUltCinematic(heroId) {
-  const hero = getHero(heroId);
+  // 殷师傅 doesn't fly a mecha so we render his cinematic from MASTER_YIN
+  // rather than HEROES.
+  const hero = heroId === MASTER_YIN.id ? MASTER_YIN : getHero(heroId);
   if (!hero || !ui.ultCinematic) return;
   // 1. Three.js scene burst (radial pulses + per-defender explosion + glitter).
-  playUltSceneEffect(hero);
-  // Color from hero — fed to CSS via custom property
-  const r = (hero.color >> 16) & 0xff;
-  const g = (hero.color >> 8) & 0xff;
-  const b = hero.color & 0xff;
+  // Yin doesn't have orbiting defenders so we skip the per-defender burst.
+  if (heroId !== MASTER_YIN.id) playUltSceneEffect(hero);
+  // Color from hero — Yin uses warm amber (no .color set on MASTER_YIN).
+  const heroColor = typeof hero.color === "number" ? hero.color : 0xffb24a;
+  const r = (heroColor >> 16) & 0xff;
+  const g = (heroColor >> 8) & 0xff;
+  const b = heroColor & 0xff;
   const colorRgba = (a) => `rgba(${r}, ${g}, ${b}, ${a})`;
   ui.ultCinematic.style.setProperty("--ult-color", colorRgba(0.92));
   if (ui.ultCinematicPortrait) {
@@ -1420,8 +1424,10 @@ const state = {
   // the AudioContext is unlocked on the initial pointerdown anywhere on the stage.
   soundOn: true,
   miniBossesDefeated: 0,
-  // 殷师傅 ("嘲讽") stage-1 guest. Each run earns him at stage 1 wave 10
-  // and loses him when stage 2 begins — never persists across sessions.
+  // 殷师傅 (Master Yin) — unlocked at stage 1 wave 10. yinUnlocked flips
+  // to true permanently for the run; yinActive only flips true while his
+  // ult is firing (charge gauge fires sushi-rain + slow for 8s).
+  yinUnlocked: false,
   yinActive: false,
   message: "地球防御系统启动中",
 };
@@ -2789,13 +2795,15 @@ function reset() {
     moneyMul: 1,
     levelUpSource: "timer",
     miniBossesDefeated: 0,
-    // Yin always starts inactive. Earned afresh at stage 1 wave 10, lost
-    // at stage 2.
+    // Yin starts locked + inactive. He unlocks at stage 1 wave 10 (joins
+    // the hero roster permanently for the run). yinActive only flips on
+    // while his ult is firing.
+    yinUnlocked: false,
     yinActive: false,
     message: "地球防御系统启动中",
   });
-  // Yin's badge is hidden by default — only appears when he's actively
-  // helping (during stage 1 from wave 10 onward). Stage 2+ he's gone.
+  // Reset Yin badge UI to hidden — the legacy badge is no longer used
+  // (he now appears in the hero roster instead).
   if (ui.yinBadge) {
     ui.yinBadge.hidden = true;
     ui.yinBadge.classList.remove("is-locked", "is-active");
@@ -2849,7 +2857,10 @@ function renderHeroRoster() {
   const roster = document.getElementById("heroRoster");
   if (!roster) return;
   roster.replaceChildren();
-  for (const hero of activeHeroes) {
+  // Build the slot list: pilots + 殷师傅 (only after he's unlocked).
+  const heroesToShow = [...activeHeroes];
+  if (state.yinUnlocked) heroesToShow.push(MASTER_YIN);
+  for (const hero of heroesToShow) {
     // Wrapper with SVG ring for ULT gauge
     const wrap = document.createElement("div");
     wrap.className = "hero-roster-slot";
@@ -4280,11 +4291,11 @@ function updateWave(dt) {
   state.waveTimer = 0;
   state.waveIndex += 1;
   state.enemyCarry += state.waveIndex % 5 === 0 ? 3.0 : 1.0;
-  // Stage 1, wave 10 → unlock 殷师傅 (Master Yin) as a guest support.
-  // First-time only; localStorage persists the flag across sessions.
+  // Stage 1, wave 10 → unlock 殷师傅 (Master Yin) as a hero. Once unlocked
+  // he stays in the roster for the rest of the run.
   if (state.stageLevel === MASTER_YIN.unlock.stage
       && state.waveIndex === MASTER_YIN.unlock.wave
-      && !state.yinActive) {
+      && !state.yinUnlocked) {
     triggerYinUnlock();
   }
   if (state.waveIndex >= wavesPerStage) {
@@ -4298,31 +4309,42 @@ function updateWave(dt) {
 }
 
 function triggerYinUnlock() {
-  state.yinActive = true;
-  // showYinUnlockOverlay has its own built-in 4-line story dialogue
-  // (YIN_STORY lines auto-advance inside the fullscreen portrait overlay).
+  // Yin joins the squad permanently for this run. yinActive stays false
+  // — it only flips on briefly when the player fires his ult.
+  state.yinUnlocked = true;
+  heroGauges.addHero(MASTER_YIN.id);
+  renderHeroRoster();
+  // 4-line story dialogue still plays in the unlock overlay.
   showYinUnlockOverlay();
-  if (ui.yinBadge) {
-    ui.yinBadge.hidden = false;
-    ui.yinBadge.classList.add("is-active");
-    ui.yinBadge.classList.remove("is-locked");
-  }
   audio.levelUp();
-  // 嘲讽 grand-entrance VFX: 36 sushi pieces explode out of Earth in a
-  // radial burst, plus an amber shockwave ring + screen shake to mark
-  // the moment 殷师傅 enters the field. After this initial blast, the
-  // ongoing spawn rate in updateYinTauntVfx (16/s) keeps sushi flying.
-  for (let i = 0; i < 36; i++) {
+  // Welcome-to-the-team sushi burst — purely cosmetic, no slow effect.
+  for (let i = 0; i < 24; i++) {
     spawnYinSushiPiece();
   }
-  addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 5, {
-    life: 1.4, grow: 1.6, spin: -0.8, opacity: 0.92, z: 8.6, color: 0xffb24a,
+  addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 4, {
+    life: 1.4, grow: 1.6, spin: -0.8, opacity: 0.85, z: 8.6, color: 0xffb24a,
   });
-  for (let i = 0; i < 12; i++) {
-    const a = (Math.PI * 2 * i) / 12;
-    spawnInterceptFlash(C.x + Math.cos(a) * (earthRadius + 60), C.y + Math.sin(a) * (earthRadius + 60), 1.1);
+  triggerScreenShake(0.3, 6);
+}
+
+// Called when the player taps Yin's portrait with a full gauge — fires
+// his ult: heavy sushi rain + 45% slow on all non-boss enemies for 8s.
+function fireYinUlt() {
+  state.yinActive = true;
+  state.yinUltEndsAt = state.time + MASTER_YIN.ult.durationSec;
+  // Big sushi explosion — 48 pieces all at once.
+  for (let i = 0; i < 48; i++) {
+    spawnYinSushiPiece();
   }
-  triggerScreenShake(0.4, 8);
+  addPolishEffect("polishDangerWarningRing", C.x, C.y, earthRadius * 5.5, {
+    life: 1.6, grow: 1.7, spin: -0.9, opacity: 0.95, z: 8.6, color: 0xffb24a,
+  });
+  for (let i = 0; i < 16; i++) {
+    const a = (Math.PI * 2 * i) / 16;
+    spawnInterceptFlash(C.x + Math.cos(a) * (earthRadius + 60), C.y + Math.sin(a) * (earthRadius + 60), 1.2);
+  }
+  triggerScreenShake(0.5, 10);
+  audio.boom();
 }
 
 // 嘲讽 visual: 殷师傅 throws sushi everywhere. While he's active, sushi
@@ -4388,16 +4410,18 @@ function updateYinTauntVfx(dt) {
     const fade = Math.min(1, p.life / 0.6);
     p.mesh.material.opacity = fade;
   }
+  // Spawn ongoing sushi only while Yin's ult is firing (state.yinActive).
   if (!state.yinActive || state.mode !== "playing") {
     _yinSushi.spawnTimer = 0;
     return;
   }
-  // Spawn rate: ~every 0.12 s, two pieces per tick → ~16 pieces/s flying
-  // outward in all directions. Looks like the chef is hurling sushi out
-  // the door at the alien horde.
+  // Spawn rate during ult: ~every 0.08 s, three pieces per tick → ~38
+  // pieces/s flying outward. Way denser than the old passive burst so
+  // it visually reads as a *moment* rather than ambient background.
   _yinSushi.spawnTimer -= dt;
   if (_yinSushi.spawnTimer <= 0) {
-    _yinSushi.spawnTimer = 0.12;
+    _yinSushi.spawnTimer = 0.08;
+    spawnYinSushiPiece();
     spawnYinSushiPiece();
     spawnYinSushiPiece();
   }
@@ -5287,10 +5311,14 @@ function updateBullets(dt) {
    Enemy Update (swap-and-pop)
    ═══════════════════════════════════════════════════════════════ */
 function updateEnemies(realDt) {
-  // 殷师傅 (Master Yin) "嘲讽" — once unlocked at stage 1 wave 10, fodder /
-  // swarm enemies move at MASTER_YIN.enemySlowFactor (0.78 = 22% slower)
-  // for the rest of the run. Bosses + mini-bosses keep full speed so their
-  // scripted choreography stays readable.
+  // Expire Yin's slow effect when his ult duration ends.
+  if (state.yinActive && state.yinUltEndsAt && state.time >= state.yinUltEndsAt) {
+    state.yinActive = false;
+    state.yinUltEndsAt = 0;
+  }
+  // 殷师傅 (Master Yin) "嘲讽" — slows fodder/swarm enemies for the duration
+  // of his ult. Bosses and mini-bosses ignore the slow so their scripted
+  // choreography stays readable.
   const yinSlow = state.yinActive ? MASTER_YIN.enemySlowFactor : 1;
   const slowedDt = realDt * yinSlow;
 
@@ -5653,9 +5681,19 @@ function frame(now) {
   updateUltFlashes();
   renderUltGauges();
   updateYinTauntVfx(dt);
-  // Auto-fire any ULT whose gauge is full + cooldown clear.
+  // Manual ULT firing — consumePending returns hero ids whose gauge has
+  // been tapped (set via tryFireUlt on portrait pointerdown).
   const fired = heroGauges.consumePending(state.time);
   for (const heroId of fired) {
+    // 殷师傅 has a special ult — sushi rain + slow, no pilot mecha.
+    if (heroId === MASTER_YIN.id) {
+      heroGauges.beginUlt(heroId, MASTER_YIN.ult.durationSec, state.time);
+      fireYinUlt();
+      state.message = `${MASTER_YIN.name} · ${MASTER_YIN.ult.name}`;
+      updateHud();
+      playUltCinematic(heroId);
+      continue;
+    }
     const hero = getHero(heroId);
     if (!hero) continue;
     heroGauges.beginUlt(heroId, hero.ult.durationSec, state.time);
